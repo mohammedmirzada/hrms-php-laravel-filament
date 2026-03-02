@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('salary_structures', function (Blueprint $table) {
+        Schema::create('attendance_branch_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('default_currency_code')->default('USD');
-            $table->boolean('is_active')->default(true);
+            $table->foreignId('branch_id')->constrained()->onDelete('cascade');
+            $table->json('settings'); // (contains working hours, grace, OT rule, shift templates, mobile rules, geofence)
             $table->timestamps();
         });
     }
@@ -25,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('salary_structures');
+        Schema::dropIfExists('attendance_branch_settings');
     }
 };

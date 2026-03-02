@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('salary_structures', function (Blueprint $table) {
+        Schema::create('exchange_rates', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('default_currency_code')->default('USD');
-            $table->boolean('is_active')->default(true);
+            $table->string('base_code', 13); // (USD)
+            $table->string('quote_currency', 13); // (IQD)
+            $table->decimal('rate', 18, 8);
+            $table->date('rate_date');
+            $table->unsignedInteger('created_by');
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('salary_structures');
+        Schema::dropIfExists('exchange_rates');
     }
 };
