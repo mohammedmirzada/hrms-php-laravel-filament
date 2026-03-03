@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('branch_id')->nullable()->constrained()->onDelete('cascade');
             $table->enum('employment_type', ['full_time', 'part_time', 'contract'])->nullable();
-            $table->decimal('employee_percent', 9, 4);
             $table->decimal('employer_percent', 9, 4);
+            $table->decimal('employee_percent', 9, 4);
             $table->enum('base_rule', ['basic_only', 'basic_plus_marked', 'gross']);
             $table->boolean('cap_enabled')->default(false);
             $table->decimal('cap_amount', 18, 4)->nullable();

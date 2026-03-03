@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('attendance_events', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->constrained()->onDelete('cascade');
-            $table->foreignId('employee_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('device_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('employer_id')->nullable()->constrained('employers')->onDelete('set null');
+            $table->foreignId('device_id')->nullable()->constrained('attendance_devices')->onDelete('set null');
             $table->string('device_user_code')->nullable();
             $table->enum('source', ['BIOMETRIC', 'MOBILE', 'MANUAL']);
             $table->enum('event_type', ['IN', 'OUT'])->nullable();

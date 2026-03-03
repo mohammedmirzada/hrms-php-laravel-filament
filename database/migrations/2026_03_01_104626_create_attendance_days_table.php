@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // UNIQUE(employee_id, date) -> only one record per employee per day
+        // UNIQUE(employer_id, date) -> only one record per employer per day
         Schema::create('attendance_days', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
+            $table->foreignId('employer_id')->constrained('employers')->onDelete('cascade');
             $table->foreignId('branch_id')->constrained()->onDelete('cascade');
             $table->date('date');
             $table->string('shift_code')->nullable(); // (string like “MORNING”, “NIGHT”)
@@ -29,8 +29,8 @@ return new class extends Migration
             $table->boolean('is_overridden')->default(false);
             $table->foreignId('override_by_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->text('override_reason')->nullable(); // (mandatory if overridden)
-            $table->json('override_before_json')->nullable();
-            $table->json('override_after_json')->nullable();
+            $table->json('override_before')->nullable();
+            $table->json('override_after')->nullable();
             $table->dateTime('override_at')->nullable();
             $table->timestamps();
         });

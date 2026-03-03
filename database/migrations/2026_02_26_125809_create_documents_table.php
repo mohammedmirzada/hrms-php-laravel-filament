@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employer_id')->constrained()->onDelete('cascade');
+            $table->foreignId('employer_id')->constrained('employers')->onDelete('cascade');
             $table->string('document_type')->enum('ID Card', 'Passport', 'Driver License', 'Work Permit', 'Visa', 'Contract', 'Certificate', 'Degree', 'CV', 'Other');
             $table->string('file_path');
             $table->date('expiry_date')->nullable();

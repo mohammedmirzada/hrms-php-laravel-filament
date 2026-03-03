@@ -4,13 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Department extends Model {
+class EmploymentStatus extends Model {
     
-    protected array $fillable = [
-        'name'
+    protected $fillable = [
+        'name',
+        'code',
     ];
 
-    protected array $casts = [
+    protected $casts = [
         'name' => 'array',
     ];
     

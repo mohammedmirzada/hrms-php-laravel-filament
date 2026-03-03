@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('leave_ledger_entries', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
+            $table->foreignId('employer_id')->constrained('employers')->onDelete('cascade');
             $table->foreignId('branch_id')->constrained()->onDelete('cascade');
             $table->foreignId('leave_type_id')->constrained()->onDelete('cascade');
             $table->foreignId('leave_request_id')->nullable()->constrained()->onDelete('set null');

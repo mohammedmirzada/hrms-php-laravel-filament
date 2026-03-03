@@ -23,14 +23,12 @@ return new class extends Migration
             $table->json('emergency_contact');
             $table->foreignId('department_id')->nullable()->constrained();
             $table->foreignId('position_id')->nullable()->constrained();
-            $table->foreignId('manager_id')->nullable()->constrained();
+            $table->foreignId('manager_id')->nullable()->constrained('employers');
             $table->date('hire_date');
             $table->date('probation_period_start_date')->nullable();
             $table->date('probation_period_end_date')->nullable();
             $table->date('contract_expiry_date')->nullable();
-            $table->foreignId('employment_status_id')
-                ->nullable()->constrained()->default(1)
-                ->comment('1: Active, 2: Terminated, 3: Resigned, 4: Suspended, 5: Probation, 6: Contract Expired, 7: Future Hired, 8: Contract, 9: Retired, 10: On Leave');
+            $table->foreignId('employment_status_id')->nullable()->constrained()->default(1);
             $table->foreignId('salary_structure_id')->nullable()->constrained();
             $table->timestamps();
             $table->softDeletes();
@@ -45,14 +43,3 @@ return new class extends Migration
         Schema::dropIfExists('employers');
     }
 };
-
-// salary_structure_items
-// ----------------------
-// id
-// salary_structure_id
-// name
-// type                (earning/deduction)
-// calculation_type    (fixed/percentage)
-// value
-// created_at
-// updated_at

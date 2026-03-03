@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('ip_address')->nullable();
             $table->integer('port')->nullable();
-            $table->string('serial_number')->nullable();
             $table->enum('sync_mode', ['REALTIME', 'SCHEDULED']);
             $table->timestamp('last_sync_at')->nullable();
             $table->timestamps();

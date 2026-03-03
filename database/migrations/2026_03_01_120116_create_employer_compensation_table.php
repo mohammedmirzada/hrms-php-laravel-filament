@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_compensation', function (Blueprint $table) {
+        Schema::create('employer_compensation', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employee_id')->constrained()->onDelete('cascade');
+            $table->foreignId('employer_id')->constrained('employers')->onDelete('cascade');
             $table->foreign('salary_structure_id')->references('id')->on('salary_structures')->onDelete('cascade');
             $table->string('currency_code', 13); // (IQD/USD)
             $table->decimal('basic_salary', 18, 4);
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_compensation');
+        Schema::dropIfExists('employer_compensation');
     }
 };
