@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('employer_compensation', function (Blueprint $table) {
             $table->id();
             $table->foreignId('employer_id')->constrained('employers')->onDelete('cascade');
-            $table->foreign('salary_structure_id')->references('id')->on('salary_structures')->onDelete('cascade');
+            $table->foreignId('salary_structure_id')->constrained('salary_structures')->onDelete('cascade');
             $table->string('currency_code', 13); // (IQD/USD)
             $table->decimal('basic_salary', 18, 4);
             $table->date('effective_from');

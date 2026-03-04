@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('employer_id')->constrained()->onDelete('cascade');
             $table->foreignId('branch_id')->constrained()->onDelete('cascade');
             $table->foreignId('leave_type_id')->constrained()->onDelete('cascade');
-            $table->foreignId('policy_id')->constrained()->onDelete('cascade');
+            $table->foreignId('policy_id')->constrained('leave_policies')->onDelete('cascade');
             $table->dateTime('start_at');
             $table->dateTime('end_at');
             $table->integer('duration_minutes');
@@ -37,7 +37,7 @@ return new class extends Migration
             $table->dateTime('approved_at')->nullable();
             $table->dateTime('rejected_at')->nullable();
             $table->dateTime('canceled_at')->nullable();
-            $table->foreignId('created_by_user_id')->nullable()->constrained();
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users');
             $table->timestamps();
         });
     }
