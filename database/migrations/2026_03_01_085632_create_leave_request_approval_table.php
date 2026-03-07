@@ -21,6 +21,8 @@ return new class extends Migration
             $table->foreignId('action_by_user_id')->nullable()->constrained('users')->onDelete('set null'); // EXAMPLE: who actually acted
             $table->dateTime('action_at')->nullable();
             $table->text('comment')->nullable();
+            $table->unique(['leave_request_id', 'step']);
+            $table->index('status');
             $table->timestamps();
         });
     }
@@ -30,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('leave_requests');
+        Schema::dropIfExists('leave_request_approvals');
     }
 };

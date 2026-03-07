@@ -15,6 +15,10 @@ class LeaveBalances extends Model {
         'as_of',
     ];
 
+    protected $casts = [
+        'as_of' => 'datetime',
+    ];
+
     public function employer() {
         return $this->belongsTo(Employer::class);
     }

@@ -18,6 +18,10 @@ class LeaveLedgerEntry extends Model {
         'created_by_user_id',
     ];
 
+    protected $casts = [
+        'occurred_on' => 'date',
+    ];
+
     public function employer() {
         return $this->belongsTo(Employer::class);
     }

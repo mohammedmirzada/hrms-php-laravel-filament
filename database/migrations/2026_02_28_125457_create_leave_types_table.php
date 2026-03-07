@@ -17,7 +17,7 @@ return new class extends Migration
             $table->json('description')->nullable();
             $table->boolean('is_system')->default(false);
             $table->boolean('is_paid')->default(false);
-            $table->foreignId('document_id')->nullable()->constrained();
+            $table->foreignId('document_id')->nullable()->constrained()->nullOnDelete();
             $table->enum('default_unit', ['HOUR', 'DAY'])->default('DAY');
             $table->timestamps();
         });

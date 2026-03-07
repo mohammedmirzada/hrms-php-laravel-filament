@@ -8,7 +8,7 @@ class AttendanceEvent extends Model {
     
     protected array $fillable = [
         'branch_id',
-        'employee_id',
+        'employer_id',
         'device_id',
         'device_user_code',
         'source',
@@ -22,5 +22,23 @@ class AttendanceEvent extends Model {
         'is_valid',
         'invalid_reason',
     ];
+
+    protected array $casts = [
+        'event_at' => 'datetime',
+        'raw_payload' => 'array',
+        'is_valid' => 'boolean',
+    ];
+
+    public function branch() {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function employer() {
+        return $this->belongsTo(Employer::class);
+    }
+
+    public function device() {
+        return $this->belongsTo(AttendanceDevice::class, 'device_id');
+    }
     
 }

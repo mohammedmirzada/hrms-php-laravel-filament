@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('attendance_branch_settings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->constrained()->onDelete('cascade');
+            $table->foreignId('branch_id')->unique()->constrained()->onDelete('cascade');
             $table->json('settings'); // (contains working hours, grace, OT rule, shift templates, mobile rules, geofence)
             $table->timestamps();
         });

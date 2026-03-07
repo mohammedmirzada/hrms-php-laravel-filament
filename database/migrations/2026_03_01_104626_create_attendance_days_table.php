@@ -11,7 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // UNIQUE(employer_id, date) -> only one record per employer per day
         Schema::create('attendance_days', function (Blueprint $table) {
             $table->id();
             $table->foreignId('employer_id')->constrained('employers')->onDelete('cascade');
@@ -32,6 +31,9 @@ return new class extends Migration
             $table->json('override_before')->nullable();
             $table->json('override_after')->nullable();
             $table->dateTime('override_at')->nullable();
+            $table->unique(['employer_id', 'date']);
+            $table->index('status');
+            $table->index(['branch_id', 'date']);
             $table->timestamps();
         });
     }

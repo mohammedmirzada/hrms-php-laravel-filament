@@ -3,11 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employer extends Model {
-
-    use SoftDeletes;
 
     protected $fillable = [
         'full_name',
@@ -31,7 +28,12 @@ class Employer extends Model {
 
     protected $casts = [
         'full_name' => 'array',
-        'emergency_contact' => 'array'
+        'emergency_contact' => 'array',
+        'date_of_birth' => 'date',
+        'hire_date' => 'date',
+        'probation_period_start_date' => 'date',
+        'probation_period_end_date' => 'date',
+        'contract_expiry_date' => 'date',
     ];
 
     public function department() {

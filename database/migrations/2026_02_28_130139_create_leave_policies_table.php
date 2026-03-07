@@ -35,8 +35,8 @@ return new class extends Migration
             $table->boolean('requires_manager_approval')->default(true);
             $table->boolean('requires_hr_approval')->default(true);
             $table->boolean('requires_final_approval')->default(true);
+            $table->unique(['branch_id', 'leave_type_id']);
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 

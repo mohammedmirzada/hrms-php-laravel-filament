@@ -26,6 +26,15 @@ class LeaveRequest extends Model {
         'created_by_user_id'
     ];
 
+    protected $casts = [
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
+        'submitted_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
+        'canceled_at' => 'datetime',
+    ];
+
     public function employer() {
         return $this->belongsTo(Employer::class);
     }

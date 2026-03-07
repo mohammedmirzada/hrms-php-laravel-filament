@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('currency_code', 13); // (IQD/USD)
             $table->date('effective_from');
             $table->date('effective_to')->nullable();
+            $table->index(['branch_id', 'effective_from']);
             $table->timestamps();
         });
     }

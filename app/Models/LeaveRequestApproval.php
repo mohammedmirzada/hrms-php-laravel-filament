@@ -13,8 +13,6 @@ class LeaveRequestApproval extends Model {
         'assigned_to_user_id',
         'status',
         'action_by_user_id',
-        'status',
-        'action_by_user_id',
         'action_at',
         'comment'
     ];

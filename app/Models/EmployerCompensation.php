@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class EmployerCompensation extends Model {
+
+    protected $table = 'employer_compensation';
     
     protected $fillable = [
         'employer_id',
@@ -15,8 +17,17 @@ class EmployerCompensation extends Model {
         'effective_to',
     ];
 
+    protected $casts = [
+        'effective_from' => 'date',
+        'effective_to' => 'date',
+    ];
+
     public function employer() {
         return $this->belongsTo(Employer::class);
+    }
+
+    public function salaryStructure() {
+        return $this->belongsTo(SalaryStructure::class);
     }
 
 }

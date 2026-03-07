@@ -15,4 +15,8 @@ class AttendanceBranchSetting extends Model {
         'settings' => 'array'
     ];
 
+    public function branch() {
+        return $this->belongsTo(Branch::class);
+    }
+
 }

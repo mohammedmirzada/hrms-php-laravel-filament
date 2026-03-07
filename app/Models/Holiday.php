@@ -15,6 +15,7 @@ class Holiday extends Model {
 
     protected $casts = [
         'name' => 'array',
+        'date' => 'date',
         'is_working_day_override' => 'boolean',
     ];
 

@@ -37,7 +37,9 @@ return new class extends Migration
             $table->dateTime('approved_at')->nullable();
             $table->dateTime('rejected_at')->nullable();
             $table->dateTime('canceled_at')->nullable();
-            $table->foreignId('created_by_user_id')->nullable()->constrained('users');
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->index('status');
+            $table->index(['employer_id', 'status']);
             $table->timestamps();
         });
     }

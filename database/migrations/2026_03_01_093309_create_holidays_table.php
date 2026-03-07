@@ -17,6 +17,8 @@ return new class extends Migration
             $table->date('date');
             $table->json('name');
             $table->boolean('is_working_day_override')->default(false);
+            $table->unique(['branch_id', 'date']);
+            $table->index('date');
             $table->timestamps();
         });
     }

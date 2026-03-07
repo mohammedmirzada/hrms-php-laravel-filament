@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('balance_minutes')->default(0);
             $table->decimal('balance_days', 10, 2)->default(0);
             $table->dateTime('as_of');
+            $table->unique(['employer_id', 'branch_id', 'leave_type_id']);
             $table->timestamps();
         });
     }

@@ -19,6 +19,12 @@ class SocialSecurityRule extends Model {
         'effective_to',
     ];
 
+    protected $casts = [
+        'effective_from' => 'date',
+        'effective_to' => 'date',
+        'cap_enabled' => 'boolean',
+    ];
+
     public function branch() {
         return $this->belongsTo(Branch::class);
     }

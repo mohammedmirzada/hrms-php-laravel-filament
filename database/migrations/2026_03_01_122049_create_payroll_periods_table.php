@@ -24,6 +24,8 @@ return new class extends Migration
             $table->foreignId('approved_by_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('approved_at')->nullable();
             $table->boolean('immutable')->default(false);
+            $table->unique(['branch_id', 'period_start', 'period_end']);
+            $table->index(['branch_id', 'status']);
             $table->timestamps();
         });
     }

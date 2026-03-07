@@ -19,6 +19,7 @@ return new class extends Migration
             $table->decimal('basic_salary', 18, 4);
             $table->date('effective_from');
             $table->date('effective_to')->nullable();
+            $table->index(['employer_id', 'effective_from']);
             $table->timestamps();
         });
     }

@@ -13,6 +13,10 @@ class Document extends Model {
         'expiry_date',
     ];
 
+    protected $casts = [
+        'expiry_date' => 'date',
+    ];
+
     public function employer() {
         return $this->belongsTo(Employer::class);
     }

@@ -14,4 +14,12 @@ class ExchangeRate extends Model {
         'created_by',
     ];
 
+    protected $casts = [
+        'rate_date' => 'date',
+    ];
+
+    public function createdBy() {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
 }

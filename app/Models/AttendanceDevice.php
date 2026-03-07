@@ -16,4 +16,12 @@ class AttendanceDevice extends Model {
         'last_sync_at'
     ];
 
+    protected array $casts = [
+        'last_sync_at' => 'datetime',
+    ];
+
+    public function branch() {
+        return $this->belongsTo(Branch::class);
+    }
+
 }

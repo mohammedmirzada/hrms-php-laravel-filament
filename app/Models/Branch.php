@@ -11,6 +11,11 @@ class Branch extends Model {
         'address',
     ];
 
+    protected $casts = [
+        'name' => 'array',
+        'address' => 'array',
+    ];
+
     public function holidays() {
         return $this->hasMany(Holiday::class);
     }

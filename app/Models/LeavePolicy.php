@@ -3,11 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LeavePolicy extends Model {
-
-    use SoftDeletes;
     
     protected $fillable = [
         'branch_id',
@@ -39,7 +36,8 @@ class LeavePolicy extends Model {
         'negative_balance_allowed' => 'boolean',
         'requires_manager_approval' => 'boolean',
         'requires_hr_approval' => 'boolean',
-        'requires_final_approval' => 'boolean'
+        'requires_final_approval' => 'boolean',
+        'carryover_expiry_date' => 'date',
     ];
 
     public function branch() {

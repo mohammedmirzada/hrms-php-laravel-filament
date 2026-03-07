@@ -27,6 +27,8 @@ return new class extends Migration
             $table->json('raw_payload')->nullable();
             $table->boolean('is_valid')->default(true);
             $table->string('invalid_reason')->nullable();
+            $table->index('event_at');
+            $table->index(['employer_id', 'event_at']);
             $table->timestamps();
         });
     }

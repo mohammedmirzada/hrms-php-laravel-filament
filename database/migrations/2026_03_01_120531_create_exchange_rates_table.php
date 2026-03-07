@@ -17,7 +17,9 @@ return new class extends Migration
             $table->string('quote_currency', 13); // (IQD)
             $table->decimal('rate', 18, 8);
             $table->date('rate_date');
-            $table->unsignedInteger('created_by');
+            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->unique(['base_code', 'quote_currency', 'rate_date']);
+            $table->index('rate_date');
             $table->timestamps();
         });
     }

@@ -22,6 +22,8 @@ return new class extends Migration
             $table->date('occurred_on');
             $table->text('note')->nullable();
             $table->foreignId('created_by_user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->index('occurred_on');
+            $table->index('entry_type');
             $table->timestamps();
         });
     }
