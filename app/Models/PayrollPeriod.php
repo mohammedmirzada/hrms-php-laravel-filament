@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class PayrollPeriod extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected $fillable = [
         'branch_id',
@@ -17,7 +20,9 @@ class PayrollPeriod extends Model {
         'attendance_locked_at',
         'approved_by_user_id',
         'approved_at',
-        'immutable'
+        'immutable',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

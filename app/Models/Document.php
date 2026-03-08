@@ -2,15 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class Document extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected $fillable = [
         'employer_id',
         'document_type',
         'file_path',
         'expiry_date',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

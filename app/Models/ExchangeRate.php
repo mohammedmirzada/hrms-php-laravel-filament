@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class ExchangeRate extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected $fillable = [
         'base_code',
@@ -12,14 +15,11 @@ class ExchangeRate extends Model {
         'rate',
         'rate_date',
         'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
         'rate_date' => 'date',
     ];
-
-    public function createdBy() {
-        return $this->belongsTo(User::class, 'created_by');
-    }
 
 }

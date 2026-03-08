@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class EmployerCompensation extends Model {
+
+    use HasCreatedUpdatedBy;
 
     protected $table = 'employer_compensation';
     
@@ -15,6 +18,8 @@ class EmployerCompensation extends Model {
         'basic_salary',
         'effective_from',
         'effective_to',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

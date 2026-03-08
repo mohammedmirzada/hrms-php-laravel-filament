@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class LeavePolicy extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected $fillable = [
         'branch_id',
@@ -25,7 +28,9 @@ class LeavePolicy extends Model {
         'negative_balance_limit',
         'requires_manager_approval',
         'requires_hr_approval',
-        'requires_final_approval'
+        'requires_final_approval',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

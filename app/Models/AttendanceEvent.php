@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class AttendanceEvent extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected array $fillable = [
         'branch_id',
@@ -21,6 +24,8 @@ class AttendanceEvent extends Model {
         'raw_payload',
         'is_valid',
         'invalid_reason',
+        'created_by',
+        'updated_by',
     ];
 
     protected array $casts = [

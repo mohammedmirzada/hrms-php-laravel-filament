@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class LeaveRequestApproval extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected $fillable = [
         'leave_request_id',
@@ -14,7 +17,9 @@ class LeaveRequestApproval extends Model {
         'status',
         'action_by_user_id',
         'action_at',
-        'comment'
+        'comment',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

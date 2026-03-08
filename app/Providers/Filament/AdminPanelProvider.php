@@ -81,6 +81,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->favicon(asset('favicon.ico'))
             ->revealablePasswords(true)
-            ->brandName(config('app.name'));
+            ->brandName(config('app.name'))
+            ->navigationGroups([
+                'Main',
+                'Employees'
+            ]);
     }
 }

@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class AttendanceDay extends Model {
+
+    use HasCreatedUpdatedBy;
 
     protected array $fillable = [
         'employer_id',
@@ -24,7 +27,9 @@ class AttendanceDay extends Model {
         'override_reason',
         'override_before',
         'override_after',
-        'override_at'
+        'override_at',
+        'created_by',
+        'updated_by',
     ];
 
     protected array $casts = [

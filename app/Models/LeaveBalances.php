@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class LeaveBalances extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected $fillable = [
         'employer_id',
@@ -13,6 +16,8 @@ class LeaveBalances extends Model {
         'balance_minutes',
         'balance_days',
         'as_of',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

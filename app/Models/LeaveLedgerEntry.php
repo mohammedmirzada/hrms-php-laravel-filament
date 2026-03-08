@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class LeaveLedgerEntry extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected $fillable = [
         'employer_id',
@@ -15,7 +18,8 @@ class LeaveLedgerEntry extends Model {
         'amount_minutes',
         'occurred_on',
         'note',
-        'created_by_user_id',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -36,10 +40,6 @@ class LeaveLedgerEntry extends Model {
 
     public function leaveRequest() {
         return $this->belongsTo(LeaveRequest::class);
-    }
-
-    public function createdByUser() {
-        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
     public function entryTypes() {

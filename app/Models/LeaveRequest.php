@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class LeaveRequest extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected $fillable = [
         'employer_id',
@@ -23,7 +26,8 @@ class LeaveRequest extends Model {
         'approved_at',
         'rejected_at',
         'canceled_at',
-        'created_by_user_id'
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -49,10 +53,6 @@ class LeaveRequest extends Model {
 
     public function policy() {
         return $this->belongsTo(LeavePolicy::class);
-    }
-
-    public function createdBy() {
-        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 
     public function statusses() {

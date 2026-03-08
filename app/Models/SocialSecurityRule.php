@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class SocialSecurityRule extends Model {
+
+    use HasCreatedUpdatedBy;
     
     protected $fillable = [
         'branch_id',
@@ -17,6 +20,8 @@ class SocialSecurityRule extends Model {
         'currency_code',
         'effective_from',
         'effective_to',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

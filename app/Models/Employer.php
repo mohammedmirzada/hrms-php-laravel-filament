@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class Employer extends Model {
+
+    use HasCreatedUpdatedBy;
 
     protected $fillable = [
         'full_name',
@@ -23,7 +26,9 @@ class Employer extends Model {
         'probation_period_end_date',
         'contract_expiry_date',
         'employment_status_id',
-        'salary_structure_id'
+        'salary_structure_id',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [

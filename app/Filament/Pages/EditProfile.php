@@ -60,6 +60,9 @@ class EditProfile extends Page implements HasForms
                                     ->disk('public')
                                     ->imageEditor()
                                     ->circleCropper()
+                                    ->avatar()
+                                    ->imageAspectRatio('1:1')
+                                    ->alignCenter(true)
                                     ->columnSpanFull(),
                                 Grid::make()
                                     ->schema([

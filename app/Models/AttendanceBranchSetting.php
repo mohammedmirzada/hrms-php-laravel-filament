@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class AttendanceBranchSetting extends Model {
 
+    use HasCreatedUpdatedBy;
+
     protected array $fillable = [
         'branch_id',
-        'settings'
+        'settings',
+        'created_by',
+        'updated_by',
     ];
 
     protected array $casts = [
