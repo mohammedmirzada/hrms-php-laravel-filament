@@ -37,6 +37,7 @@ class PayrollPeriodResource extends Resource
                 Section::make('Period Details')
                     ->schema([
                         Select::make('branch_id')
+                            ->native(false)
                             ->label('Branch')
                             ->relationship('branch', 'name')
                             ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
@@ -44,11 +45,14 @@ class PayrollPeriodResource extends Resource
                             ->searchable()
                             ->preload(),
                         DatePicker::make('period_start')
+                            ->native(false)
                             ->required(),
                         DatePicker::make('period_end')
+                            ->native(false)
                             ->required()
                             ->after('period_start'),
                         Select::make('processing_currency_code')
+                            ->native(false)
                             ->label('Processing Currency')
                             ->options([
                                 'USD' => 'USD',
@@ -59,9 +63,11 @@ class PayrollPeriodResource extends Resource
                             ->required()
                             ->searchable(),
                         DatePicker::make('exchange_rate_date')
+                            ->native(false)
                             ->label('Exchange Rate Date')
                             ->nullable(),
                         Select::make('status')
+                            ->native(false)
                             ->options([
                                 'open' => 'Open',
                                 'attendance_locked' => 'Attendance Locked',

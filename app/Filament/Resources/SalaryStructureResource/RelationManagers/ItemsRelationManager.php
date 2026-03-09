@@ -23,12 +23,14 @@ class ItemsRelationManager extends RelationManager
             ->schema([
                 static::translatableTabs('name', 'Item Name', required: true),
                 Select::make('type')
+                    ->native(false)
                     ->options([
                         'earning' => 'Earning',
                         'deduction' => 'Deduction',
                     ])
                     ->required(),
                 Select::make('calculation_type')
+                    ->native(false)
                     ->options([
                         'fixed' => 'Fixed Amount',
                         'percentage' => 'Percentage',

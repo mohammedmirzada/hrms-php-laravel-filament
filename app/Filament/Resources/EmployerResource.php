@@ -8,6 +8,8 @@ use App\Filament\Resources\EmployerResource\RelationManagers;
 use App\Models\Employer;
 use BackedEnum;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -18,6 +20,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Actions;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -50,6 +53,22 @@ class EmployerResource extends Resource
                         Tab::make('Personal Information')
                             ->icon(Heroicon::User)
                             ->schema([
+                                Section::make('Profile Picture')
+                                    ->icon(Heroicon::Camera)
+                                    ->schema([
+                                        FileUpload::make('profile_picture')
+                                            ->label('Profile Picture')
+                                            ->directory('employer-photos')
+                                            ->disk('public')
+                                            ->image()
+                                            ->circleCropper(true)
+                                            ->imageAspectRatio('1:1')
+                                            ->imageEditor()
+                                            ->alignCenter(true)
+                                            ->circleCropper()
+                                            ->columnSpanFull(),
+                                    ]),
+
                                 Section::make('Full Name')
                                     ->icon(Heroicon::Identification)
                                     ->schema([
@@ -62,6 +81,7 @@ class EmployerResource extends Resource
                                         Grid::make(3)
                                             ->schema([
                                                 Select::make('genre')
+                                                    ->native(false)
                                                     ->label('Gender')
                                                     ->options([
                                                         'male' => 'Male',
@@ -69,10 +89,12 @@ class EmployerResource extends Resource
                                                     ])
                                                     ->required(),
                                                 DatePicker::make('date_of_birth')
+                                                    ->native(false)
                                                     ->label('Date of Birth')
                                                     ->required()
                                                     ->maxDate(now()->subYears(16)),
                                                 Select::make('marital_status')
+                                                    ->native(false)
                                                     ->label('Marital Status')
                                                     ->options([
                                                         'single' => 'Single',
@@ -136,16 +158,19 @@ class EmployerResource extends Resource
                                         Grid::make(3)
                                             ->schema([
                                                 Select::make('department_id')
+                                                    ->native(false)
                                                     ->relationship('department', 'name')
                                                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->getTranslation('name', 'en'))
                                                     ->searchable()
                                                     ->preload(),
                                                 Select::make('position_id')
+                                                    ->native(false)
                                                     ->relationship('position', 'name')
                                                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->getTranslation('name', 'en'))
                                                     ->searchable()
                                                     ->preload(),
                                                 Select::make('manager_id')
+                                                    ->native(false)
                                                     ->label('Manager')
                                                     ->relationship('manager', 'full_name')
                                                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->getTranslation('full_name', 'en'))
@@ -160,18 +185,23 @@ class EmployerResource extends Resource
                                         Grid::make(3)
                                             ->schema([
                                                 DatePicker::make('hire_date')
+                                                    ->native(false)
                                                     ->label('Hiring Date')
                                                     ->required(),
                                                 DatePicker::make('probation_period_start_date')
+                                                    ->native(false)
                                                     ->label('Probation Start'),
                                                 DatePicker::make('probation_period_end_date')
+                                                    ->native(false)
                                                     ->label('Probation End'),
                                             ]),
                                         Grid::make(3)
                                             ->schema([
                                                 DatePicker::make('contract_expiry_date')
+                                                    ->native(false)
                                                     ->label('Contract Expiry'),
                                                 Select::make('employment_status_id')
+                                                    ->native(false)
                                                     ->label('Employment Status')
                                                     ->relationship('employmentStatus', 'name')
                                                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->getTranslation('name', 'en') . ' (' . $record->code . ')')
@@ -179,12 +209,49 @@ class EmployerResource extends Resource
                                                     ->preload()
                                                     ->required(),
                                                 Select::make('salary_structure_id')
+                                                    ->native(false)
                                                     ->label('Salary Structure')
                                                     ->relationship('salaryStructure', 'name')
                                                     ->searchable()
                                                     ->preload(),
                                             ]),
                                     ]),
+                            ]),
+
+                        Tab::make('Documents & Media')
+                            ->icon(Heroicon::DocumentText)
+                            ->schema([
+                                Repeater::make('documents')
+                                            ->relationship()
+                                            ->schema([
+                                                Select::make('document_type')
+                                                    ->native(false)
+                                                    ->options([
+                                                        'ID Card' => 'ID Card',
+                                                        'Passport' => 'Passport',
+                                                        'Driver License' => 'Driver License',
+                                                        'Work Permit' => 'Work Permit',
+                                                        'Visa' => 'Visa',
+                                                        'Contract' => 'Contract',
+                                                        'Certificate' => 'Certificate',
+                                                        'Degree' => 'Degree',
+                                                        'CV' => 'CV',
+                                                        'Other' => 'Other',
+                                                    ])
+                                                    ->required(),
+                                                FileUpload::make('file_path')
+                                                    ->label('File')
+                                                    ->directory('documents')
+                                                    ->disk('public')
+                                                    ->required(),
+                                                DatePicker::make('expiry_date')
+                                                    ->native(false)
+                                                    ->label('Expiry Date'),
+                                            ])
+                                            ->columns(3)
+                                            ->columnSpanFull()
+                                            ->defaultItems(0)
+                                            ->addActionLabel('Add Document'),
                             ]),
                     ])
                     ->columnSpanFull()
@@ -200,6 +267,10 @@ class EmployerResource extends Resource
                     ->label('ID')
                     ->sortable()
                     ->searchable(),
+                ImageColumn::make('profile_picture')
+                    ->label('Photo')
+                    ->circular()
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->getTranslation('full_name', 'en') ?? '') . '&color=7F9CF5&background=EBF4FF'),
                 TextColumn::make('full_name')
                     ->label('Full Name')
                     ->formatStateUsing(fn ($record) => $record->getTranslation('full_name', 'en'))

@@ -32,6 +32,7 @@ class ExchangeRateResource extends Resource
         return $schema
             ->schema([
                 Select::make('base_code')
+                    ->native(false)
                     ->label('Base Currency')
                     ->options([
                         'USD' => 'USD',
@@ -42,6 +43,7 @@ class ExchangeRateResource extends Resource
                     ->required()
                     ->searchable(),
                 Select::make('quote_currency')
+                    ->native(false)
                     ->label('Quote Currency')
                     ->options([
                         'USD' => 'USD',
@@ -56,6 +58,7 @@ class ExchangeRateResource extends Resource
                     ->required()
                     ->minValue(0),
                 DatePicker::make('rate_date')
+                    ->native(false)
                     ->label('Rate Date')
                     ->required(),
             ]);

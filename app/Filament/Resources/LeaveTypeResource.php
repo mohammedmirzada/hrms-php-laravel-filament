@@ -37,6 +37,7 @@ class LeaveTypeResource extends Resource
                 static::translatableTabs('name', 'Leave Type Name', required: true),
                 static::translatableTabs('description', 'Description'),
                 Select::make('default_unit')
+                    ->native(false)
                     ->options([
                         'HOUR' => 'Hour',
                         'DAY' => 'Day',
@@ -49,6 +50,7 @@ class LeaveTypeResource extends Resource
                     ->label('System Type')
                     ->helperText('System types cannot be deleted by users'),
                 Select::make('document_id')
+                    ->native(false)
                     ->label('Required Document')
                     ->relationship('document', 'document_type')
                     ->searchable()

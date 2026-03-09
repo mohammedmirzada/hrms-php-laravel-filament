@@ -26,6 +26,7 @@ class DocumentsRelationManager extends RelationManager
         return $schema
             ->schema([
                 Select::make('document_type')
+                    ->native(false)
                     ->options([
                         'ID Card' => 'ID Card',
                         'Passport' => 'Passport',
@@ -46,6 +47,7 @@ class DocumentsRelationManager extends RelationManager
                     ->required()
                     ->columnSpanFull(),
                 DatePicker::make('expiry_date')
+                    ->native(false)
                     ->label('Expiry Date'),
             ]);
     }

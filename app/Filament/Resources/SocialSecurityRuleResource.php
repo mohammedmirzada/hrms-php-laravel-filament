@@ -38,6 +38,7 @@ class SocialSecurityRuleResource extends Resource
                 Section::make('Rule Setup')
                     ->schema([
                         Select::make('branch_id')
+                            ->native(false)
                             ->label('Branch')
                             ->relationship('branch', 'name')
                             ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
@@ -45,6 +46,7 @@ class SocialSecurityRuleResource extends Resource
                             ->searchable()
                             ->preload(),
                         Select::make('employment_type')
+                            ->native(false)
                             ->options([
                                 'full_time' => 'Full Time',
                                 'part_time' => 'Part Time',
@@ -52,6 +54,7 @@ class SocialSecurityRuleResource extends Resource
                             ])
                             ->required(),
                         Select::make('base_rule')
+                            ->native(false)
                             ->options([
                                 'basic_only' => 'Basic Only',
                                 'basic_plus_marked' => 'Basic + Marked Items',
@@ -59,6 +62,7 @@ class SocialSecurityRuleResource extends Resource
                             ])
                             ->required(),
                         Select::make('currency_code')
+                            ->native(false)
                             ->label('Currency')
                             ->options([
                                 'USD' => 'USD',
@@ -100,8 +104,10 @@ class SocialSecurityRuleResource extends Resource
                 Section::make('Effective Period')
                     ->schema([
                         DatePicker::make('effective_from')
+                            ->native(false)
                             ->required(),
                         DatePicker::make('effective_to')
+                            ->native(false)
                             ->nullable()
                             ->after('effective_from'),
                     ])

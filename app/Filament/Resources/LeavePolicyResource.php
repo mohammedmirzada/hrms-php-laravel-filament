@@ -40,6 +40,7 @@ class LeavePolicyResource extends Resource
                 Section::make('Policy Assignment')
                     ->schema([
                         Select::make('branch_id')
+                            ->native(false)
                             ->label('Branch')
                             ->relationship('branch', 'name')
                             ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
@@ -47,6 +48,7 @@ class LeavePolicyResource extends Resource
                             ->searchable()
                             ->preload(),
                         Select::make('leave_type_id')
+                            ->native(false)
                             ->label('Leave Type')
                             ->relationship('leaveType', 'name')
                             ->getOptionLabelFromRecordUsing(fn (LeaveType $record) => $record->getTranslation('name', 'en'))
@@ -65,6 +67,7 @@ class LeavePolicyResource extends Resource
                             ->numeric()
                             ->nullable(),
                         Select::make('accrual_unit')
+                            ->native(false)
                             ->options([
                                 'DAY_PER_MONTH' => 'Days per Month',
                                 'HOUR_PER_MONTH' => 'Hours per Month',
@@ -73,6 +76,7 @@ class LeavePolicyResource extends Resource
                             ])
                             ->nullable(),
                         Select::make('accrual_start_rule')
+                            ->native(false)
                             ->options([
                                 'HIRE_DATE' => 'From Hire Date',
                                 'AFTER_PROBATION' => 'After Probation',
@@ -101,6 +105,7 @@ class LeavePolicyResource extends Resource
                             ->numeric()
                             ->nullable(),
                         DatePicker::make('carryover_expiry_date')
+                            ->native(false)
                             ->label('Carryover Expiry')
                             ->nullable(),
                     ])

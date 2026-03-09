@@ -37,6 +37,7 @@ class HolidayResource extends Resource
         return $schema
             ->schema([
                 Select::make('branch_id')
+                    ->native(false)
                     ->label('Branch')
                     ->relationship('branch', 'name')
                     ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
@@ -45,6 +46,7 @@ class HolidayResource extends Resource
                     ->preload(),
                 static::translatableTabs('name', 'Holiday Name', required: true),
                 DatePicker::make('date')
+                    ->native(false)
                     ->required(),
                 Toggle::make('is_working_day_override')
                     ->label('Working Day Override')

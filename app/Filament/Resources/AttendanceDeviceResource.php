@@ -33,6 +33,7 @@ class AttendanceDeviceResource extends Resource
         return $schema
             ->schema([
                 Select::make('branch_id')
+                    ->native(false)
                     ->label('Branch')
                     ->relationship('branch', 'name')
                     ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
@@ -53,6 +54,7 @@ class AttendanceDeviceResource extends Resource
                     ->numeric()
                     ->nullable(),
                 Select::make('sync_mode')
+                    ->native(false)
                     ->options([
                         'push' => 'Push',
                         'pull' => 'Pull',
@@ -60,6 +62,7 @@ class AttendanceDeviceResource extends Resource
                     ])
                     ->nullable(),
                 DateTimePicker::make('last_sync_at')
+                    ->native(false)
                     ->label('Last Sync')
                     ->disabled()
                     ->nullable(),

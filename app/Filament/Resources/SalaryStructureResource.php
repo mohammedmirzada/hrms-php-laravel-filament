@@ -37,6 +37,7 @@ class SalaryStructureResource extends Resource
                     ->required()
                     ->maxLength(255),
                 Select::make('default_currency_code')
+                    ->native(false)
                     ->label('Default Currency')
                     ->options([
                         'USD' => 'USD',

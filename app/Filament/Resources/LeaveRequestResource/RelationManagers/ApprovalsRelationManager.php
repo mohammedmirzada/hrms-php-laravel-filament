@@ -23,6 +23,7 @@ class ApprovalsRelationManager extends RelationManager
                     ->numeric()
                     ->required(),
                 Select::make('role')
+                    ->native(false)
                     ->options([
                         'manager' => 'Manager',
                         'hr' => 'HR',
@@ -30,12 +31,14 @@ class ApprovalsRelationManager extends RelationManager
                     ])
                     ->required(),
                 Select::make('assigned_to_user_id')
+                    ->native(false)
                     ->label('Assigned To')
                     ->relationship('assignedToUser', 'name')
                     ->searchable()
                     ->preload()
                     ->required(),
                 Select::make('status')
+                    ->native(false)
                     ->options([
                         'pending' => 'Pending',
                         'approved' => 'Approved',

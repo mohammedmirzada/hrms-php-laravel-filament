@@ -41,6 +41,7 @@ class LeaveRequestResource extends Resource
                 Section::make('Request Details')
                     ->schema([
                         Select::make('employer_id')
+                            ->native(false)
                             ->label('Employee')
                             ->relationship('employer', 'full_name')
                             ->getOptionLabelFromRecordUsing(fn (Employer $record) => $record->getTranslation('full_name', 'en'))
@@ -48,6 +49,7 @@ class LeaveRequestResource extends Resource
                             ->searchable()
                             ->preload(),
                         Select::make('branch_id')
+                            ->native(false)
                             ->label('Branch')
                             ->relationship('branch', 'name')
                             ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
@@ -55,6 +57,7 @@ class LeaveRequestResource extends Resource
                             ->searchable()
                             ->preload(),
                         Select::make('leave_type_id')
+                            ->native(false)
                             ->label('Leave Type')
                             ->relationship('leaveType', 'name')
                             ->getOptionLabelFromRecordUsing(fn (LeaveType $record) => $record->getTranslation('name', 'en'))
@@ -62,6 +65,7 @@ class LeaveRequestResource extends Resource
                             ->searchable()
                             ->preload(),
                         Select::make('policy_id')
+                            ->native(false)
                             ->label('Leave Policy')
                             ->relationship('policy', 'id')
                             ->getOptionLabelFromRecordUsing(fn ($record) => "Policy #{$record->id} — " . ($record->branch?->getTranslation('name', 'en') ?? ''))
@@ -74,8 +78,10 @@ class LeaveRequestResource extends Resource
                 Section::make('Duration')
                     ->schema([
                         DateTimePicker::make('start_at')
+                            ->native(false)
                             ->required(),
                         DateTimePicker::make('end_at')
+                            ->native(false)
                             ->required()
                             ->after('start_at'),
                         TextInput::make('duration_minutes')
@@ -87,6 +93,7 @@ class LeaveRequestResource extends Resource
                             ->numeric()
                             ->nullable(),
                         Select::make('day_part')
+                            ->native(false)
                             ->options([
                                 'full' => 'Full Day',
                                 'first_half' => 'First Half',
@@ -106,6 +113,7 @@ class LeaveRequestResource extends Resource
                             ->directory('leave-attachments')
                             ->nullable(),
                         Select::make('status')
+                            ->native(false)
                             ->options([
                                 'DRAFT' => 'Draft',
                                 'SUBMITTED' => 'Submitted',

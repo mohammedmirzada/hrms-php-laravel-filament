@@ -29,6 +29,7 @@ class CompensationsRelationManager extends RelationManager
                 Grid::make(2)
                     ->schema([
                         Select::make('salary_structure_id')
+                            ->native(false)
                             ->relationship('salaryStructure', 'name')
                             ->searchable()
                             ->preload()
@@ -42,8 +43,10 @@ class CompensationsRelationManager extends RelationManager
                             ->numeric()
                             ->required(),
                         DatePicker::make('effective_from')
+                            ->native(false)
                             ->required(),
-                        DatePicker::make('effective_to'),
+                        DatePicker::make('effective_to')
+                            ->native(false),
                     ]),
             ]);
     }
