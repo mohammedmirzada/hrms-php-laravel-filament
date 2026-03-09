@@ -9,7 +9,7 @@ class AttendanceDay extends Model {
 
     use HasCreatedUpdatedBy;
 
-    protected array $fillable = [
+    protected $fillable = [
         'employer_id',
         'branch_id',
         'date',
@@ -32,7 +32,7 @@ class AttendanceDay extends Model {
         'updated_by',
     ];
 
-    protected array $casts = [
+    protected $casts = [
         'date' => 'date',
         'scheduled_start_at' => 'datetime',
         'scheduled_end_at' => 'datetime',

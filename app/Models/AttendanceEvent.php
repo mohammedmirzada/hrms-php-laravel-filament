@@ -9,7 +9,7 @@ class AttendanceEvent extends Model {
 
     use HasCreatedUpdatedBy;
     
-    protected array $fillable = [
+    protected $fillable = [
         'branch_id',
         'employer_id',
         'device_id',
@@ -28,7 +28,7 @@ class AttendanceEvent extends Model {
         'updated_by',
     ];
 
-    protected array $casts = [
+    protected $casts = [
         'event_at' => 'datetime',
         'raw_payload' => 'array',
         'is_valid' => 'boolean',

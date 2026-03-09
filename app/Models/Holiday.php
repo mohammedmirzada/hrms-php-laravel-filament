@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
 
 class Holiday extends Model {
 
     use HasCreatedUpdatedBy;
+    use HasTranslations;
     
     protected $fillable = [
         'branch_id',
@@ -18,8 +20,9 @@ class Holiday extends Model {
         'updated_by',
     ];
 
+    public array $translatable = ['name'];
+
     protected $casts = [
-        'name' => 'array',
         'date' => 'date',
         'is_working_day_override' => 'boolean',
     ];

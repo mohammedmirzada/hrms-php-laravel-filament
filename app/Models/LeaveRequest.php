@@ -55,6 +55,10 @@ class LeaveRequest extends Model {
         return $this->belongsTo(LeavePolicy::class);
     }
 
+    public function approvals() {
+        return $this->hasMany(LeaveRequestApproval::class);
+    }
+
     public function statusses() {
         return [
             'DRAFT' => 'Draft',

@@ -9,14 +9,14 @@ class AttendanceBranchSetting extends Model {
 
     use HasCreatedUpdatedBy;
 
-    protected array $fillable = [
+    protected $fillable = [
         'branch_id',
         'settings',
         'created_by',
         'updated_by',
     ];
 
-    protected array $casts = [
+    protected $casts = [
         'settings' => 'array'
     ];
 

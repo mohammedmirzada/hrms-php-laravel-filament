@@ -4,13 +4,18 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
 
 class Employer extends Model {
 
     use HasCreatedUpdatedBy;
+    use HasTranslations;
+
+    public array $translatable = ['full_name'];
 
     protected $fillable = [
         'full_name',
+        'profile_picture',
         'genre',
         'email',
         'phone_number_1',
@@ -32,7 +37,6 @@ class Employer extends Model {
     ];
 
     protected $casts = [
-        'full_name' => 'array',
         'emergency_contact' => 'array',
         'date_of_birth' => 'date',
         'hire_date' => 'date',
@@ -53,12 +57,28 @@ class Employer extends Model {
         return $this->belongsTo(Employer::class, 'manager_id', 'id');
     }
 
+    public function subordinates() {
+        return $this->hasMany(Employer::class, 'manager_id');
+    }
+
     public function employmentStatus() {
         return $this->belongsTo(EmploymentStatus::class);
     }
 
     public function salaryStructure() {
         return $this->belongsTo(SalaryStructure::class);
+    }
+
+    public function compensations() {
+        return $this->hasMany(EmployerCompensation::class);
+    }
+
+    public function leaveRequests() {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    public function attendanceDays() {
+        return $this->hasMany(AttendanceDay::class);
     }
 
     public function isOnProbation() {

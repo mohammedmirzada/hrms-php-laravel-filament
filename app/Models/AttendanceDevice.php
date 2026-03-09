@@ -9,7 +9,7 @@ class AttendanceDevice extends Model {
 
     use HasCreatedUpdatedBy;
     
-    protected array $fillable = [
+    protected $fillable = [
         'branch_id',
         'vendor',
         'name',
@@ -21,7 +21,7 @@ class AttendanceDevice extends Model {
         'updated_by',
     ];
 
-    protected array $casts = [
+    protected $casts = [
         'last_sync_at' => 'datetime',
     ];
 

@@ -4,11 +4,15 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
 
 class SalaryStructureItem extends Model {
 
     use HasCreatedUpdatedBy;
-    
+    use HasTranslations;
+
+    public array $translatable = ['name'];
+
     protected $fillable = [
         'salary_structure_id',
         'name',
@@ -19,9 +23,7 @@ class SalaryStructureItem extends Model {
         'updated_by',
     ];
 
-    protected $casts = [
-        'name' => 'array',
-    ];
+    protected $casts = [];
 
     public function salaryStructure() {
         return $this->belongsTo(SalaryStructure::class);

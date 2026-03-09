@@ -84,7 +84,11 @@ class AdminPanelProvider extends PanelProvider
             ->brandName(config('app.name'))
             ->navigationGroups([
                 'Main',
-                'Employees'
+                'Employees',
+                'Organization',
+                'Leave Management',
+                'Attendance',
+                'Payroll & Compensation',
             ]);
     }
 }

@@ -1,0 +1,185 @@
+<?php
+
+namespace App\Filament\Resources;
+
+use App\Filament\Resources\LeaveLedgerEntryResource\Pages;
+use App\Models\Branch;
+use App\Models\Employer;
+use App\Models\LeaveLedgerEntry;
+use BackedEnum;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Actions;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+use UnitEnum;
+
+class LeaveLedgerEntryResource extends Resource
+{
+    protected static ?string $model = LeaveLedgerEntry::class;
+
+    protected static BackedEnum|string|null $navigationIcon = Heroicon::BookOpen;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Leave Management';
+
+    protected static ?int $navigationSort = 5;
+
+    public static function form(Schema $schema): Schema
+    {
+        return $schema
+            ->schema([
+                Grid::make(3)->schema([
+                    Select::make('employer_id')
+                        ->native(false)
+                        ->label('Employee')
+                        ->relationship('employer', 'full_name')
+                        ->getOptionLabelFromRecordUsing(fn (Employer $record) => $record->getTranslation('full_name', 'en'))
+                        ->required()
+                        ->searchable()
+                        ->preload(),
+                    Select::make('branch_id')
+                        ->native(false)
+                        ->label('Branch')
+                        ->relationship('branch', 'name')
+                        ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
+                        ->required()
+                        ->searchable()
+                        ->preload(),
+                    Select::make('leave_type_id')
+                        ->native(false)
+                        ->label('Leave Type')
+                        ->relationship('leaveType', 'name')
+                        ->required()
+                        ->searchable()
+                        ->preload(),
+                ]),
+                Grid::make(3)->schema([
+                    Select::make('leave_request_id')
+                        ->native(false)
+                        ->label('Leave Request')
+                        ->relationship('leaveRequest', 'id')
+                        ->searchable()
+                        ->preload(),
+                    Select::make('entry_type')
+                        ->native(false)
+                        ->options([
+                            'ACCRUAL' => 'Accrual',
+                            'DEDUCTION' => 'Deduction',
+                            'ADJUSTMENT' => 'Adjustment',
+                            'REVERSAL' => 'Reversal',
+                            'EXPIRY' => 'Expiry',
+                        ])
+                        ->required(),
+                    TextInput::make('amount_minutes')
+                        ->label('Amount')
+                        ->numeric()
+                        ->required()
+                        ->suffix('min'),
+                ]),
+                Grid::make(2)->schema([
+                    DatePicker::make('occurred_on')
+                        ->native(false)
+                        ->label('Occurred On')
+                        ->required(),
+                    Textarea::make('note')
+                        ->maxLength(65535),
+                ]),
+            ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                TextColumn::make('id')
+                    ->sortable(),
+                TextColumn::make('employer.full_name')
+                    ->label('Employee')
+                    ->formatStateUsing(fn ($record) => $record->employer?->getTranslation('full_name', 'en'))
+                    ->searchable()
+                    ->sortable(),
+                TextColumn::make('branch.name')
+                    ->label('Branch')
+                    ->formatStateUsing(fn ($record) => $record->branch?->getTranslation('name', 'en'))
+                    ->sortable()
+                    ->toggleable(),
+                TextColumn::make('leaveType.name')
+                    ->label('Leave Type')
+                    ->sortable(),
+                TextColumn::make('entry_type')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'ACCRUAL' => 'success',
+                        'DEDUCTION' => 'danger',
+                        'ADJUSTMENT' => 'warning',
+                        'REVERSAL' => 'info',
+                        'EXPIRY' => 'gray',
+                        default => 'gray',
+                    })
+                    ->sortable(),
+                TextColumn::make('amount_minutes')
+                    ->label('Amount (min)')
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('occurred_on')
+                    ->date()
+                    ->sortable(),
+                TextColumn::make('leaveRequest.id')
+                    ->label('Request #')
+                    ->sortable()
+                    ->toggleable()
+                    ->placeholder('—'),
+                TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                SelectFilter::make('entry_type')
+                    ->options([
+                        'ACCRUAL' => 'Accrual',
+                        'DEDUCTION' => 'Deduction',
+                        'ADJUSTMENT' => 'Adjustment',
+                        'REVERSAL' => 'Reversal',
+                        'EXPIRY' => 'Expiry',
+                    ]),
+                SelectFilter::make('branch_id')
+                    ->label('Branch')
+                    ->relationship('branch', 'name'),
+                SelectFilter::make('leave_type_id')
+                    ->label('Leave Type')
+                    ->relationship('leaveType', 'name'),
+                SelectFilter::make('employer_id')
+                    ->label('Employee')
+                    ->relationship('employer', 'full_name')
+                    ->searchable()
+                    ->preload(),
+            ])
+            ->recordActions([
+                Actions\EditAction::make(),
+                Actions\DeleteAction::make(),
+            ])
+            ->toolbarActions([
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
+                ]),
+            ])
+            ->defaultSort('occurred_on', 'desc');
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListLeaveLedgerEntries::route('/'),
+            'create' => Pages\CreateLeaveLedgerEntry::route('/create'),
+            'edit' => Pages\EditLeaveLedgerEntry::route('/{record}/edit'),
+        ];
+    }
+}

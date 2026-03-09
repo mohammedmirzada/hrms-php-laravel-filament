@@ -4,11 +4,15 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
 
 class LeaveType extends Model {
 
     use HasCreatedUpdatedBy;
-    
+    use HasTranslations;
+
+    public array $translatable = ['name', 'description'];
+
     protected $fillable = [
         'name',
         'description',
@@ -21,8 +25,6 @@ class LeaveType extends Model {
     ];
 
     protected $casts = [
-        'name' => 'array',
-        'description' => 'array',
         'is_system' => 'boolean',
         'is_paid' => 'boolean',
     ];
