@@ -111,6 +111,7 @@ class LeaveRequestResource extends Resource
                         FileUpload::make('attachment_path')
                             ->label('Attachment')
                             ->directory('leave-attachments')
+                            ->maxSize(5120)
                             ->nullable(),
                         Select::make('status')
                             ->native(false)

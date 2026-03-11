@@ -119,6 +119,7 @@ class AttendanceEventResource extends Resource
                             ->directory('attendance-selfies')
                             ->disk('public')
                             ->image()
+                            ->maxSize(5120)
                             ->columnSpanFull(),
                         Toggle::make('is_valid')
                             ->label('Valid')

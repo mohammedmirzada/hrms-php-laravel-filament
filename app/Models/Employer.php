@@ -26,6 +26,7 @@ class Employer extends Model {
         'department_id',
         'position_id',
         'manager_id',
+        'branch_id',
         'hire_date',
         'probation_period_start_date',
         'probation_period_end_date',
@@ -55,6 +56,10 @@ class Employer extends Model {
 
     public function manager() {
         return $this->belongsTo(Employer::class, 'manager_id', 'id');
+    }
+
+    public function branch() {
+        return $this->belongsTo(Branch::class);
     }
 
     public function subordinates() {

@@ -58,6 +58,7 @@ class EditProfile extends Page implements HasForms
                                     ->image()
                                     ->directory('avatars')
                                     ->disk('public')
+                                    ->maxSize(5120)
                                     ->imageEditor()
                                     ->circleCropper()
                                     ->avatar()

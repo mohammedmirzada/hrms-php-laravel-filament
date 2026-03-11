@@ -44,6 +44,9 @@ class DocumentsRelationManager extends RelationManager
                     ->label('File')
                     ->directory('documents')
                     ->disk('public')
+                    ->maxSize(5120)
+                    ->openable()
+                    ->previewable()
                     ->required()
                     ->columnSpanFull(),
                 DatePicker::make('expiry_date')
@@ -59,6 +62,13 @@ class DocumentsRelationManager extends RelationManager
                 TextColumn::make('document_type')
                     ->badge()
                     ->sortable(),
+                TextColumn::make('file_path')
+                    ->label('File')
+                    ->formatStateUsing(fn ($state) => $state ? basename($state) : '—')
+                    ->url(fn ($record) => $record->file_path ? asset('storage/' . $record->file_path) : null)
+                    ->openUrlInNewTab()
+                    ->icon(Heroicon::ArrowTopRightOnSquare)
+                    ->color('primary'),
                 TextColumn::make('expiry_date')
                     ->date()
                     ->sortable()

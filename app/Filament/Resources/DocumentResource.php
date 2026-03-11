@@ -59,6 +59,9 @@ class DocumentResource extends Resource
                     ->label('File')
                     ->directory('documents')
                     ->disk('public')
+                    ->maxSize(5120)
+                    ->openable()
+                    ->previewable()
                     ->required()
                     ->columnSpanFull(),
                 DatePicker::make('expiry_date')
@@ -81,6 +84,13 @@ class DocumentResource extends Resource
                 TextColumn::make('document_type')
                     ->badge()
                     ->sortable(),
+                TextColumn::make('file_path')
+                    ->label('File')
+                    ->formatStateUsing(fn ($state) => $state ? basename($state) : '—')
+                    ->url(fn ($record) => $record->file_path ? asset('storage/' . $record->file_path) : null)
+                    ->openUrlInNewTab()
+                    ->icon(Heroicon::ArrowTopRightOnSquare)
+                    ->color('primary'),
                 TextColumn::make('expiry_date')
                     ->date()
                     ->sortable()
@@ -88,6 +98,14 @@ class DocumentResource extends Resource
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_by')
+                    ->label('Created By')
+                    ->formatStateUsing(fn ($record) => $record->createdBy?->name)
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([

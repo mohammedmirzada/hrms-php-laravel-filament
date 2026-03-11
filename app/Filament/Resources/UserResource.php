@@ -24,7 +24,7 @@ class UserResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = Heroicon::Users;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Main';
+    protected static string|UnitEnum|null $navigationGroup = 'Settings';
 
     protected static ?int $navigationSort = 1;
 
@@ -37,6 +37,7 @@ class UserResource extends Resource
                     ->directory('avatars')
                     ->disk('public')
                     ->image()
+                    ->maxSize(5120)
                     ->imageEditor()
                     ->circleCropper()
                     ->columnSpanFull(),

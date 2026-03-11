@@ -89,6 +89,7 @@ class AdminPanelProvider extends PanelProvider
                 'Leave Management',
                 'Attendance',
                 'Payroll & Compensation',
+                'Settings',
             ]);
     }
 }
