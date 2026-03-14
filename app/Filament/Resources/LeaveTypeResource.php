@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Concerns\HasTranslatableFields;
 use App\Filament\Resources\LeaveTypeResource\Pages;
+use App\Models\Document;
 use App\Models\LeaveType;
 use BackedEnum;
 use Filament\Forms\Components\Select;
@@ -45,14 +46,16 @@ class LeaveTypeResource extends Resource
                     ->required(),
                 Toggle::make('is_paid')
                     ->label('Paid Leave')
+                    ->columnSpanFull()
                     ->default(true),
                 Toggle::make('is_system')
                     ->label('System Type')
+                    ->columnSpanFull()
                     ->helperText('System types cannot be deleted by users'),
-                Select::make('document_id')
+                Select::make('document_type')
                     ->native(false)
-                    ->label('Required Document')
-                    ->relationship('document', 'document_type')
+                    ->label('Required Document Type')
+                    ->options(Document::getDocumentTypeOptions())
                     ->searchable()
                     ->preload()
                     ->nullable(),
@@ -87,9 +90,11 @@ class LeaveTypeResource extends Resource
             ])
             ->filters([
                 TernaryFilter::make('is_paid')
-                    ->label('Paid'),
+                    ->label('Paid')
+                    ->native(false),
                 TernaryFilter::make('is_system')
-                    ->label('System'),
+                    ->label('System')
+                    ->native(false),
             ])
             ->recordActions([
                 Actions\EditAction::make(),

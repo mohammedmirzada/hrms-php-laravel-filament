@@ -141,14 +141,20 @@ class PayrollPeriodResource extends Resource
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Branch')
-                    ->relationship('branch', 'name'),
+                    ->relationship('branch', 'name')
+                    ->native(false)
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('status')
                     ->options([
                         'open' => 'Open',
                         'attendance_locked' => 'Attendance Locked',
                         'calculated' => 'Calculated',
                         'approved' => 'Approved',
-                    ]),
+                    ])
+                    ->native(false)
+                    ->searchable()
+                    ->preload(),
             ])
             ->recordActions([
                 Actions\ViewAction::make(),

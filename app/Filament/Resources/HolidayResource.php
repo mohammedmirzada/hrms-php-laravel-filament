@@ -90,7 +90,10 @@ class HolidayResource extends Resource
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Branch')
-                    ->relationship('branch', 'name'),
+                    ->relationship('branch', 'name')
+                    ->native(false)
+                    ->searchable()
+                    ->preload()
             ])
             ->recordActions([
                 Actions\EditAction::make(),

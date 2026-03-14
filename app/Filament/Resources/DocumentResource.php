@@ -14,6 +14,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Actions;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use UnitEnum;
@@ -110,21 +111,33 @@ class DocumentResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('document_type')
-                    ->options([
-                        'ID Card' => 'ID Card',
-                        'Passport' => 'Passport',
-                        'Driver License' => 'Driver License',
-                        'Work Permit' => 'Work Permit',
-                        'Visa' => 'Visa',
-                        'Contract' => 'Contract',
-                        'Certificate' => 'Certificate',
-                        'Degree' => 'Degree',
-                        'CV' => 'CV',
-                        'Other' => 'Other',
-                    ]),
+                    ->options(Document::getDocumentTypeOptions())
+                    ->native(false)
+                    ->multiple(true)
+                    ->searchable(),
                 SelectFilter::make('employer_id')
                     ->label('Employee')
-                    ->relationship('employer', 'full_name'),
+                    ->relationship('employer', 'full_name')
+                    ->native(false)
+                    ->preload()
+                    ->searchable(),
+                Filter::make('expiry_date')
+                    ->schema([
+                        DatePicker::make('expiry_date_from')
+                            ->native(false)
+                            ->label('Expiry Date From'),
+                        DatePicker::make('expiry_date_to')
+                            ->native(false)
+                            ->label('Expiry Date To'),
+                    ])
+                    ->query(function ($query, $data) {
+                        if ($data['expiry_date_from']) {
+                            $query->whereDate('expiry_date', '>=', $data['expiry_date_from']);
+                        }
+                        if ($data['expiry_date_to']) {
+                            $query->whereDate('expiry_date', '<=', $data['expiry_date_to']);
+                        }
+                    }),
             ])
             ->recordActions([
                 Actions\EditAction::make(),

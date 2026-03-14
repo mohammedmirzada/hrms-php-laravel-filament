@@ -18,7 +18,7 @@ class LeaveType extends Model {
         'description',
         'is_system',
         'is_paid',
-        'document_id',
+        'document_type',
         'default_unit',
         'created_by',
         'updated_by',
@@ -28,10 +28,6 @@ class LeaveType extends Model {
         'is_system' => 'boolean',
         'is_paid' => 'boolean',
     ];
-
-    public function document() {
-        return $this->belongsTo(Document::class);
-    }
 
     public function defaultUnits() {
         return [

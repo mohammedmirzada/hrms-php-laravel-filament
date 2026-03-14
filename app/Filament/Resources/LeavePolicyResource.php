@@ -38,6 +38,7 @@ class LeavePolicyResource extends Resource
         return $schema
             ->schema([
                 Section::make('Policy Assignment')
+                    ->compact()
                     ->schema([
                         Select::make('branch_id')
                             ->native(false)
@@ -55,14 +56,16 @@ class LeavePolicyResource extends Resource
                             ->required()
                             ->searchable()
                             ->preload(),
-                    ])
-                    ->columns(2),
+                    ]),
 
                 Section::make('Accrual Settings')
+                    ->compact()
+                    ->description('If accrual is enabled, leave will be automatically added to employee balances based on the defined rate and unit. Accrual can start from hire date, after probation, or a fixed date each year.')
                     ->schema([
                         Toggle::make('accrual_enabled')
                             ->label('Enable Accrual')
-                            ->reactive(),
+                            ->reactive()
+                            ->columnSpanFull(),
                         TextInput::make('accrual_rate')
                             ->numeric()
                             ->nullable(),
@@ -91,11 +94,14 @@ class LeavePolicyResource extends Resource
                         TextInput::make('annual_cap')
                             ->label('Annual Cap')
                             ->numeric()
-                            ->nullable(),
+                            ->nullable()
+                            ->helperText('Maximum leave that can be accrued in a year. Leave will stop accruing once this cap is reached.')
                     ])
                     ->columns(3),
 
                 Section::make('Carryover Settings')
+                    ->compact()
+                    ->description('If carryover is enabled, unused leave at the end of the period (usually year-end) can be carried over to the next period. You can set a cap on how many days can be carried over and an optional expiry date for the carried days.')
                     ->schema([
                         Toggle::make('carryover_enabled')
                             ->label('Enable Carryover')
@@ -109,9 +115,10 @@ class LeavePolicyResource extends Resource
                             ->label('Carryover Expiry')
                             ->nullable(),
                     ])
-                    ->columns(3),
+                    ->columns(1),
 
                 Section::make('Request Rules')
+                    ->compact()
                     ->schema([
                         Toggle::make('allow_hourly')
                             ->label('Allow Hourly Requests'),
@@ -132,6 +139,7 @@ class LeavePolicyResource extends Resource
                     ->columns(3),
 
                 Section::make('Approval Workflow')
+                    ->compact()
                     ->schema([
                         Toggle::make('requires_manager_approval')
                             ->label('Manager Approval'),
@@ -181,10 +189,16 @@ class LeavePolicyResource extends Resource
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Branch')
-                    ->relationship('branch', 'name'),
+                    ->relationship('branch', 'name')
+                    ->native(false)
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('leave_type_id')
                     ->label('Leave Type')
-                    ->relationship('leaveType', 'name'),
+                    ->relationship('leaveType', 'name')
+                    ->native(false)
+                    ->searchable()
+                    ->preload(),
             ])
             ->recordActions([
                 Actions\EditAction::make(),

@@ -34,7 +34,7 @@ class Document extends Model {
         return $this->expiry_date && $this->expiry_date->isFuture() && $this->expiry_date->diffInDays(now()) <= 30;
     }
 
-    public function getDocumentTypeOptions() {
+    public static function getDocumentTypeOptions() {
         return [
             'ID Card' => 'ID Card',
             'Passport' => 'Passport',
