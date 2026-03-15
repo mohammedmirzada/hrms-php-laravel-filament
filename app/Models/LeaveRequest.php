@@ -8,6 +8,28 @@ use Illuminate\Database\Eloquent\Model;
 class LeaveRequest extends Model {
 
     use HasCreatedUpdatedBy;
+
+    protected static function booted(): void
+    {
+        static::saving(function (LeaveRequest $request) {
+            $original = $request->getOriginal('status');
+            $new = $request->status;
+
+            if ($original === $new) {
+                return;
+            }
+
+            $now = now();
+
+            match ($new) {
+                'SUBMITTED' => $request->submitted_at = $request->submitted_at ?? $now,
+                'FINAL_APPROVED' => $request->approved_at = $now,
+                'REJECTED' => $request->rejected_at = $now,
+                'CANCELLED' => $request->canceled_at = $now,
+                default => null,
+            };
+        });
+    }
     
     protected $fillable = [
         'employer_id',
@@ -22,10 +44,6 @@ class LeaveRequest extends Model {
         'reason',
         'attachment_path',
         'status',
-        'submitted_at',
-        'approved_at',
-        'rejected_at',
-        'canceled_at',
         'created_by',
         'updated_by',
     ];

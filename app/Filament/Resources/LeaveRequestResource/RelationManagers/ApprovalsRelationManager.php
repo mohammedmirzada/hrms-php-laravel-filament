@@ -25,9 +25,9 @@ class ApprovalsRelationManager extends RelationManager
                 Select::make('role')
                     ->native(false)
                     ->options([
-                        'manager' => 'Manager',
-                        'hr' => 'HR',
-                        'final' => 'Final Approver',
+                        'MANAGER' => 'Manager',
+                        'HR' => 'HR',
+                        'FINAL' => 'Final Approver',
                     ])
                     ->required(),
                 Select::make('assigned_to_user_id')
@@ -40,11 +40,12 @@ class ApprovalsRelationManager extends RelationManager
                 Select::make('status')
                     ->native(false)
                     ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
+                        'PENDING' => 'Pending',
+                        'APPROVED' => 'Approved',
+                        'REJECTED' => 'Rejected',
+                        'SKIPPED' => 'Skipped',
                     ])
-                    ->default('pending')
+                    ->default('PENDING')
                     ->required(),
                 Textarea::make('comment')
                     ->rows(2)
@@ -66,9 +67,10 @@ class ApprovalsRelationManager extends RelationManager
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'approved' => 'success',
-                        'rejected' => 'danger',
+                        'PENDING' => 'warning',
+                        'APPROVED' => 'success',
+                        'REJECTED' => 'danger',
+                        'SKIPPED' => 'gray',
                         default => 'gray',
                     })
                     ->sortable(),

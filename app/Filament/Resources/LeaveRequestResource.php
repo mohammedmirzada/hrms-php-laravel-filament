@@ -9,16 +9,18 @@ use App\Models\Employer;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
 use BackedEnum;
+use Carbon\Carbon;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Actions;
+
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -77,31 +79,54 @@ class LeaveRequestResource extends Resource
 
                 Section::make('Duration')
                     ->schema([
-                        DateTimePicker::make('start_at')
-                            ->native(false)
-                            ->required(),
-                        DateTimePicker::make('end_at')
-                            ->native(false)
-                            ->required()
-                            ->after('start_at'),
-                        TextInput::make('duration_minutes')
-                            ->label('Duration (minutes)')
-                            ->numeric()
-                            ->nullable(),
-                        TextInput::make('duration_days')
-                            ->label('Duration (days)')
-                            ->numeric()
-                            ->nullable(),
                         Select::make('day_part')
                             ->native(false)
                             ->options([
-                                'full' => 'Full Day',
-                                'first_half' => 'First Half',
-                                'second_half' => 'Second Half',
+                                'FULL_DAY' => 'Full Day',
+                                'HALF_DAY_AM' => 'Half Day (AM)',
+                                'HALF_DAY_PM' => 'Half Day (PM)',
+                                'HOURLY' => 'Hourly',
                             ])
-                            ->nullable(),
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $result = self::calculateDuration($get('start_at'), $get('end_at'), $get('day_part'));
+                                $set('duration_minutes', $result['minutes']);
+                                $set('duration_days', $result['days']);
+                            }),
+                        DateTimePicker::make('start_at')
+                            ->native(false)
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $result = self::calculateDuration($get('start_at'), $get('end_at'), $get('day_part'));
+                                $set('duration_minutes', $result['minutes']);
+                                $set('duration_days', $result['days']);
+                            }),
+                        DateTimePicker::make('end_at')
+                            ->native(false)
+                            ->required()
+                            ->after('start_at')
+                            ->live()
+                            ->afterStateUpdated(function (callable $get, callable $set) {
+                                $result = self::calculateDuration($get('start_at'), $get('end_at'), $get('day_part'));
+                                $set('duration_minutes', $result['minutes']);
+                                $set('duration_days', $result['days']);
+                            }),
+                        TextEntry::make('duration_display')
+                            ->label('Calculated Duration')
+                            ->state(function (callable $get): string {
+                                $minutes = $get('duration_minutes');
+                                $days = $get('duration_days');
+                                if ($minutes === null) {
+                                    return 'Select dates and day part to calculate';
+                                }
+                                return "{$minutes} minutes ({$days} days)";
+                            }),
+                        \Filament\Forms\Components\Hidden::make('duration_minutes'),
+                        \Filament\Forms\Components\Hidden::make('duration_days'),
                     ])
-                    ->columns(3),
+                    ->columns(2),
 
                 Section::make('Details')
                     ->schema([
@@ -112,7 +137,8 @@ class LeaveRequestResource extends Resource
                             ->label('Attachment')
                             ->directory('leave-attachments')
                             ->maxSize(5120)
-                            ->nullable(),
+                            ->nullable()
+                            ->openable(),
                         Select::make('status')
                             ->native(false)
                             ->options([
@@ -125,7 +151,8 @@ class LeaveRequestResource extends Resource
                                 'CANCELLED' => 'Cancelled',
                             ])
                             ->default('DRAFT')
-                            ->required(),
+                            ->required()
+                            ->hiddenOn('create'),
                     ])
                     ->columns(2),
             ]);
@@ -186,13 +213,21 @@ class LeaveRequestResource extends Resource
                         'FINAL_APPROVED' => 'Final Approved',
                         'REJECTED' => 'Rejected',
                         'CANCELLED' => 'Cancelled',
-                    ]),
+                    ])
+                    ->searchable()
+                    ->native(false),
                 SelectFilter::make('leave_type_id')
                     ->label('Leave Type')
-                    ->relationship('leaveType', 'name'),
+                    ->relationship('leaveType', 'name')
+                    ->searchable()
+                    ->native(false)
+                    ->preload(),
                 SelectFilter::make('branch_id')
                     ->label('Branch')
-                    ->relationship('branch', 'name'),
+                    ->relationship('branch', 'name')
+                    ->searchable()
+                    ->native(false)
+                    ->preload(),
             ])
             ->recordActions([
                 Actions\ViewAction::make(),
@@ -204,6 +239,31 @@ class LeaveRequestResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function calculateDuration(?string $startAt, ?string $endAt, ?string $dayPart): array
+    {
+        if (! $startAt || ! $endAt || ! $dayPart) {
+            return ['minutes' => null, 'days' => null];
+        }
+
+        $start = Carbon::parse($startAt);
+        $end = Carbon::parse($endAt);
+
+        if ($end->lte($start)) {
+            return ['minutes' => null, 'days' => null];
+        }
+
+        $totalMinutes = match ($dayPart) {
+            'HOURLY' => (int) $start->diffInMinutes($end),
+            'HALF_DAY_AM', 'HALF_DAY_PM' => 240 * max(1, $start->diffInDays($end)),
+            'FULL_DAY' => 480 * max(1, (int) ceil($start->diffInDays($end))),
+            default => (int) $start->diffInMinutes($end),
+        };
+
+        $days = round($totalMinutes / 480, 2);
+
+        return ['minutes' => $totalMinutes, 'days' => $days];
     }
 
     public static function getRelations(): array
