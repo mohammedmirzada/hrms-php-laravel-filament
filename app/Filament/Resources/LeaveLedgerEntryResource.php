@@ -149,17 +149,26 @@ class LeaveLedgerEntryResource extends Resource
                         'ADJUSTMENT' => 'Adjustment',
                         'REVERSAL' => 'Reversal',
                         'EXPIRY' => 'Expiry',
-                    ]),
+                    ])
+                    ->searchable()
+                    ->native(false),
                 SelectFilter::make('branch_id')
                     ->label('Branch')
-                    ->relationship('branch', 'name'),
+                    ->relationship('branch', 'name')
+                    ->searchable()
+                    ->native(false)
+                    ->preload(),
                 SelectFilter::make('leave_type_id')
                     ->label('Leave Type')
-                    ->relationship('leaveType', 'name'),
+                    ->relationship('leaveType', 'name')
+                    ->searchable()
+                    ->native(false)
+                    ->preload(),
                 SelectFilter::make('employer_id')
                     ->label('Employee')
                     ->relationship('employer', 'full_name')
                     ->searchable()
+                    ->native(false)
                     ->preload(),
             ])
             ->recordActions([

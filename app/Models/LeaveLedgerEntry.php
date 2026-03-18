@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
+// Ledger = Transaction History
 class LeaveLedgerEntry extends Model {
 
     use HasCreatedUpdatedBy;

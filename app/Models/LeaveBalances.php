@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
+// Balance = Current Snapshot
 class LeaveBalances extends Model {
 
     use HasCreatedUpdatedBy;
