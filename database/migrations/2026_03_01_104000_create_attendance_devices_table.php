@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('attendance_devices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->constrained()->onDelete('cascade');
-            $table->enum('vendor', ['ZKTECO', 'SUPREMA']);
+            $table->string('vendor');
             $table->string('name');
             $table->string('ip_address')->nullable();
             $table->integer('port')->nullable();
-            $table->enum('sync_mode', ['REALTIME', 'SCHEDULED']);
+            $table->enum('sync_mode', ['push', 'pull', 'manual']);
             $table->timestamp('last_sync_at')->nullable();
             $table->timestamps();
         });

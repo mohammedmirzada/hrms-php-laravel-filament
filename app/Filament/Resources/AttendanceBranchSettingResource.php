@@ -6,12 +6,16 @@ use App\Filament\Resources\AttendanceBranchSettingResource\Pages;
 use App\Models\AttendanceBranchSetting;
 use App\Models\Branch;
 use BackedEnum;
-use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Actions;
+use Filament\Schemas\Components\Section as ComponentsSection;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -44,9 +48,31 @@ class AttendanceBranchSettingResource extends Resource
                     ->searchable()
                     ->preload()
                     ->unique(ignoreRecord: true),
-                KeyValue::make('settings')
-                    ->label('Settings')
-                    ->helperText('Working hours, grace period, OT rules, shift templates, mobile rules, geofence')
+                ComponentsSection::make('Settings')
+                    ->schema([
+                        TextInput::make('settings.late_grace_minutes')
+                            ->label('Late Grace (min)')
+                            ->helperText('e.g. 10 → If you arrive within 10 minutes of shift start, you\'re still on time. After that, you\'re marked late.')
+                            ->numeric()
+                            ->minValue(0),
+                        TextInput::make('settings.overtime_threshold_minutes')
+                            ->label('Overtime Threshold (min)')
+                            ->helperText('e.g. 30 → You only get overtime credit if you stay 30+ minutes past shift end.')
+                            ->numeric()
+                            ->minValue(0),
+                        TimePicker::make('settings.work_start_time')
+                            ->label('Work Start Time')
+                            ->helperText('e.g. 09:00 → The official start of the workday for this branch.')
+                            ->seconds(false),
+                        TimePicker::make('settings.work_end_time')
+                            ->label('Work End Time')
+                            ->helperText('e.g. 17:00 → The official end of the workday for this branch.')
+                            ->seconds(false),
+                        Toggle::make('settings.require_selfie')
+                            ->label('Require Selfie')
+                            ->helperText('If enabled, employees must take a photo when clocking in from their phone.'),
+                    ])
+                    ->columns(2)
                     ->columnSpanFull(),
             ]);
     }
@@ -74,7 +100,10 @@ class AttendanceBranchSettingResource extends Resource
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Branch')
-                    ->relationship('branch', 'name'),
+                    ->relationship('branch', 'name')
+                    ->preload()
+                    ->name(false)
+                    ->searchable()
             ])
             ->recordActions([
                 Actions\EditAction::make(),

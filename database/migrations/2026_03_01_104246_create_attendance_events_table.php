@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('employer_id')->nullable()->constrained('employers')->onDelete('set null');
             $table->foreignId('device_id')->nullable()->constrained('attendance_devices')->onDelete('set null');
             $table->string('device_user_code')->nullable();
-            $table->enum('source', ['BIOMETRIC', 'MOBILE', 'MANUAL']);
+            $table->enum('source', ['BIOMETRIC', 'MOBILE']);
             $table->enum('event_type', ['IN', 'OUT'])->nullable();
             $table->dateTime('event_at');
             $table->decimal('latitude', 10, 7)->nullable();

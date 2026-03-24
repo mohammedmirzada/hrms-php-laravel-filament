@@ -76,8 +76,7 @@ class AttendanceEventResource extends Resource
                                 ->native(false)
                                 ->options([
                                     'BIOMETRIC' => 'Biometric',
-                                    'MOBILE' => 'Mobile',
-                                    'MANUAL' => 'Manual',
+                                    'MOBILE' => 'Mobile'
                                 ])
                                 ->required(),
                             Select::make('event_type')
@@ -182,22 +181,31 @@ class AttendanceEventResource extends Resource
                 SelectFilter::make('source')
                     ->options([
                         'BIOMETRIC' => 'Biometric',
-                        'MOBILE' => 'Mobile',
-                        'MANUAL' => 'Manual',
-                    ]),
+                        'MOBILE' => 'Mobile'
+                    ])
+                    ->searchable()
+                    ->preload()
+                    ->native(false),
                 SelectFilter::make('event_type')
                     ->options([
                         'IN' => 'In',
                         'OUT' => 'Out',
-                    ]),
+                    ])
+                    ->searchable()
+                    ->preload()
+                    ->native(false),
                 SelectFilter::make('branch_id')
                     ->label('Branch')
-                    ->relationship('branch', 'name'),
+                    ->relationship('branch', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->native(false),
                 SelectFilter::make('employer_id')
                     ->label('Employee')
                     ->relationship('employer', 'full_name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->native(false)
             ])
             ->recordActions([
                 Actions\EditAction::make(),
