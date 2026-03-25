@@ -20,6 +20,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Filament\Actions\Action;
+use Filament\Enums\GlobalSearchPosition;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
 use Filament\Support\Facades\FilamentView;
@@ -90,6 +91,7 @@ class AdminPanelProvider extends PanelProvider
                 'Attendance',
                 'Payroll & Compensation',
                 'Settings',
-            ]);
+            ])
+            ->globalSearch(position: GlobalSearchPosition::Topbar);
     }
 }

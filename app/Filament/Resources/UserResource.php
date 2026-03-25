@@ -106,4 +106,16 @@ class UserResource extends Resource
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
+
+    // Global search configuration
+    
+    protected static bool $isGloballySearchable = true;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array {
+        return ['name', 'email'];
+    }
+
+    protected static ?bool $isGlobalSearchForcedCaseInsensitive = true;
 }

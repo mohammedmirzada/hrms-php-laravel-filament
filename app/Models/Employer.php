@@ -97,6 +97,10 @@ class Employer extends Model {
         return $this->contract_expiry_date && $today > $this->contract_expiry_date;
     }
 
+    public function employerShifts() {
+        return $this->hasMany(EmployerShift::class);
+    }
+
     public function documents() {
         return $this->hasMany(Document::class);
     }

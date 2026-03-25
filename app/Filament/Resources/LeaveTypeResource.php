@@ -115,4 +115,16 @@ class LeaveTypeResource extends Resource
             'edit' => Pages\EditLeaveType::route('/{record}/edit'),
         ];
     }
+
+    // Global search configuration
+    
+    protected static bool $isGloballySearchable = true;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array {
+        return ['name'];
+    }
+
+    protected static ?bool $isGlobalSearchForcedCaseInsensitive = true;
 }

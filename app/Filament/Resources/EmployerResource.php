@@ -7,7 +7,6 @@ use App\Filament\Resources\EmployerResource\Pages;
 use App\Filament\Resources\EmployerResource\RelationManagers;
 use App\Models\Employer;
 use BackedEnum;
-use Dom\Text;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
@@ -303,6 +302,7 @@ class EmployerResource extends Resource
                                                     ->createOptionForm(SalaryStructureResource::form(Schema::make())->getComponents()),
                                             ]),
                                     ]),
+
                             ]),
 
                         Tab::make('Documents & Media')
@@ -483,6 +483,7 @@ class EmployerResource extends Resource
         return [
             RelationManagers\DocumentsRelationManager::class,
             RelationManagers\CompensationsRelationManager::class,
+            RelationManagers\ShiftsRelationManager::class,
         ];
     }
 
@@ -696,4 +697,17 @@ class EmployerResource extends Resource
             '+263' => 'Zimbabwe (+263)',
         ];
     }
+
+    // Global search configuration
+    
+    protected static bool $isGloballySearchable = true;
+
+    protected static ?string $recordTitleAttribute = 'full_name';
+
+    public static function getGloballySearchableAttributes(): array {
+        return ['full_name', 'email', 'phone_number_1', 'phone_number_2'];
+    }
+
+    protected static ?bool $isGlobalSearchForcedCaseInsensitive = true;
+
 }
