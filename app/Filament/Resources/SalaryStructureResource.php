@@ -39,12 +39,8 @@ class SalaryStructureResource extends Resource
                 Select::make('default_currency_code')
                     ->native(false)
                     ->label('Default Currency')
-                    ->options([
-                        'USD' => 'USD',
-                        'EUR' => 'EUR',
-                        'IQD' => 'IQD',
-                        'TRY' => 'TRY',
-                    ])
+                    ->options(config('currency'))
+                    ->default('USD')
                     ->required()
                     ->searchable(),
                 Toggle::make('is_active')
@@ -81,7 +77,8 @@ class SalaryStructureResource extends Resource
             ])
             ->filters([
                 TernaryFilter::make('is_active')
-                    ->label('Active'),
+                    ->label('Active')
+                    ->native(false)
             ])
             ->recordActions([
                 Actions\EditAction::make(),

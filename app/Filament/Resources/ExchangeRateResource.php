@@ -34,23 +34,13 @@ class ExchangeRateResource extends Resource
                 Select::make('base_code')
                     ->native(false)
                     ->label('Base Currency')
-                    ->options([
-                        'USD' => 'USD',
-                        'EUR' => 'EUR',
-                        'IQD' => 'IQD',
-                        'TRY' => 'TRY',
-                    ])
+                    ->options(config('currency'))
                     ->required()
                     ->searchable(),
                 Select::make('quote_currency')
                     ->native(false)
                     ->label('Quote Currency')
-                    ->options([
-                        'USD' => 'USD',
-                        'EUR' => 'EUR',
-                        'IQD' => 'IQD',
-                        'TRY' => 'TRY',
-                    ])
+                    ->options(config('currency'))
                     ->required()
                     ->searchable(),
                 TextInput::make('rate')
@@ -92,20 +82,14 @@ class ExchangeRateResource extends Resource
             ->filters([
                 SelectFilter::make('base_code')
                     ->label('Base Currency')
-                    ->options([
-                        'USD' => 'USD',
-                        'EUR' => 'EUR',
-                        'IQD' => 'IQD',
-                        'TRY' => 'TRY',
-                    ]),
+                    ->options(config('currency'))
+                    ->searchable()
+                    ->native(false),
                 SelectFilter::make('quote_currency')
                     ->label('Quote Currency')
-                    ->options([
-                        'USD' => 'USD',
-                        'EUR' => 'EUR',
-                        'IQD' => 'IQD',
-                        'TRY' => 'TRY',
-                    ]),
+                    ->options(config('currency'))
+                    ->searchable()
+                    ->native(false)
             ])
             ->recordActions([
                 Actions\EditAction::make(),

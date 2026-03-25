@@ -54,12 +54,8 @@ class PayrollPeriodResource extends Resource
                         Select::make('processing_currency_code')
                             ->native(false)
                             ->label('Processing Currency')
-                            ->options([
-                                'USD' => 'USD',
-                                'EUR' => 'EUR',
-                                'IQD' => 'IQD',
-                                'TRY' => 'TRY',
-                            ])
+                            ->options(config('currency'))
+                            ->default('USD')
                             ->required()
                             ->searchable(),
                         DatePicker::make('exchange_rate_date')

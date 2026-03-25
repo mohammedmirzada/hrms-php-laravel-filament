@@ -64,12 +64,8 @@ class SocialSecurityRuleResource extends Resource
                         Select::make('currency_code')
                             ->native(false)
                             ->label('Currency')
-                            ->options([
-                                'USD' => 'USD',
-                                'EUR' => 'EUR',
-                                'IQD' => 'IQD',
-                                'TRY' => 'TRY',
-                            ])
+                            ->options(config('currency'))
+                            ->default('USD')
                             ->required()
                             ->searchable(),
                     ])
@@ -162,13 +158,18 @@ class SocialSecurityRuleResource extends Resource
             ->filters([
                 SelectFilter::make('branch_id')
                     ->label('Branch')
-                    ->relationship('branch', 'name'),
+                    ->relationship('branch', 'name')
+                    ->searchable()
+                    ->native(false)
+                    ->preload(),
                 SelectFilter::make('employment_type')
                     ->options([
                         'full_time' => 'Full Time',
                         'part_time' => 'Part Time',
                         'contract' => 'Contract',
-                    ]),
+                    ])
+                    ->searchable()
+                    ->native(false)
             ])
             ->recordActions([
                 Actions\EditAction::make(),
