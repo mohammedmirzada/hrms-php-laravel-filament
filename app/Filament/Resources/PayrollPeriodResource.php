@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\PayrollPeriodResource\Pages;
 use App\Models\Branch;
+use App\Models\ExchangeRate;
 use App\Models\PayrollPeriod;
 use BackedEnum;
 use Filament\Forms\Components\DatePicker;
@@ -43,35 +44,55 @@ class PayrollPeriodResource extends Resource
                             ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->helperText('The company branch this payroll period belongs to. Each branch runs its own payroll independently.'),
                         DatePicker::make('period_start')
                             ->native(false)
-                            ->required(),
+                            ->required()
+                            ->helperText('The first day of the pay cycle (e.g. March 1).'),
                         DatePicker::make('period_end')
                             ->native(false)
                             ->required()
-                            ->after('period_start'),
+                            ->after('period_start')
+                            ->helperText('The last day of the pay cycle (e.g. March 31). Must be after the start date.'),
                         Select::make('processing_currency_code')
                             ->native(false)
                             ->label('Processing Currency')
                             ->options(config('currency'))
                             ->default('USD')
                             ->required()
-                            ->searchable(),
+                            ->searchable()
+                            ->live()
+                            ->afterStateUpdated(function ($state, $set) {
+                                if ($state && $state !== 'USD') {
+                                    $latest = ExchangeRate::where('quote_currency', $state)
+                                        ->latest('rate_date')
+                                        ->value('rate_date');
+                                    $set('exchange_rate_date', $latest);
+                                } else {
+                                    $set('exchange_rate_date', null);
+                                }
+                            })
+                            ->helperText('All salary amounts will be converted and finalized in this currency for this period. If not USD, the latest exchange rate will be applied automatically.'),
                         DatePicker::make('exchange_rate_date')
                             ->native(false)
                             ->label('Exchange Rate Date')
-                            ->nullable(),
+                            ->disabled()
+                            ->dehydrated()
+                            ->hidden(fn ($get) => !$get('processing_currency_code') || $get('processing_currency_code') === 'USD')
+                            ->helperText('Automatically set to the most recent exchange rate available for the selected currency. Read-only.'),
                         Select::make('status')
                             ->native(false)
                             ->options([
                                 'open' => 'Open',
-                                'attendance_locked' => 'Attendance Locked',
                                 'calculated' => 'Calculated',
                                 'approved' => 'Approved',
                             ])
                             ->default('open')
-                            ->required(),
+                            ->required()
+                            ->disabled(fn ($record) => $record !== null)
+                            ->dehydrated(fn ($record) => $record === null)
+                            ->helperText('Tracks where this payroll is in the process: Open → Calculated → Approved. Advances automatically through workflow actions.'),
                     ])
                     ->columns(2),
 
@@ -79,7 +100,7 @@ class PayrollPeriodResource extends Resource
                     ->schema([
                         Toggle::make('immutable')
                             ->label('Immutable (Finalized)')
-                            ->helperText('Once enabled, no further changes can be made'),
+                            ->helperText('Once turned on, this payroll period is permanently locked. No salary amounts, attendance, or approvals can be changed. Only enable this after the period is fully approved and paid.'),
                     ]),
             ]);
     }
@@ -107,7 +128,6 @@ class PayrollPeriodResource extends Resource
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'open' => 'info',
-                        'attendance_locked' => 'warning',
                         'calculated' => 'primary',
                         'approved' => 'success',
                         default => 'gray',
@@ -116,13 +136,6 @@ class PayrollPeriodResource extends Resource
                 IconColumn::make('immutable')
                     ->label('Finalized')
                     ->boolean(),
-                TextColumn::make('attendanceLockedByUser.name')
-                    ->label('Locked By')
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('attendance_locked_at')
-                    ->label('Locked At')
-                    ->dateTime()
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('approvedByUser.name')
                     ->label('Approved By')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -144,7 +157,6 @@ class PayrollPeriodResource extends Resource
                 SelectFilter::make('status')
                     ->options([
                         'open' => 'Open',
-                        'attendance_locked' => 'Attendance Locked',
                         'calculated' => 'Calculated',
                         'approved' => 'Approved',
                     ])

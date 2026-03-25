@@ -44,7 +44,8 @@ class SocialSecurityRuleResource extends Resource
                             ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->helperText('The branch this rule applies to. Different branches or countries may have different social security laws.'),
                         Select::make('employment_type')
                             ->native(false)
                             ->options([
@@ -52,7 +53,8 @@ class SocialSecurityRuleResource extends Resource
                                 'part_time' => 'Part Time',
                                 'contract' => 'Contract',
                             ])
-                            ->required(),
+                            ->required()
+                            ->helperText('Social security rates often differ by employment type. This rule will only apply to employees of the selected type.'),
                         Select::make('base_rule')
                             ->native(false)
                             ->options([
@@ -60,14 +62,16 @@ class SocialSecurityRuleResource extends Resource
                                 'basic_plus_marked' => 'Basic + Marked Items',
                                 'gross' => 'Gross Salary',
                             ])
-                            ->required(),
+                            ->required()
+                            ->helperText('Which part of the salary to calculate contributions on. "Basic Only" uses the fixed base salary. "Basic + Marked Items" includes specific allowances. "Gross" uses the full total before deductions.'),
                         Select::make('currency_code')
                             ->native(false)
                             ->label('Currency')
                             ->options(config('currency'))
                             ->default('USD')
                             ->required()
-                            ->searchable(),
+                            ->searchable()
+                            ->helperText('The currency used for the contribution cap amount below.'),
                     ])
                     ->columns(2),
 
@@ -77,12 +81,14 @@ class SocialSecurityRuleResource extends Resource
                             ->label('Employer %')
                             ->numeric()
                             ->suffix('%')
-                            ->required(),
+                            ->required()
+                            ->helperText('The percentage the company pays to the government on top of the employee\'s salary (e.g. 5 means the company pays an extra 5% of the base).'),
                         TextInput::make('employee_percent')
                             ->label('Employee %')
                             ->numeric()
                             ->suffix('%')
-                            ->required(),
+                            ->required()
+                            ->helperText('The percentage deducted from the employee\'s own salary and sent to the government (e.g. 3 means $30 is deducted from a $1,000 salary).'),
                     ])
                     ->columns(2),
 
@@ -90,10 +96,13 @@ class SocialSecurityRuleResource extends Resource
                     ->schema([
                         Toggle::make('cap_enabled')
                             ->label('Enable Cap')
-                            ->reactive(),
+                            ->live()
+                            ->helperText('Turn on if the law sets a maximum monthly contribution amount, regardless of how high the salary is.'),
                         TextInput::make('cap_amount')
                             ->numeric()
-                            ->nullable(),
+                            ->nullable()
+                            ->hidden(fn ($get) => !$get('cap_enabled'))
+                            ->helperText('The maximum social security contribution per month in the selected currency. Contributions will never exceed this amount.'),
                     ])
                     ->columns(2),
 
@@ -101,11 +110,14 @@ class SocialSecurityRuleResource extends Resource
                     ->schema([
                         DatePicker::make('effective_from')
                             ->native(false)
-                            ->required(),
+                            ->required()
+                            ->default(now())
+                            ->helperText('The date this rule starts being applied to payroll calculations.'),
                         DatePicker::make('effective_to')
                             ->native(false)
                             ->nullable()
-                            ->after('effective_from'),
+                            ->after('effective_from')
+                            ->helperText('The last date this rule is active. Leave empty if this rule is still in effect today. When the law changes, set this date and create a new rule.'),
                     ])
                     ->columns(2),
             ]);

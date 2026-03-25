@@ -28,7 +28,8 @@ class ItemsRelationManager extends RelationManager
                         'earning' => 'Earning',
                         'deduction' => 'Deduction',
                     ])
-                    ->required(),
+                    ->required()
+                    ->helperText('Earnings add to the employee\'s pay (e.g. housing allowance, bonus). Deductions reduce it (e.g. loan repayment, penalty).'),
                 Select::make('calculation_type')
                     ->native(false)
                     ->options([
@@ -36,10 +37,18 @@ class ItemsRelationManager extends RelationManager
                         'percentage' => 'Percentage',
                         'manual' => 'Manual',
                     ])
-                    ->required(),
+                    ->required()
+                    ->live()
+                    ->helperText('Fixed: same amount every month. Percentage: calculated from the base salary. Manual: entered separately each payroll period (e.g. overtime).'),
                 TextInput::make('value')
                     ->numeric()
-                    ->required(),
+                    ->required()
+                    ->helperText(fn ($get) => match ($get('calculation_type')) {
+                        'fixed'      => 'Enter the flat amount paid every month in the structure\'s currency (e.g. 200 means $200/month).',
+                        'percentage' => 'Enter the percentage of the base salary (e.g. 10 means 10% of basic salary).',
+                        'manual'     => 'This is a default/reference value only. The actual amount will be entered manually each time payroll is run.',
+                        default      => 'Enter the amount or percentage depending on the calculation type selected above.',
+                    }),
             ]);
     }
 

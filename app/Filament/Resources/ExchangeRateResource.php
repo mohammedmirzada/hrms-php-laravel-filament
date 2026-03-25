@@ -36,21 +36,26 @@ class ExchangeRateResource extends Resource
                     ->label('Base Currency')
                     ->options(config('currency'))
                     ->required()
-                    ->searchable(),
+                    ->searchable()
+                    ->helperText('The currency your salaries are originally defined in (e.g. USD).'),
                 Select::make('quote_currency')
                     ->native(false)
                     ->label('Quote Currency')
                     ->options(config('currency'))
                     ->required()
-                    ->searchable(),
+                    ->searchable()
+                    ->helperText('The currency you want to convert to — usually the local currency where employees are paid (e.g. ETB, IQD).'),
                 TextInput::make('rate')
                     ->numeric()
                     ->required()
-                    ->minValue(0),
+                    ->minValue(0)
+                    ->helperText('How much 1 unit of the base currency equals in the quote currency. Example: if 1 USD = 57.5 ETB, enter 57.5.'),
                 DatePicker::make('rate_date')
                     ->native(false)
                     ->label('Rate Date')
-                    ->required(),
+                    ->required()
+                    ->default(now())
+                    ->helperText('The date this exchange rate was recorded. Payroll periods will use the rate matching their "Exchange Rate Date".'),
             ]);
     }
 

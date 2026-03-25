@@ -35,17 +35,20 @@ class SalaryStructureResource extends Resource
             ->schema([
                 TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->helperText('A descriptive name for this salary template (e.g. "Executive Package", "Field Staff", "Part-Time Basic").'),
                 Select::make('default_currency_code')
                     ->native(false)
                     ->label('Default Currency')
                     ->options(config('currency'))
                     ->default('USD')
                     ->required()
-                    ->searchable(),
+                    ->searchable()
+                    ->helperText('The currency in which this structure\'s salary items are defined. The payroll period may convert these amounts to a different processing currency.'),
                 Toggle::make('is_active')
                     ->label('Active')
-                    ->default(true),
+                    ->default(true)
+                    ->helperText('Inactive structures cannot be assigned to employees. Disable instead of deleting to preserve historical records.'),
             ]);
     }
 
