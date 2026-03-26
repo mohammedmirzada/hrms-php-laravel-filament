@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Models\UserInfo;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\FileUpload;
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Auth;
 
 class EditProfile extends Page implements HasForms
 {
-    use InteractsWithForms;
+    use InteractsWithForms, HasPageShield;
 
     protected string $view = 'filament.pages.edit-profile';
     protected static ?string $navigationLabel = 'Edit Profile';

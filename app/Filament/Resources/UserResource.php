@@ -12,10 +12,12 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Actions;
+use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
+use STS\FilamentImpersonate\Actions\Impersonate;
 use UnitEnum;
 
 class UserResource extends Resource
@@ -41,22 +43,27 @@ class UserResource extends Resource
                     ->imageEditor()
                     ->circleCropper()
                     ->columnSpanFull(),
-                Grid::make(2)->schema([
-                    TextInput::make('name')
-                        ->required()
-                        ->maxLength(255),
-                    TextInput::make('email')
-                        ->email()
-                        ->required()
-                        ->unique(ignoreRecord: true)
-                        ->maxLength(255),
-                ]),
+                TextInput::make('name')
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('email')
+                    ->email()
+                    ->required()
+                    ->unique(ignoreRecord: true)
+                    ->maxLength(255),
                 TextInput::make('password')
                     ->password()
                     ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                     ->dehydrated(fn ($state) => filled($state))
                     ->required(fn (string $operation): bool => $operation === 'create')
-                    ->maxLength(255),
+                    ->minLength(8)
+                    ->maxLength(64)
+                    ->revealable(true)
+                    ->rules(['nullable', 'min:8', 'max:64']),
+                Select::make('roles')
+                    ->relationship('roles', 'name')
+                    ->native(false)
+                    ->label('Roles')
             ]);
     }
 
@@ -89,6 +96,9 @@ class UserResource extends Resource
             ->recordActions([
                 Actions\EditAction::make(),
                 Actions\DeleteAction::make(),
+                Impersonate::make()
+                    ->guard('another-guard')
+                    ->redirectTo(route('filament.admin.home'))
             ])
             ->toolbarActions([
                 Actions\BulkActionGroup::make([

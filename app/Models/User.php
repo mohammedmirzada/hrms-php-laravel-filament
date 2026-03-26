@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Models\Concerns\HasCreatedUpdatedBy;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
@@ -11,11 +12,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasAvatar {
 
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles, HasCreatedUpdatedBy;
 
     /**
      * The attributes that are mass assignable.
@@ -78,4 +80,13 @@ class User extends Authenticatable implements FilamentUser, HasAvatar {
         return true;
     }
 
+    public function roles() {
+        return $this->morphToMany(Role::class, 'model', 'model_has_roles', 'model_id', 'role_id');
+    }
+
+    public function canImpersonate()
+    {
+        return true;
+    }
+    
 }
