@@ -25,7 +25,6 @@ return new class extends Migration
         'holidays',
         'attendance_devices',
         'attendance_events',
-        'attendance_days',
         'attendance_branch_settings',
         'employer_compensation',
         'social_security_rules',

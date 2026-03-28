@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('shifts', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->constrained()->onDelete('cascade');
+            $table->foreignId('branch_id')->constrained()->onDelete('cascade')->index();
             $table->enum('code', ['MORNING', 'AFTERNOON', 'NIGHT']);
             $table->json('name');
             $table->time('start_time');

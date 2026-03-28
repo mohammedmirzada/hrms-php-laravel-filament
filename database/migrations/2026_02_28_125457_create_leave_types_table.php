@@ -17,7 +17,7 @@ return new class extends Migration
             $table->json('description')->nullable();
             $table->boolean('is_system')->default(false);
             $table->boolean('is_paid')->default(false);
-            $table->enum('document_type', ['ID Card', 'Passport', 'Driver License', 'Work Permit', 'Visa', 'Contract', 'Certificate', 'Degree', 'CV', 'Other']);
+            $table->enum('document_type', ['Medical Certificate', 'Death Certificate', 'Marriage Certificate', 'Court Order', 'Travel Document', 'Other'])->nullable();
             $table->enum('default_unit', ['HOUR', 'DAY'])->default('DAY');
             $table->timestamps();
         });
