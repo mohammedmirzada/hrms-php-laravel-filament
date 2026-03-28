@@ -125,7 +125,7 @@ class EmployerResource extends Resource
                                                             ->options(static::getPhoneCodes())
                                                             ->native(false)
                                                             ->searchable()
-                                                            ->default('+670')
+                                                            ->default('+964')
                                                             ->dehydrated(false)
                                                             ->columnSpan(2),
                                                         TextInput::make('phone_number_1')
@@ -153,7 +153,7 @@ class EmployerResource extends Resource
                                                             ->options(static::getPhoneCodes())
                                                             ->native(false)
                                                             ->searchable()
-                                                            ->default('+670')
+                                                            ->default('+964')
                                                             ->dehydrated(false)
                                                             ->columnSpan(2),
                                                         TextInput::make('phone_number_2')
@@ -193,7 +193,7 @@ class EmployerResource extends Resource
                                                             ->options(static::getPhoneCodes())
                                                             ->native(false)
                                                             ->searchable()
-                                                            ->default('+670')
+                                                            ->default('+964')
                                                             ->columnSpan(2),
                                                         TextInput::make('phone')
                                                             ->label('Contact Phone')

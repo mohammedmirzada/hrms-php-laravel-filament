@@ -25,7 +25,7 @@ class AttendanceBranchSettingResource extends Resource
 {
     protected static ?string $model = AttendanceBranchSetting::class;
 
-    protected static BackedEnum|string|null $navigationIcon = Heroicon::Cog6Tooth;
+    protected static BackedEnum|string|null $navigationIcon = Heroicon::CubeTransparent;
 
     protected static string|UnitEnum|null $navigationGroup = 'Attendance';
 
