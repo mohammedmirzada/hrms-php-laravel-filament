@@ -35,19 +35,17 @@ class ItemsRelationManager extends RelationManager
                     ->options([
                         'fixed' => 'Fixed Amount',
                         'percentage' => 'Percentage',
-                        'manual' => 'Manual',
                     ])
                     ->required()
                     ->live()
-                    ->helperText('Fixed: same amount every month. Percentage: calculated from the base salary. Manual: entered separately each payroll period (e.g. overtime).'),
+                    ->helperText('Fixed: same amount every month. Percentage: calculated as a % of the employee\'s basic salary.'),
                 TextInput::make('value')
                     ->numeric()
                     ->required()
                     ->helperText(fn ($get) => match ($get('calculation_type')) {
                         'fixed'      => 'Enter the flat amount paid every month in the structure\'s currency (e.g. 200 means $200/month).',
-                        'percentage' => 'Enter the percentage of the base salary (e.g. 10 means 10% of basic salary).',
-                        'manual'     => 'This is a default/reference value only. The actual amount will be entered manually each time payroll is run.',
-                        default      => 'Enter the amount or percentage depending on the calculation type selected above.',
+                        'percentage' => 'Enter the percentage of the basic salary (e.g. 10 means 10% of basic).',
+                        default      => 'Select a calculation type first.',
                     }),
             ]);
     }

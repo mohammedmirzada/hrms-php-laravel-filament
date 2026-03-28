@@ -150,7 +150,7 @@ class SocialSecurityRuleResource extends Resource
                     ->label('Cap')
                     ->boolean(),
                 TextColumn::make('cap_amount')
-                    ->numeric()
+                    ->money(fn ($record) => $record->currency_code)
                     ->placeholder('—'),
                 TextColumn::make('currency_code')
                     ->label('Currency')

@@ -18,6 +18,7 @@ use Filament\Actions;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Notifications\Notification;
 use Filament\Tables\Table;
 use UnitEnum;
 
@@ -65,7 +66,8 @@ class PayrollPeriodResource extends Resource
                             ->live()
                             ->afterStateUpdated(function ($state, $set) {
                                 if ($state && $state !== 'USD') {
-                                    $latest = ExchangeRate::where('quote_currency', $state)
+                                    $latest = ExchangeRate::where('base_code', 'USD')
+                                        ->where('quote_currency', $state)
                                         ->latest('rate_date')
                                         ->value('rate_date');
                                     $set('exchange_rate_date', $latest);
@@ -73,6 +75,21 @@ class PayrollPeriodResource extends Resource
                                     $set('exchange_rate_date', null);
                                 }
                             })
+
+                            ->rules([
+                                function () {
+                                    return function (string $_attribute, $value, \Closure $fail) {
+                                        if ($value && $value !== 'USD') {
+                                            $exists = ExchangeRate::where('base_code', 'USD')
+                                                ->where('quote_currency', $value)
+                                                ->exists();
+                                            if (! $exists) {
+                                                $fail('No exchange rate found for ' . $value . '. Add one in Exchange Rates first.');
+                                            }
+                                        }
+                                    };
+                                },
+                            ])
                             ->helperText('All salary amounts will be converted and finalized in this currency for this period. If not USD, the latest exchange rate will be applied automatically.'),
                         DatePicker::make('exchange_rate_date')
                             ->native(false)
@@ -90,9 +107,9 @@ class PayrollPeriodResource extends Resource
                             ])
                             ->default('open')
                             ->required()
-                            ->disabled(fn ($record) => $record !== null)
+                            ->disabled()
                             ->dehydrated(fn ($record) => $record === null)
-                            ->helperText('Tracks where this payroll is in the process: Open → Calculated → Approved. Advances automatically through workflow actions.'),
+                            ->helperText('Always starts as Open. Advances automatically through workflow actions — cannot be changed manually.'),
                     ])
                     ->columns(2),
 
@@ -100,7 +117,8 @@ class PayrollPeriodResource extends Resource
                     ->schema([
                         Toggle::make('immutable')
                             ->label('Immutable (Finalized)')
-                            ->helperText('Once turned on, this payroll period is permanently locked. No salary amounts, attendance, or approvals can be changed. Only enable this after the period is fully approved and paid.'),
+                            ->disabled(fn ($record) => $record?->immutable)
+                            ->helperText('Once turned on, this payroll period is permanently locked and cannot be unlocked by anyone. Only enable this after the period is fully approved and paid.'),
                     ]),
             ]);
     }
@@ -166,11 +184,22 @@ class PayrollPeriodResource extends Resource
             ])
             ->recordActions([
                 Actions\ViewAction::make(),
-                Actions\EditAction::make(),
+                Actions\EditAction::make()
+                    ->hidden(fn ($record) => $record->immutable),
             ])
             ->toolbarActions([
                 Actions\BulkActionGroup::make([
-                    Actions\DeleteBulkAction::make(),
+                    Actions\DeleteBulkAction::make()
+                        ->before(function ($records, $action) {
+                            if ($records->contains('immutable', true)) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title('Cannot delete finalized periods')
+                                    ->body('Deselect all finalized periods and try again.')
+                                    ->send();
+                                $action->halt();
+                            }
+                        }),
                 ]),
             ])
             ->defaultSort('period_start', 'desc');

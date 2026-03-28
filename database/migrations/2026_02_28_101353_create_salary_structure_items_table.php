@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('salary_structure_id')->constrained()->onDelete('cascade');
             $table->json('name');
             $table->enum('type', ['earning', 'deduction']);
-            $table->enum('calculation_type', ['fixed', 'percentage', 'manual']); // (manual means it’s entered per payroll period like overtime/bonus/penalty/advance)
+            $table->enum('calculation_type', ['fixed', 'percentage']);
             $table->decimal('value', 15, 2);
             $table->timestamps();
         });

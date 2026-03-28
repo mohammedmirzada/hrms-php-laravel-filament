@@ -21,15 +21,24 @@ class EmployerShiftForm
                     ->getOptionLabelFromRecordUsing(fn (Employer $record) => $record->getTranslation('full_name', 'en'))
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->live(),
                 Select::make('shift_id')
                     ->native(false)
                     ->label('Shift')
-                    ->options(fn () => Shift::all()->mapWithKeys(fn (Shift $s) => [
-                        $s->id => $s->getTranslation('name', 'en') . ' (' . $s->code . ' · ' . $s->start_time . ' – ' . $s->end_time . ')',
-                    ]))
+                    ->options(function ($get) {
+                        $branchId = Employer::find($get('employer_id'))?->branch_id;
+                        if (! $branchId) {
+                            return [];
+                        }
+                        return Shift::where('branch_id', $branchId)
+                            ->get()
+                            ->mapWithKeys(fn (Shift $s) => [
+                                $s->id => $s->getTranslation('name', 'en') . ' (' . $s->code . ' · ' . $s->start_time . ' – ' . $s->end_time . ')',
+                            ]);
+                    })
                     ->required()
-                    ->searchable(),
+                    ->helperText('Only shifts from the selected employee\'s branch are listed. If you can\'t find a shift, make sure the employee\'s branch is set correctly.'),
                 DatePicker::make('effective_from')
                     ->native(false)
                     ->required(),

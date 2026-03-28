@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\EmployerResource\RelationManagers;
 
+use App\Models\EmployerCompensation;
 use BackedEnum;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -22,6 +23,11 @@ class CompensationsRelationManager extends RelationManager
 
     protected static BackedEnum|string|null $navigationIcon = Heroicon::Banknotes;
 
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema
@@ -30,14 +36,16 @@ class CompensationsRelationManager extends RelationManager
                     ->schema([
                         Select::make('salary_structure_id')
                             ->native(false)
-                            ->relationship('salaryStructure', 'name')
+                            ->relationship('salaryStructure', 'name', fn ($query) => $query->where('is_active', true))
                             ->searchable()
                             ->preload()
                             ->required(),
-                        TextInput::make('currency_code')
+                        Select::make('currency_code')
+                            ->native(false)
                             ->label('Currency')
+                            ->options(config('currency'))
                             ->default('USD')
-                            ->maxLength(13)
+                            ->searchable()
                             ->required(),
                         TextInput::make('basic_salary')
                             ->numeric()
@@ -46,7 +54,8 @@ class CompensationsRelationManager extends RelationManager
                             ->native(false)
                             ->required(),
                         DatePicker::make('effective_to')
-                            ->native(false),
+                            ->native(false)
+                            ->after('effective_from'),
                     ]),
             ]);
     }
@@ -61,19 +70,26 @@ class CompensationsRelationManager extends RelationManager
                 TextColumn::make('currency_code')
                     ->label('Currency'),
                 TextColumn::make('basic_salary')
-                    ->money(fn ($record) => strtolower($record->currency_code))
+                    ->money(fn ($record) => $record->currency_code)
                     ->sortable(),
                 TextColumn::make('effective_from')
                     ->date()
                     ->sortable(),
                 TextColumn::make('effective_to')
-                    ->date()
-                    ->sortable()
-                    ->placeholder('Current'),
+                    ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->toFormattedDateString() : 'Current')
+                    ->badge()
+                    ->color(fn ($record) => $record->effective_to === null ? 'success' : 'gray')
+                    ->sortable(),
             ])
             ->defaultSort('effective_from', 'desc')
             ->headerActions([
-                Actions\CreateAction::make(),
+                Actions\CreateAction::make()
+                    ->after(function ($record) {
+                        EmployerCompensation::where('employer_id', $record->employer_id)
+                            ->where('id', '!=', $record->id)
+                            ->whereNull('effective_to')
+                            ->update(['effective_to' => today()]);
+                    }),
             ])
             ->recordActions([
                 Actions\EditAction::make(),

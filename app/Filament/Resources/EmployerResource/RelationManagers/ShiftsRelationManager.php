@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\EmployerResource\RelationManagers;
 
 use App\Models\EmployerShift;
+use App\Models\Shift;
 use BackedEnum;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
@@ -33,12 +34,14 @@ class ShiftsRelationManager extends RelationManager
                 Select::make('shift_id')
                     ->native(false)
                     ->label('Shift')
-                    ->relationship('shift', 'name')
-                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->getTranslation('name', 'en'))
-                    ->searchable()
-                    ->preload()
+                    ->options(function () {
+                        $branchId = $this->getOwnerRecord()->branch_id;
+                        return Shift::where('branch_id', $branchId)
+                            ->get()
+                            ->mapWithKeys(fn ($shift) => [$shift->id => $shift->getTranslation('name', 'en')]);
+                    })
                     ->required()
-                    ->helperText('Select the shift assigned to this employee.'),
+                    ->helperText('Only shifts from this employee\'s branch are listed. If you can\'t find a shift, check that the shift is assigned to the same branch as this employee.'),
                 DatePicker::make('effective_from')
                     ->native(false)
                     ->label('From')

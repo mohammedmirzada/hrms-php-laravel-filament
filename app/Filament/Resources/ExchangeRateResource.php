@@ -34,10 +34,11 @@ class ExchangeRateResource extends Resource
                 Select::make('base_code')
                     ->native(false)
                     ->label('Base Currency')
-                    ->options(config('currency'))
-                    ->required()
-                    ->searchable()
-                    ->helperText('The currency your salaries are originally defined in (e.g. USD).'),
+                    ->options(['USD' => 'USD - US Dollar'])
+                    ->default('USD')
+                    ->disabled()
+                    ->dehydrated()
+                    ->helperText('Always USD. All rates are defined as USD → other currency.'),
                 Select::make('quote_currency')
                     ->native(false)
                     ->label('Quote Currency')

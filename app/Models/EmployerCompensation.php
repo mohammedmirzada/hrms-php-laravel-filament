@@ -9,6 +9,15 @@ class EmployerCompensation extends Model {
 
     use HasCreatedUpdatedBy;
 
+    protected static function booted(): void {
+        static::created(function ($compensation) {
+            static::where('employer_id', $compensation->employer_id)
+                ->where('id', '!=', $compensation->id)
+                ->whereNull('effective_to')
+                ->update(['effective_to' => today()]);
+        });
+    }
+
     protected $table = 'employer_compensation';
     
     protected $fillable = [

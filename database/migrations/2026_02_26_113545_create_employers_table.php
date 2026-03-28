@@ -29,7 +29,6 @@ return new class extends Migration
             $table->date('probation_period_end_date')->nullable();
             $table->date('contract_expiry_date')->nullable();
             $table->foreignId('employment_status_id')->nullable()->default(1)->constrained()->nullOnDelete();
-            $table->foreignId('salary_structure_id')->nullable()->constrained()->nullOnDelete();
             $table->index('hire_date');
             $table->index('date_of_birth');
             $table->timestamps();

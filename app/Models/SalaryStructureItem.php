@@ -30,16 +30,11 @@ class SalaryStructureItem extends Model {
     }
 
     public function calculateAmount($baseAmount = 0) {
-        switch ($this->calculation_type) {
-            case 'fixed':
-                return $this->value;
-            case 'percentage':
-                return ($baseAmount * $this->value) / 100;
-            case 'manual':
-                return $this->value; // This should be set manually for each payroll period
-            default:
-                return 0;
-        }
+        return match ($this->calculation_type) {
+            'fixed'      => $this->value,
+            'percentage' => ($baseAmount * $this->value) / 100,
+            default      => throw new \InvalidArgumentException("Unknown calculation type [{$this->calculation_type}] on SalaryStructureItem ID {$this->id}."),
+        };
     }
 
     public function types() {

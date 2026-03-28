@@ -8,6 +8,24 @@ use Illuminate\Database\Eloquent\Model;
 class SocialSecurityRule extends Model {
 
     use HasCreatedUpdatedBy;
+
+    protected static function booted(): void {
+        static::saving(function ($rule) {
+            if ($rule->effective_to !== null && $rule->effective_to <= $rule->effective_from) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'effective_to' => 'Effective To date must be after Effective From date.',
+                ]);
+            }
+        });
+
+        static::created(function ($rule) {
+            static::where('branch_id', $rule->branch_id)
+                ->where('employment_type', $rule->employment_type)
+                ->where('id', '!=', $rule->id)
+                ->whereNull('effective_to')
+                ->update(['effective_to' => today()]);
+        });
+    }
     
     protected $fillable = [
         'branch_id',

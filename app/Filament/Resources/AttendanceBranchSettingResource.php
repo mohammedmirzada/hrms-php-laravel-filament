@@ -102,7 +102,7 @@ class AttendanceBranchSettingResource extends Resource
                     ->label('Branch')
                     ->relationship('branch', 'name')
                     ->preload()
-                    ->name(false)
+                    ->native(false)
                     ->searchable()
             ])
             ->recordActions([

@@ -2,165 +2,163 @@
 
 return [
     // Major & Widely Used
-    'USD', // US Dollar
-    'EUR', // Euro
-    'GBP', // British Pound
-    'JPY', // Japanese Yen
-    'CHF', // Swiss Franc
-    'CAD', // Canadian Dollar
-    'AUD', // Australian Dollar
-    'NZD', // New Zealand Dollar
-    'CNY', // Chinese Yuan Renminbi
-    'HKD', // Hong Kong Dollar
-    'SGD', // Singapore Dollar
-    'SEK', // Swedish Krona
-    'NOK', // Norwegian Krone
-    'DKK', // Danish Krone
-    'KRW', // South Korean Won
-    'INR', // Indian Rupee
-    'BRL', // Brazilian Real
-    'MXN', // Mexican Peso
-    'RUB', // Russian Ruble
-    'ZAR', // South African Rand
-    'TRY', // Turkish Lira
-    'SAR', // Saudi Riyal
-    'AED', // UAE Dirham
-    'TWD', // Taiwan Dollar
-    'THB', // Thai Baht
-    'MYR', // Malaysian Ringgit
-    'IDR', // Indonesian Rupiah
-    'PHP', // Philippine Peso
-    'VND', // Vietnamese Dong
-    'PKR', // Pakistani Rupee
-    'BDT', // Bangladeshi Taka
-    'EGP', // Egyptian Pound
-    'NGN', // Nigerian Naira
-    'KWD', // Kuwaiti Dinar
-    'QAR', // Qatari Riyal
-    'BHD', // Bahraini Dinar
-    'OMR', // Omani Rial
-    'JOD', // Jordanian Dinar
-    'IQD', // Iraqi Dinar
-    'LBP', // Lebanese Pound
-    'SYP', // Syrian Pound
-    'ILS', // Israeli New Shekel
-    'IRR', // Iranian Rial
-    'AFN', // Afghan Afghani
-    'KZT', // Kazakhstani Tenge
-    'UZS', // Uzbekistani Som
-    'AZN', // Azerbaijani Manat
-    'GEL', // Georgian Lari
-    'AMD', // Armenian Dram
-    'TJS', // Tajikistani Somoni
-    'TMT', // Turkmenistani Manat
-    'KGS', // Kyrgyzstani Som
-    'MNT', // Mongolian Tugrik
-    'NPR', // Nepalese Rupee
-    'LKR', // Sri Lankan Rupee
-    'MMK', // Myanmar Kyat
-    'KHR', // Cambodian Riel
-    'LAK', // Lao Kip
-    'BND', // Brunei Dollar
-    'MOP', // Macanese Pataca
+    'USD' => 'USD - US Dollar',
+    'EUR' => 'EUR - Euro',
+    'GBP' => 'GBP - British Pound',
+    'JPY' => 'JPY - Japanese Yen',
+    'CHF' => 'CHF - Swiss Franc',
+    'CAD' => 'CAD - Canadian Dollar',
+    'AUD' => 'AUD - Australian Dollar',
+    'NZD' => 'NZD - New Zealand Dollar',
+    'CNY' => 'CNY - Chinese Yuan Renminbi',
+    'HKD' => 'HKD - Hong Kong Dollar',
+    'SGD' => 'SGD - Singapore Dollar',
+    'SEK' => 'SEK - Swedish Krona',
+    'NOK' => 'NOK - Norwegian Krone',
+    'DKK' => 'DKK - Danish Krone',
+    'KRW' => 'KRW - South Korean Won',
+    'INR' => 'INR - Indian Rupee',
+    'BRL' => 'BRL - Brazilian Real',
+    'MXN' => 'MXN - Mexican Peso',
+    'RUB' => 'RUB - Russian Ruble',
+    'ZAR' => 'ZAR - South African Rand',
+    'TRY' => 'TRY - Turkish Lira',
+    'SAR' => 'SAR - Saudi Riyal',
+    'AED' => 'AED - UAE Dirham',
+    'TWD' => 'TWD - Taiwan Dollar',
+    'THB' => 'THB - Thai Baht',
+    'MYR' => 'MYR - Malaysian Ringgit',
+    'IDR' => 'IDR - Indonesian Rupiah',
+    'PHP' => 'PHP - Philippine Peso',
+    'VND' => 'VND - Vietnamese Dong',
+    'PKR' => 'PKR - Pakistani Rupee',
+    'BDT' => 'BDT - Bangladeshi Taka',
+    'EGP' => 'EGP - Egyptian Pound',
+    'NGN' => 'NGN - Nigerian Naira',
+    'KWD' => 'KWD - Kuwaiti Dinar',
+    'QAR' => 'QAR - Qatari Riyal',
+    'BHD' => 'BHD - Bahraini Dinar',
+    'OMR' => 'OMR - Omani Rial',
+    'JOD' => 'JOD - Jordanian Dinar',
+    'IQD' => 'IQD - Iraqi Dinar',
+    'LBP' => 'LBP - Lebanese Pound',
+    'SYP' => 'SYP - Syrian Pound',
+    'ILS' => 'ILS - Israeli New Shekel',
+    'IRR' => 'IRR - Iranian Rial',
+    'AFN' => 'AFN - Afghan Afghani',
+    'KZT' => 'KZT - Kazakhstani Tenge',
+    'UZS' => 'UZS - Uzbekistani Som',
+    'AZN' => 'AZN - Azerbaijani Manat',
+    'GEL' => 'GEL - Georgian Lari',
+    'AMD' => 'AMD - Armenian Dram',
+    'TJS' => 'TJS - Tajikistani Somoni',
+    'TMT' => 'TMT - Turkmenistani Manat',
+    'KGS' => 'KGS - Kyrgyzstani Som',
+    'MNT' => 'MNT - Mongolian Tugrik',
+    'NPR' => 'NPR - Nepalese Rupee',
+    'LKR' => 'LKR - Sri Lankan Rupee',
+    'MMK' => 'MMK - Myanmar Kyat',
+    'KHR' => 'KHR - Cambodian Riel',
+    'LAK' => 'LAK - Lao Kip',
+    'BND' => 'BND - Brunei Dollar',
+    'MOP' => 'MOP - Macanese Pataca',
 
     // Europe
-    'PLN', // Polish Zloty
-    'CZK', // Czech Koruna
-    'HUF', // Hungarian Forint
-    'RON', // Romanian Leu
-    'BGN', // Bulgarian Lev
-    'HRK', // Croatian Kuna
-    'RSD', // Serbian Dinar
-    'UAH', // Ukrainian Hryvnia
-    'BYN', // Belarusian Ruble
-    'MDL', // Moldovan Leu
-    'ALL', // Albanian Lek
-    'MKD', // Macedonian Denar
-    'BAM', // Bosnia-Herzegovina Convertible Mark
-    'ISK', // Icelandic Krona
-    'GBP', // (already listed, duplicate guard note)
+    'PLN' => 'PLN - Polish Zloty',
+    'CZK' => 'CZK - Czech Koruna',
+    'HUF' => 'HUF - Hungarian Forint',
+    'RON' => 'RON - Romanian Leu',
+    'BGN' => 'BGN - Bulgarian Lev',
+    'HRK' => 'HRK - Croatian Kuna',
+    'RSD' => 'RSD - Serbian Dinar',
+    'UAH' => 'UAH - Ukrainian Hryvnia',
+    'BYN' => 'BYN - Belarusian Ruble',
+    'MDL' => 'MDL - Moldovan Leu',
+    'ALL' => 'ALL - Albanian Lek',
+    'MKD' => 'MKD - Macedonian Denar',
+    'BAM' => 'BAM - Bosnia-Herzegovina Convertible Mark',
+    'ISK' => 'ISK - Icelandic Krona',
 
     // Africa
-    'MAD', // Moroccan Dirham
-    'TND', // Tunisian Dinar
-    'DZD', // Algerian Dinar
-    'LYD', // Libyan Dinar
-    'SDG', // Sudanese Pound
-    'ETB', // Ethiopian Birr
-    'KES', // Kenyan Shilling
-    'UGX', // Ugandan Shilling
-    'TZS', // Tanzanian Shilling
-    'RWF', // Rwandan Franc
-    'GHS', // Ghanaian Cedi
-    'XOF', // West African CFA Franc
-    'XAF', // Central African CFA Franc
-    'AOA', // Angolan Kwanza
-    'ZMW', // Zambian Kwacha
-    'ZWL', // Zimbabwean Dollar
-    'MZN', // Mozambican Metical
-    'BWP', // Botswana Pula
-    'NAD', // Namibian Dollar
-    'SZL', // Swazi Lilangeni
-    'LSL', // Lesotho Loti
-    'MUR', // Mauritian Rupee
-    'SCR', // Seychellois Rupee
-    'MGA', // Malagasy Ariary
-    'MWK', // Malawian Kwacha
-    'ZMW', // Zambian Kwacha
-    'BIF', // Burundian Franc
-    'DJF', // Djiboutian Franc
-    'ERN', // Eritrean Nakfa
-    'SOS', // Somali Shilling
-    'GMD', // Gambian Dalasi
-    'GNF', // Guinean Franc
-    'SLL', // Sierra Leonean Leone
-    'LRD', // Liberian Dollar
-    'CVE', // Cape Verdean Escudo
-    'STN', // São Tomé and Príncipe Dobra
-    'CDF', // Congolese Franc
-    'XPF', // CFP Franc (Pacific)
+    'MAD' => 'MAD - Moroccan Dirham',
+    'TND' => 'TND - Tunisian Dinar',
+    'DZD' => 'DZD - Algerian Dinar',
+    'LYD' => 'LYD - Libyan Dinar',
+    'SDG' => 'SDG - Sudanese Pound',
+    'ETB' => 'ETB - Ethiopian Birr',
+    'KES' => 'KES - Kenyan Shilling',
+    'UGX' => 'UGX - Ugandan Shilling',
+    'TZS' => 'TZS - Tanzanian Shilling',
+    'RWF' => 'RWF - Rwandan Franc',
+    'GHS' => 'GHS - Ghanaian Cedi',
+    'XOF' => 'XOF - West African CFA Franc',
+    'XAF' => 'XAF - Central African CFA Franc',
+    'AOA' => 'AOA - Angolan Kwanza',
+    'ZMW' => 'ZMW - Zambian Kwacha',
+    'ZWL' => 'ZWL - Zimbabwean Dollar',
+    'MZN' => 'MZN - Mozambican Metical',
+    'BWP' => 'BWP - Botswana Pula',
+    'NAD' => 'NAD - Namibian Dollar',
+    'SZL' => 'SZL - Swazi Lilangeni',
+    'LSL' => 'LSL - Lesotho Loti',
+    'MUR' => 'MUR - Mauritian Rupee',
+    'SCR' => 'SCR - Seychellois Rupee',
+    'MGA' => 'MGA - Malagasy Ariary',
+    'MWK' => 'MWK - Malawian Kwacha',
+    'BIF' => 'BIF - Burundian Franc',
+    'DJF' => 'DJF - Djiboutian Franc',
+    'ERN' => 'ERN - Eritrean Nakfa',
+    'SOS' => 'SOS - Somali Shilling',
+    'GMD' => 'GMD - Gambian Dalasi',
+    'GNF' => 'GNF - Guinean Franc',
+    'SLL' => 'SLL - Sierra Leonean Leone',
+    'LRD' => 'LRD - Liberian Dollar',
+    'CVE' => 'CVE - Cape Verdean Escudo',
+    'STN' => 'STN - São Tomé and Príncipe Dobra',
+    'CDF' => 'CDF - Congolese Franc',
+    'XPF' => 'XPF - CFP Franc (Pacific)',
 
     // Americas
-    'ARS', // Argentine Peso
-    'CLP', // Chilean Peso
-    'COP', // Colombian Peso
-    'PEN', // Peruvian Sol
-    'UYU', // Uruguayan Peso
-    'PYG', // Paraguayan Guarani
-    'BOB', // Bolivian Boliviano
-    'VES', // Venezuelan Bolívar
-    'GYD', // Guyanese Dollar
-    'SRD', // Surinamese Dollar
-    'TTD', // Trinidad and Tobago Dollar
-    'JMD', // Jamaican Dollar
-    'BBD', // Barbadian Dollar
-    'BSD', // Bahamian Dollar
-    'BZD', // Belize Dollar
-    'GTQ', // Guatemalan Quetzal
-    'HNL', // Honduran Lempira
-    'NIO', // Nicaraguan Córdoba
-    'CRC', // Costa Rican Colón
-    'PAB', // Panamanian Balboa
-    'DOP', // Dominican Peso
-    'HTG', // Haitian Gourde
-    'CUP', // Cuban Peso
-    'AWG', // Aruban Florin
-    'ANG', // Netherlands Antillean Guilder
-    'KYD', // Cayman Islands Dollar
-    'BMD', // Bermudian Dollar
-    'XCD', // East Caribbean Dollar
+    'ARS' => 'ARS - Argentine Peso',
+    'CLP' => 'CLP - Chilean Peso',
+    'COP' => 'COP - Colombian Peso',
+    'PEN' => 'PEN - Peruvian Sol',
+    'UYU' => 'UYU - Uruguayan Peso',
+    'PYG' => 'PYG - Paraguayan Guarani',
+    'BOB' => 'BOB - Bolivian Boliviano',
+    'VES' => 'VES - Venezuelan Bolívar',
+    'GYD' => 'GYD - Guyanese Dollar',
+    'SRD' => 'SRD - Surinamese Dollar',
+    'TTD' => 'TTD - Trinidad and Tobago Dollar',
+    'JMD' => 'JMD - Jamaican Dollar',
+    'BBD' => 'BBD - Barbadian Dollar',
+    'BSD' => 'BSD - Bahamian Dollar',
+    'BZD' => 'BZD - Belize Dollar',
+    'GTQ' => 'GTQ - Guatemalan Quetzal',
+    'HNL' => 'HNL - Honduran Lempira',
+    'NIO' => 'NIO - Nicaraguan Córdoba',
+    'CRC' => 'CRC - Costa Rican Colón',
+    'PAB' => 'PAB - Panamanian Balboa',
+    'DOP' => 'DOP - Dominican Peso',
+    'HTG' => 'HTG - Haitian Gourde',
+    'CUP' => 'CUP - Cuban Peso',
+    'AWG' => 'AWG - Aruban Florin',
+    'ANG' => 'ANG - Netherlands Antillean Guilder',
+    'KYD' => 'KYD - Cayman Islands Dollar',
+    'BMD' => 'BMD - Bermudian Dollar',
+    'XCD' => 'XCD - East Caribbean Dollar',
 
     // Oceania
-    'FJD', // Fijian Dollar
-    'PGK', // Papua New Guinean Kina
-    'SBD', // Solomon Islands Dollar
-    'VUV', // Vanuatu Vatu
-    'WST', // Samoan Tala
-    'TOP', // Tongan Paʻanga
-    'KID', // Kiribati Dollar (pegged to AUD)
+    'FJD' => 'FJD - Fijian Dollar',
+    'PGK' => 'PGK - Papua New Guinean Kina',
+    'SBD' => 'SBD - Solomon Islands Dollar',
+    'VUV' => 'VUV - Vanuatu Vatu',
+    'WST' => 'WST - Samoan Tala',
+    'TOP' => 'TOP - Tongan Paʻanga',
+    'KID' => 'KID - Kiribati Dollar',
 
     // Special / Precious Metals / Other
-    'XAU', // Gold (troy ounce)
-    'XAG', // Silver (troy ounce)
-    'XDR', // IMF Special Drawing Rights
+    'XAU' => 'XAU - Gold (troy ounce)',
+    'XAG' => 'XAG - Silver (troy ounce)',
+    'XDR' => 'XDR - IMF Special Drawing Rights',
 ];

@@ -279,7 +279,7 @@ class EmployerResource extends Resource
                                                     ->native(false)
                                                     ->label('Probation End'),
                                             ]),
-                                        Grid::make(3)
+                                        Grid::make(2)
                                             ->schema([
                                                 DatePicker::make('contract_expiry_date')
                                                     ->native(false)
@@ -293,13 +293,6 @@ class EmployerResource extends Resource
                                                     ->preload()
                                                     ->required()
                                                     ->createOptionForm(EmploymentStatusResource::form(Schema::make())->getComponents()),
-                                                Select::make('salary_structure_id')
-                                                    ->native(false)
-                                                    ->label('Salary Structure')
-                                                    ->relationship('salaryStructure', 'name')
-                                                    ->searchable()
-                                                    ->preload()
-                                                    ->createOptionForm(SalaryStructureResource::form(Schema::make())->getComponents()),
                                             ]),
                                     ]),
 

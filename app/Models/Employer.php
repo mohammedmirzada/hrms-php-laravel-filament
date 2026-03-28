@@ -32,7 +32,6 @@ class Employer extends Model {
         'probation_period_end_date',
         'contract_expiry_date',
         'employment_status_id',
-        'salary_structure_id',
         'created_by',
         'updated_by',
     ];
@@ -70,10 +69,6 @@ class Employer extends Model {
         return $this->belongsTo(EmploymentStatus::class);
     }
 
-    public function salaryStructure() {
-        return $this->belongsTo(SalaryStructure::class);
-    }
-
     public function compensations() {
         return $this->hasMany(EmployerCompensation::class);
     }
@@ -87,14 +82,13 @@ class Employer extends Model {
     }
 
     public function isOnProbation() {
-        $today = now()->toDateString();
-        return $this->probation_period_start_date && $this->probation_period_end_date &&
-               $today >= $this->probation_period_start_date && $today <= $this->probation_period_end_date;
+        return $this->probation_period_start_date
+            && $this->probation_period_end_date
+            && now()->between($this->probation_period_start_date, $this->probation_period_end_date);
     }
 
     public function isContractExpired() {
-        $today = now()->toDateString();
-        return $this->contract_expiry_date && $today > $this->contract_expiry_date;
+        return $this->contract_expiry_date && now()->isAfter($this->contract_expiry_date);
     }
 
     public function employerShifts() {
