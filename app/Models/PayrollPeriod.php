@@ -11,6 +11,14 @@ class PayrollPeriod extends Model {
     use HasCreatedUpdatedBy;
 
     protected static function booted() {
+        static::updating(function ($payrollPeriod) {
+            if ($payrollPeriod->getOriginal('immutable') === true) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'immutable' => 'This payroll period is locked and cannot be modified.',
+                ]);
+            }
+        });
+
         static::creating(function ($payrollPeriod) {
             if ($payrollPeriod->processing_currency_code !== 'USD' && ! $payrollPeriod->exchange_rate_date) {
                 $rateDate = ExchangeRate::where('base_code', 'USD')

@@ -19,14 +19,31 @@ class LeaveRequest extends Model {
                 return;
             }
 
+            $allowed = [
+                null                 => ['DRAFT', 'SUBMITTED'],
+                'DRAFT'              => ['SUBMITTED', 'CANCELLED'],
+                'SUBMITTED'          => ['MANAGER_APPROVED', 'HR_APPROVED', 'FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
+                'MANAGER_APPROVED'   => ['HR_APPROVED', 'FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
+                'HR_APPROVED'        => ['FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
+                'FINAL_APPROVED'     => [],
+                'REJECTED'           => [],
+                'CANCELLED'          => [],
+            ];
+
+            if (array_key_exists($original, $allowed) && ! in_array($new, $allowed[$original])) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'status' => "Cannot transition from " . ($original ?? 'new') . " to {$new}.",
+                ]);
+            }
+
             $now = now();
 
             match ($new) {
-                'SUBMITTED' => $request->submitted_at = $request->submitted_at ?? $now,
+                'SUBMITTED'      => $request->submitted_at = $request->submitted_at ?? $now,
                 'FINAL_APPROVED' => $request->approved_at = $now,
-                'REJECTED' => $request->rejected_at = $now,
-                'CANCELLED' => $request->canceled_at = $now,
-                default => null,
+                'REJECTED'       => $request->rejected_at = $now,
+                'CANCELLED'      => $request->canceled_at = $now,
+                default          => null,
             };
         });
     }

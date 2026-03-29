@@ -31,8 +31,6 @@ return new class extends Migration
             $table->foreignId('employment_status_id')->nullable()->constrained()->nullOnDelete();
             $table->index('hire_date');
             $table->index('date_of_birth');
-            $table->index('manager_id');
-            $table->index('employment_status_id');
             $table->timestamps();
         });
     }

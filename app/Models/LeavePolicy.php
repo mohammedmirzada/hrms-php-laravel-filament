@@ -42,7 +42,7 @@ class LeavePolicy extends Model {
         'requires_manager_approval' => 'boolean',
         'requires_hr_approval' => 'boolean',
         'requires_final_approval' => 'boolean',
-        'carryover_expiry_date' => 'date',
+        // carryover_expiry_date is stored as "MM-DD" string, not a full date
     ];
 
     public function branch() {

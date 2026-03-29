@@ -95,16 +95,11 @@ class UserResource extends Resource
             ->filters([])
             ->recordActions([
                 Actions\EditAction::make(),
-                Actions\DeleteAction::make(),
                 Impersonate::make()
                     ->guard('another-guard')
                     ->redirectTo(route('filament.admin.home'))
             ])
-            ->toolbarActions([
-                Actions\BulkActionGroup::make([
-                    Actions\DeleteBulkAction::make(),
-                ]),
-            ])
+            ->toolbarActions([])
             ->defaultSort('id', 'desc');
     }
 

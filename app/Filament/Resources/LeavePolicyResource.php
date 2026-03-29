@@ -7,7 +7,6 @@ use App\Models\Branch;
 use App\Models\LeavePolicy;
 use App\Models\LeaveType;
 use BackedEnum;
-use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -110,10 +109,12 @@ class LeavePolicyResource extends Resource
                             ->label('Carryover Cap')
                             ->numeric()
                             ->nullable(),
-                        DatePicker::make('carryover_expiry_date')
-                            ->native(false)
-                            ->label('Carryover Expiry')
-                            ->nullable(),
+                        TextInput::make('carryover_expiry_date')
+                            ->label('Carryover Expiry (MM-DD)')
+                            ->placeholder('03-31')
+                            ->helperText('e.g. 03-31 for March 31st every year')
+                            ->nullable()
+                            ->rules(['nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/']),
                     ])
                     ->columns(1),
 

@@ -36,16 +36,11 @@ class Document extends Model {
 
     public static function getDocumentTypeOptions() {
         return [
-            'ID Card' => 'ID Card',
-            'Passport' => 'Passport',
-            'Driver License' => 'Driver License',
-            'Work Permit' => 'Work Permit',
-            'Visa' => 'Visa',
-            'Contract' => 'Contract',
-            'Certificate' => 'Certificate',
-            'Degree' => 'Degree',
-            'CV' => 'CV',
-            'Other' => 'Other',
+            'Medical Certificate' => 'Medical Certificate',
+            'Marriage Certificate' => 'Marriage Certificate',
+            'Court Order' => 'Court Order',
+            'Travel Document' => 'Travel Document',
+            'Other' => 'Other'
         ];
     }
 

@@ -77,10 +77,6 @@ class Employer extends Model {
         return $this->hasMany(LeaveRequest::class);
     }
 
-    public function attendanceDays() {
-        return $this->hasMany(AttendanceDay::class);
-    }
-
     public function isOnProbation() {
         return $this->probation_period_start_date
             && $this->probation_period_end_date
@@ -88,7 +84,7 @@ class Employer extends Model {
     }
 
     public function isContractExpired() {
-        return $this->contract_expiry_date && now()->isAfter($this->contract_expiry_date);
+        return $this->contract_expiry_date && today()->isAfter($this->contract_expiry_date);
     }
 
     public function employerShifts() {

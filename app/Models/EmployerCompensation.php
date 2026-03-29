@@ -14,7 +14,7 @@ class EmployerCompensation extends Model {
             static::where('employer_id', $compensation->employer_id)
                 ->where('id', '!=', $compensation->id)
                 ->whereNull('effective_to')
-                ->update(['effective_to' => today()]);
+                ->update(['effective_to' => $compensation->effective_from->subDay()]);
         });
     }
 

@@ -15,15 +15,10 @@ return new class extends Migration
                 ->change();
         });
 
-        // Bug 3: add indexes
-        Schema::table('employers', function (Blueprint $table) {
-            $table->index('manager_id');
-            $table->index('employment_status_id');
-        });
-
         // Bug 4: remove default(1) from employment_status_id
+        // Indexes for manager_id and employment_status_id already exist from create_employers_table migration
         Schema::table('employers', function (Blueprint $table) {
-            $table->foreignId('employment_status_id')->nullable()->default(null)->constrained()->nullOnDelete()->change();
+            $table->unsignedBigInteger('employment_status_id')->nullable()->default(null)->change();
         });
     }
 
@@ -36,9 +31,7 @@ return new class extends Migration
         });
 
         Schema::table('employers', function (Blueprint $table) {
-            $table->dropIndex(['manager_id']);
-            $table->dropIndex(['employment_status_id']);
-            $table->foreignId('employment_status_id')->nullable()->default(1)->constrained()->nullOnDelete()->change();
+            $table->unsignedBigInteger('employment_status_id')->nullable()->default(1)->change();
         });
     }
 };

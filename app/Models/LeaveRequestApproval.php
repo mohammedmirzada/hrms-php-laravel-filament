@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class LeaveRequestApproval extends Model {
 
@@ -20,7 +21,7 @@ class LeaveRequestApproval extends Model {
             }
 
             if (in_array($new, ['APPROVED', 'REJECTED', 'SKIPPED'])) {
-                $approval->action_by_user_id = auth()->id();
+                $approval->action_by_user_id = Auth::id();
                 $approval->action_at = now();
             }
         });
@@ -31,6 +32,8 @@ class LeaveRequestApproval extends Model {
         'step',
         'role',
         'assigned_to_user_id',
+        'action_by_user_id',
+        'action_at',
         'status',
         'comment',
         'created_by',

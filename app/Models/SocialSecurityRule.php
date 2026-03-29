@@ -23,7 +23,7 @@ class SocialSecurityRule extends Model {
                 ->where('employment_type', $rule->employment_type)
                 ->where('id', '!=', $rule->id)
                 ->whereNull('effective_to')
-                ->update(['effective_to' => today()]);
+                ->update(['effective_to' => $rule->effective_from->subDay()]);
         });
     }
     
