@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class EmployerCompensation extends Model {
 
@@ -11,10 +12,18 @@ class EmployerCompensation extends Model {
 
     protected static function booted(): void {
         static::created(function ($compensation) {
-            static::where('employer_id', $compensation->employer_id)
-                ->where('id', '!=', $compensation->id)
-                ->whereNull('effective_to')
-                ->update(['effective_to' => $compensation->effective_from->subDay()]);
+            DB::transaction(function () use ($compensation) {
+                static::where('employer_id', $compensation->employer_id)
+                    ->whereNull('effective_to')
+                    ->where('id', '!=', $compensation->id)
+                    ->lockForUpdate()
+                    ->get();
+
+                static::where('employer_id', $compensation->employer_id)
+                    ->whereNull('effective_to')
+                    ->where('id', '!=', $compensation->id)
+                    ->update(['effective_to' => $compensation->effective_from->subDay()]);
+            });
         });
     }
 

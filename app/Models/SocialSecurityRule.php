@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class SocialSecurityRule extends Model {
 
@@ -19,11 +20,20 @@ class SocialSecurityRule extends Model {
         });
 
         static::created(function ($rule) {
-            static::where('branch_id', $rule->branch_id)
-                ->where('employment_type', $rule->employment_type)
-                ->where('id', '!=', $rule->id)
-                ->whereNull('effective_to')
-                ->update(['effective_to' => $rule->effective_from->subDay()]);
+            DB::transaction(function () use ($rule) {
+                static::where('branch_id', $rule->branch_id)
+                    ->where('employment_type', $rule->employment_type)
+                    ->whereNull('effective_to')
+                    ->where('id', '!=', $rule->id)
+                    ->lockForUpdate()
+                    ->get();
+
+                static::where('branch_id', $rule->branch_id)
+                    ->where('employment_type', $rule->employment_type)
+                    ->whereNull('effective_to')
+                    ->where('id', '!=', $rule->id)
+                    ->update(['effective_to' => $rule->effective_from->subDay()]);
+            });
         });
     }
     
