@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\LeaveBalances;
 use App\Models\LeaveLedgerEntry;
 use App\Models\LeaveRequest;
+use Illuminate\Support\Facades\DB;
 
 class LeaveBalanceService {
 
@@ -14,20 +15,24 @@ class LeaveBalanceService {
     public function recordEntry(int $employerId, int $branchId, int $leaveTypeId, string $entryType, int $amountMinutes,
                                 string $occurredOn, ?string $note = null, 
                                 ?int $leaveRequestId = null): LeaveLedgerEntry {
-        $entry = LeaveLedgerEntry::create([
-            'employer_id' => $employerId,
-            'branch_id' => $branchId,
-            'leave_type_id' => $leaveTypeId,
-            'leave_request_id' => $leaveRequestId,
-            'entry_type' => $entryType,
-            'amount_minutes' => $amountMinutes,
-            'occurred_on' => $occurredOn,
-            'note' => $note,
-        ]);
 
-        $this->refreshBalance($employerId, $branchId, $leaveTypeId);
-
-        return $entry;
+        // Use a transaction to ensure ledger entry and balance update are atomic
+        // This prevents race conditions when multiple requests are processed concurrently
+        return DB::transaction(function () use ($employerId, $branchId, $leaveTypeId, $entryType, $amountMinutes, $occurredOn, $note, $leaveRequestId) {
+            $entry = LeaveLedgerEntry::create([
+                'employer_id' => $employerId,
+                'branch_id' => $branchId,
+                'leave_type_id' => $leaveTypeId,
+                'leave_request_id' => $leaveRequestId,
+                'entry_type' => $entryType,
+                'amount_minutes' => $amountMinutes,
+                'occurred_on' => $occurredOn,
+                'note' => $note,
+            ]);
+            $this->refreshBalance($employerId, $branchId, $leaveTypeId);
+            return $entry;
+        });
+        
     }
 
     /**
