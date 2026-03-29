@@ -129,13 +129,6 @@ class LeavePolicyResource extends Resource
                             ->label('Minimum Request (minutes)')
                             ->numeric()
                             ->nullable(),
-                        Toggle::make('negative_balance_allowed')
-                            ->label('Allow Negative Balance')
-                            ->reactive(),
-                        TextInput::make('negative_balance_limit')
-                            ->label('Negative Balance Limit')
-                            ->numeric()
-                            ->nullable(),
                     ])
                     ->columns(3),
 
