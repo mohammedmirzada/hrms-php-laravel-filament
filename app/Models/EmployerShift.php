@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class EmployerShift extends Model
 {
@@ -11,10 +12,18 @@ class EmployerShift extends Model
     protected static function booted(): void
     {
         static::created(function ($shift) {
-            static::where('employer_id', $shift->employer_id)
-                ->where('id', '!=', $shift->id)
-                ->whereNull('effective_to')
-                ->update(['effective_to' => $shift->effective_from->subDay()]);
+            DB::transaction(function () use ($shift) {
+                static::where('employer_id', $shift->employer_id)
+                    ->whereNull('effective_to')
+                    ->where('id', '!=', $shift->id)
+                    ->lockForUpdate()
+                    ->get();
+
+                static::where('employer_id', $shift->employer_id)
+                    ->whereNull('effective_to')
+                    ->where('id', '!=', $shift->id)
+                    ->update(['effective_to' => $shift->effective_from->subDay()]);
+            });
         });
     }
 
