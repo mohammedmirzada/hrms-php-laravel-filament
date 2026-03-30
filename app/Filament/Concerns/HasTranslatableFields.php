@@ -10,7 +10,7 @@ trait HasTranslatableFields
 {
     protected static function getLocales(): array
     {
-        return ['en', 'ar', 'ku'];
+        return ['en', 'ar', 'ckb'];
     }
 
     protected static function getLocaleLabels(): array
