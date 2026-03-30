@@ -49,7 +49,7 @@ class ExchangeRateResource extends Resource
                 TextInput::make('rate')
                     ->numeric()
                     ->required()
-                    ->minValue(0)
+                    ->minValue(0.000001)
                     ->helperText('How much 1 unit of the base currency equals in the quote currency. Example: if 1 USD = 57.5 ETB, enter 57.5.'),
                 DatePicker::make('rate_date')
                     ->native(false)

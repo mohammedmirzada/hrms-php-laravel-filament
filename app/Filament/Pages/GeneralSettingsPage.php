@@ -14,7 +14,7 @@ use UnitEnum;
 
 class GeneralSettingsPage extends SettingsPage
 {
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::Cog6Tooth;
     protected static string|UnitEnum|null $navigationGroup = 'Settings';
     protected static ?string $navigationLabel = 'General';
     protected static ?int $navigationSort = 1;

@@ -26,7 +26,7 @@ class LeavePolicyResource extends Resource
 {
     protected static ?string $model = LeavePolicy::class;
 
-    protected static BackedEnum|string|null $navigationIcon = Heroicon::DocumentCheck;
+    protected static BackedEnum|string|null $navigationIcon = Heroicon::ShieldExclamation;
 
     protected static string|UnitEnum|null $navigationGroup = 'Leave Management';
 
@@ -89,7 +89,8 @@ class LeavePolicyResource extends Resource
                             ->label('Fixed Start (MM-DD)')
                             ->placeholder('01-01')
                             ->maxLength(5)
-                            ->nullable(),
+                            ->nullable()
+                            ->rules(['nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/']),
                         TextInput::make('annual_cap')
                             ->label('Annual Cap')
                             ->numeric()

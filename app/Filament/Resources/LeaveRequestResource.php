@@ -30,7 +30,7 @@ class LeaveRequestResource extends Resource
 {
     protected static ?string $model = LeaveRequest::class;
 
-    protected static BackedEnum|string|null $navigationIcon = Heroicon::DocumentText;
+    protected static BackedEnum|string|null $navigationIcon = Heroicon::DocumentDuplicate;
 
     protected static string|UnitEnum|null $navigationGroup = 'Leave Management';
 
@@ -142,14 +142,34 @@ class LeaveRequestResource extends Resource
                         Select::make('status')
                             ->native(false)
                             ->options([
-                                'DRAFT' => 'Draft',
-                                'SUBMITTED' => 'Submitted',
+                                'DRAFT'            => 'Draft',
+                                'SUBMITTED'        => 'Submitted',
                                 'MANAGER_APPROVED' => 'Manager Approved',
-                                'HR_APPROVED' => 'HR Approved',
-                                'FINAL_APPROVED' => 'Final Approved',
-                                'REJECTED' => 'Rejected',
-                                'CANCELLED' => 'Cancelled',
+                                'HR_APPROVED'      => 'HR Approved',
+                                'FINAL_APPROVED'   => 'Final Approved',
+                                'REJECTED'         => 'Rejected',
+                                'CANCELLED'        => 'Cancelled',
                             ])
+                            ->disableOptionWhen(function (string $value, $record): bool {
+                                if (! $record) {
+                                    return false;
+                                }
+
+                                $transitions = [
+                                    'DRAFT'            => ['SUBMITTED', 'CANCELLED'],
+                                    'SUBMITTED'        => ['MANAGER_APPROVED', 'HR_APPROVED', 'FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
+                                    'MANAGER_APPROVED' => ['HR_APPROVED', 'FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
+                                    'HR_APPROVED'      => ['FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
+                                    'FINAL_APPROVED'   => [],
+                                    'REJECTED'         => [],
+                                    'CANCELLED'        => [],
+                                ];
+
+                                $current = $record->status;
+                                $allowed = $transitions[$current] ?? [];
+
+                                return $value !== $current && ! in_array($value, $allowed);
+                            })
                             ->default('DRAFT')
                             ->required()
                             ->hiddenOn('create'),
@@ -161,6 +181,7 @@ class LeaveRequestResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['employer', 'leaveType', 'branch']))
             ->columns([
                 TextColumn::make('id')
                     ->sortable(),

@@ -42,6 +42,8 @@ class ItemsRelationManager extends RelationManager
                 TextInput::make('value')
                     ->numeric()
                     ->required()
+                    ->minValue(0)
+                    ->maxValue(fn ($get) => $get('calculation_type') === 'percentage' ? 100 : PHP_INT_MAX)
                     ->helperText(fn ($get) => match ($get('calculation_type')) {
                         'fixed'      => 'Enter the flat amount paid every month in the structure\'s currency (e.g. 200 means $200/month).',
                         'percentage' => 'Enter the percentage of the basic salary (e.g. 10 means 10% of basic).',

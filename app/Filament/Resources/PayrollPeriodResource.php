@@ -19,6 +19,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
 use Filament\Tables\Table;
 use UnitEnum;
 
@@ -190,15 +191,22 @@ class PayrollPeriodResource extends Resource
             ->toolbarActions([
                 Actions\BulkActionGroup::make([
                     Actions\DeleteBulkAction::make()
-                        ->before(function ($records, $action) {
-                            if ($records->contains('immutable', true)) {
+                        ->action(function ($records) {
+                            $blocked = $records->firstWhere('immutable', true);
+
+                            if ($blocked) {
                                 Notification::make()
                                     ->danger()
                                     ->title('Cannot delete finalized periods')
-                                    ->body('Deselect all finalized periods and try again.')
+                                    ->body("Period \"{$blocked->name}\" is finalized. No periods were deleted.")
                                     ->send();
-                                $action->halt();
+
+                                return;
                             }
+
+                            DB::transaction(function () use ($records) {
+                                $records->each->delete();
+                            });
                         }),
                 ]),
             ])

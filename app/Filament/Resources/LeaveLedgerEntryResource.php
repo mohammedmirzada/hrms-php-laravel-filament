@@ -25,7 +25,7 @@ class LeaveLedgerEntryResource extends Resource
 {
     protected static ?string $model = LeaveLedgerEntry::class;
 
-    protected static BackedEnum|string|null $navigationIcon = Heroicon::BookOpen;
+    protected static BackedEnum|string|null $navigationIcon = Heroicon::InformationCircle;
 
     protected static string|UnitEnum|null $navigationGroup = 'Leave Management';
 

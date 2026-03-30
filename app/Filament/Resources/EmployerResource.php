@@ -248,7 +248,14 @@ class EmployerResource extends Resource
                                                 Select::make('manager_id')
                                                     ->native(false)
                                                     ->label('Manager')
-                                                    ->relationship('manager', 'full_name')
+                                                    ->relationship(
+                                                        'manager',
+                                                        'full_name',
+                                                        fn ($query, $record) => $query->when(
+                                                            $record?->id,
+                                                            fn ($q) => $q->where('id', '!=', $record->id)
+                                                        )
+                                                    )
                                                     ->getOptionLabelFromRecordUsing(fn ($record) => $record->getTranslation('full_name', 'en'))
                                                     ->searchable()
                                                     ->preload(),
@@ -277,7 +284,8 @@ class EmployerResource extends Resource
                                                     ->label('Probation Start'),
                                                 DatePicker::make('probation_period_end_date')
                                                     ->native(false)
-                                                    ->label('Probation End'),
+                                                    ->label('Probation End')
+                                                    ->after('probation_period_start_date'),
                                             ]),
                                         Grid::make(2)
                                             ->schema([

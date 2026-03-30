@@ -24,7 +24,7 @@ class LeaveBalanceResource extends Resource
 {
     protected static ?string $model = LeaveBalances::class;
 
-    protected static BackedEnum|string|null $navigationIcon = Heroicon::Scale;
+    protected static BackedEnum|string|null $navigationIcon = Heroicon::DocumentChartBar;
 
     protected static string|UnitEnum|null $navigationGroup = 'Leave Management';
 
@@ -69,10 +69,12 @@ class LeaveBalanceResource extends Resource
                     TextInput::make('balance_minutes')
                         ->numeric()
                         ->default(0)
+                        ->minValue(0)
                         ->suffix('min'),
                     TextInput::make('balance_days')
                         ->numeric()
                         ->default(0)
+                        ->minValue(0)
                         ->step(0.01)
                         ->suffix('days'),
                     DateTimePicker::make('as_of')
@@ -86,6 +88,7 @@ class LeaveBalanceResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->with(['employer', 'branch', 'leaveType']))
             ->columns([
                 TextColumn::make('id')
                     ->sortable(),

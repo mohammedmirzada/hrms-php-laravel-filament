@@ -11,7 +11,26 @@ class LeaveRequest extends Model {
 
     protected static function booted(): void
     {
+        static::creating(function (LeaveRequest $request) {
+            $request->status ??= 'DRAFT';
+        });
+
         static::saving(function (LeaveRequest $request) {
+            if ($request->start_at && $request->end_at) {
+                $overlap = static::where('employer_id', $request->employer_id)
+                    ->whereNotIn('status', ['CANCELLED', 'REJECTED'])
+                    ->where('start_at', '<=', $request->end_at)
+                    ->where('end_at', '>=', $request->start_at)
+                    ->when($request->exists, fn ($q) => $q->where('id', '!=', $request->id))
+                    ->exists();
+
+                if ($overlap) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'start_at' => 'This employee already has a leave request overlapping this period.',
+                    ]);
+                }
+            }
+
             $original = $request->getOriginal('status');
             $new = $request->status;
 

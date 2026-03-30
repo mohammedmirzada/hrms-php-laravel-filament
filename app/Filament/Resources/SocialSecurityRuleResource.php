@@ -81,12 +81,16 @@ class SocialSecurityRuleResource extends Resource
                             ->label('Employer %')
                             ->numeric()
                             ->suffix('%')
+                            ->minValue(0)
+                            ->maxValue(100)
                             ->required()
                             ->helperText('The percentage the company pays to the government on top of the employee\'s salary (e.g. 5 means the company pays an extra 5% of the base).'),
                         TextInput::make('employee_percent')
                             ->label('Employee %')
                             ->numeric()
                             ->suffix('%')
+                            ->minValue(0)
+                            ->maxValue(100)
                             ->required()
                             ->helperText('The percentage deducted from the employee\'s own salary and sent to the government (e.g. 3 means $30 is deducted from a $1,000 salary).'),
                     ])

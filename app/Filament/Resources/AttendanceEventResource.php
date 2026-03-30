@@ -92,23 +92,6 @@ class AttendanceEventResource extends Resource
                             ->required(),
                     ]),
 
-                Section::make('Location')
-                    ->icon(Heroicon::MapPin)
-                    ->collapsible()
-                    ->schema([
-                        Grid::make(3)->schema([
-                            TextInput::make('latitude')
-                                ->numeric()
-                                ->step(0.0000001),
-                            TextInput::make('longitude')
-                                ->numeric()
-                                ->step(0.0000001),
-                            TextInput::make('accuracy_m')
-                                ->label('Accuracy (m)')
-                                ->numeric(),
-                        ]),
-                    ]),
-
                 Section::make('Validation')
                     ->icon(Heroicon::ShieldCheck)
                     ->collapsible()

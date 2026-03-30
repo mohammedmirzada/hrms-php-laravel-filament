@@ -49,6 +49,7 @@ class CompensationsRelationManager extends RelationManager
                             ->required(),
                         TextInput::make('basic_salary')
                             ->numeric()
+                            ->minValue(0.01)
                             ->required(),
                         DatePicker::make('effective_from')
                             ->native(false)
