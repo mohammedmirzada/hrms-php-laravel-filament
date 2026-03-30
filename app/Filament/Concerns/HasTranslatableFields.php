@@ -18,7 +18,7 @@ trait HasTranslatableFields
         return [
             'en' => 'English',
             'ar' => 'Arabic',
-            'ku' => 'Kurdish',
+            'ckb' => 'Central Kurdish',
         ];
     }
 

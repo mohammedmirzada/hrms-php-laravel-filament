@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\LeaveRequest;
 use App\Observers\LeaveRequestObserver;
+use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +29,16 @@ class AppServiceProvider extends ServiceProvider
         LeaveRequest::observe(LeaveRequestObserver::class);
 
         $this->configureDefaults();
+
+        LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
+            $switch->locales(['en','ckb','ar'])
+                    ->flags([
+                        'en' => asset('flags/en.svg'),
+                        'ckb' => asset('flags/ckb.svg'),      
+                        'ar' => asset('flags/sr.svg')
+                    ])
+                    ->circular();
+        });
     }
 
     /**

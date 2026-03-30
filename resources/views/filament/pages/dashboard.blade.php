@@ -62,4 +62,12 @@
         </div>
     @endif
 
+    <div class="mt-6">
+        @livewire(App\Filament\Widgets\HomeStatic::class)
+    </div>
+
+    <div class="mt-6">
+        @livewire(App\Filament\Widgets\HolidaysWidget::class)
+    </div>
+
 </x-filament-panels::page>
