@@ -17,6 +17,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Actions;
@@ -317,6 +318,31 @@ class EmployerResource extends Resource
                                             ]),
                                     ]),
 
+                            ]),
+
+                        Tab::make('Authentication')
+                            ->icon(Heroicon::LockClosed)
+                            ->schema([
+                                Section::make('Employee Portal Access')
+                                    ->icon(Heroicon::ComputerDesktop)
+                                    ->description('Set a password to allow this employee to log in to the employee portal.')
+                                    ->schema([
+                                        Text::make(new \Illuminate\Support\HtmlString(
+                                            'Employee portal login page: <a href="' . url('/employee/login') . '" target="_blank" class="fi-link text-primary-600 underline">' . url('/employee/login') . '</a><br><span class="text-sm text-gray-500">Share this link with the employee along with their email and password.</span>'
+                                        )),
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextInput::make('password')
+                                                    ->label('Password')
+                                                    ->password()
+                                                    ->revealable()
+                                                    ->minLength(8)
+                                                    ->maxLength(255)
+                                                    ->dehydrated(fn ($state) => filled($state))
+                                                    ->dehydrateStateUsing(fn ($state) => bcrypt($state))
+                                                    ->helperText('Leave blank to keep the current password. Min 8 characters.'),
+                                            ]),
+                                    ]),
                             ]),
 
                         Tab::make('Documents & Media')

@@ -1,27 +1,31 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Filament\Employee\Pages;
 
+use BackedEnum;
 use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Pages\SimplePage;
+use Filament\Pages\Page;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 
-class SubmitLeaveResuest extends SimplePage implements HasForms {
+class SubmitLeaveResuest extends Page implements HasForms {
 
     use InteractsWithForms;
 
-    protected string $view = 'livewire.submit-leave-resuest';
+    protected string $view = 'filament.employee.pages.submit-leave-resuest';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-document-text';
+    protected static ?int $navigationSort = 2;
 
     public ?array $data = [];
     public $form_name;
     public $form_date;
-    public $form_id, $slug;
+    public $form_id;
+    public $form_slug;
     public $hideForm = false;
     public $showQrCode = false;
     
