@@ -4,13 +4,19 @@
 
     @if(!empty($shortcuts))
         <div
-            x-data="{ open: true }"
+            x-data="{
+                open: (document.cookie.match(/(?:^|; )quickAccessOpen=([^;]*)/) || [])[1] !== 'false',
+                toggle() {
+                    this.open = !this.open;
+                    document.cookie = 'quickAccessOpen=' + this.open + '; path=/; max-age=31536000';
+                }
+            }"
             class="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-gray-800"
         >
             {{-- Header --}}
             <button
                 type="button"
-                @click="open = !open"
+                @click="toggle()"
                 class="flex w-full items-center justify-between px-5 py-3 text-left"
             >
                 <div class="flex items-center gap-2">
@@ -62,12 +68,22 @@
         </div>
     @endif
 
-    <div class="mt-6">
+    <hr class="border-gray-300 dark:border-white/20">
+
+    <div>
         @livewire(App\Filament\Widgets\HomeStatic::class)
     </div>
 
-    <div class="mt-6">
+    <hr class="border-gray-300 dark:border-white/20">
+
+    <div>
         @livewire(App\Filament\Widgets\HolidaysWidget::class)
+    </div>
+
+    <hr class="border-gray-300 dark:border-white/20">
+
+    <div>
+        @livewire(App\Filament\Widgets\ExpiredDocumentsWidget::class)
     </div>
 
 </x-filament-panels::page>
