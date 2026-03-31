@@ -73,7 +73,8 @@ class EmployerResource extends Resource
                                             ->avatar()
                                             ->imageAspectRatio('1:1')
                                             ->alignCenter(true)
-                                            ->columnSpanFull(),
+                                            ->columnSpanFull()
+                                            ->helperText('Optional. Max 5MB. The photo will be shown on the employee card and list view.'),
                                         static::translatableTabs('full_name', 'Full Name', required: true),
                                     ]),
 
@@ -89,12 +90,14 @@ class EmployerResource extends Resource
                                                         'male' => 'Male',
                                                         'female' => 'Female',
                                                     ])
-                                                    ->required(),
+                                                    ->required()
+                                                    ->helperText('Used for HR reporting and compliance records.'),
                                                 DatePicker::make('date_of_birth')
                                                     ->native(false)
                                                     ->label('Date of Birth')
                                                     ->required()
-                                                    ->maxDate(now()->subYears(16)),
+                                                    ->maxDate(now()->subYears(16))
+                                                    ->helperText('Must be at least 16 years ago. Used for age calculations and legal compliance.'),
                                                 Select::make('marital_status')
                                                     ->native(false)
                                                     ->label('Marital Status')
@@ -104,7 +107,8 @@ class EmployerResource extends Resource
                                                         'divorced' => 'Divorced',
                                                         'widowed' => 'Widowed',
                                                     ])
-                                                    ->required(),
+                                                    ->required()
+                                                    ->helperText('Used for tax and benefits calculations in some countries.'),
                                             ]),
                                     ]),
 
@@ -134,6 +138,7 @@ class EmployerResource extends Resource
                                                             ->required()
                                                             ->unique(ignoreRecord: true)
                                                             ->maxLength(20)
+                                                            ->helperText('Select the country code first, then type the number without the country prefix.')
                                                             ->afterStateHydrated(function ($state, $set) {
                                                                 if ($state && str_starts_with($state, '+')) {
                                                                     $parts = explode(' ', $state, 2);
@@ -161,6 +166,7 @@ class EmployerResource extends Resource
                                                             ->tel()
                                                             ->unique(ignoreRecord: true)
                                                             ->maxLength(20)
+                                                            ->helperText('Optional. A second number (personal, home, or work alternate).')
                                                             ->afterStateHydrated(function ($state, $set) {
                                                                 if ($state && str_starts_with($state, '+')) {
                                                                     $parts = explode(' ', $state, 2);
@@ -185,7 +191,8 @@ class EmployerResource extends Resource
                                                 TextInput::make('name')
                                                     ->label('Contact Name')
                                                     ->required()
-                                                    ->maxLength(255),
+                                                    ->maxLength(255)
+                                                    ->helperText('Full name of the person to contact in an emergency.'),
                                                 Grid::make(5)
                                                     ->schema([
                                                         Select::make('phone_code')
@@ -200,6 +207,7 @@ class EmployerResource extends Resource
                                                             ->tel()
                                                             ->required()
                                                             ->maxLength(20)
+                                                            ->helperText('Include country code (e.g. +964 770...).')
                                                             ->columnSpan(3),
                                                     ]),
                                                 Select::make('relation')
@@ -213,7 +221,8 @@ class EmployerResource extends Resource
                                                         'friend' => 'Friend',
                                                         'other' => 'Other',
                                                     ])
-                                                    ->required(),
+                                                    ->required()
+                                                    ->helperText('How this person is related to the employee.'),
                                             ])
                                             ->columns(3)
                                             ->columnSpanFull()
@@ -278,20 +287,24 @@ class EmployerResource extends Resource
                                                 DatePicker::make('hire_date')
                                                     ->native(false)
                                                     ->label('Hiring Date')
-                                                    ->required(),
+                                                    ->required()
+                                                    ->helperText('The first official working day. Used to calculate tenure, leave accrual start, and payroll eligibility.'),
                                                 DatePicker::make('probation_period_start_date')
                                                     ->native(false)
-                                                    ->label('Probation Start'),
+                                                    ->label('Probation Start')
+                                                    ->helperText('The first day of the trial period. Leave empty if this employee has no probation.'),
                                                 DatePicker::make('probation_period_end_date')
                                                     ->native(false)
                                                     ->label('Probation End')
-                                                    ->after('probation_period_start_date'),
+                                                    ->after('probation_period_start_date')
+                                                    ->helperText('The last day of the trial period. Must be after Probation Start. Leave accrual policies set to "After Probation" will start from this date.'),
                                             ]),
                                         Grid::make(2)
                                             ->schema([
                                                 DatePicker::make('contract_expiry_date')
                                                     ->native(false)
-                                                    ->label('Contract Expiry'),
+                                                    ->label('Contract Expiry')
+                                                    ->helperText('Leave empty for permanent employees. Set for fixed-term contracts so HR can track renewals before they expire.'),
                                                 Select::make('employment_status_id')
                                                     ->native(false)
                                                     ->label('Employment Status')
@@ -326,7 +339,8 @@ class EmployerResource extends Resource
                                                         'CV' => 'CV',
                                                         'Other' => 'Other',
                                                     ])
-                                                    ->required(),
+                                                    ->required()
+                                                    ->helperText('Choose the category that best describes this file.'),
                                                 FileUpload::make('file_path')
                                                     ->label('File')
                                                     ->directory('documents')
@@ -334,10 +348,12 @@ class EmployerResource extends Resource
                                                     ->maxSize(5120)
                                                     ->openable()
                                                     ->previewable()
-                                                    ->required(),
+                                                    ->required()
+                                                    ->helperText('Max 5MB. Accepted formats: PDF, images, Word documents.'),
                                                 DatePicker::make('expiry_date')
                                                     ->native(false)
-                                                    ->label('Expiry Date'),
+                                                    ->label('Expiry Date')
+                                                    ->helperText('Optional. Set for documents that expire (visas, work permits, passports) so renewals can be tracked.'),
                                             ])
                                             ->columnSpanFull()
                                             ->defaultItems(0)

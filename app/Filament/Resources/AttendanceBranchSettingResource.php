@@ -6,7 +6,6 @@ use App\Filament\Resources\AttendanceBranchSettingResource\Pages;
 use App\Models\AttendanceBranchSetting;
 use App\Models\Branch;
 use BackedEnum;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
@@ -47,7 +46,8 @@ class AttendanceBranchSettingResource extends Resource
                     ->required()
                     ->searchable()
                     ->preload()
-                    ->unique(ignoreRecord: true),
+                    ->unique(ignoreRecord: true)
+                    ->helperText('Each branch can have only one attendance setting record. These settings control how clock-in/out events are interpreted for employees at this branch.'),
                 ComponentsSection::make('Settings')
                     ->schema([
                         TextInput::make('settings.late_grace_minutes')

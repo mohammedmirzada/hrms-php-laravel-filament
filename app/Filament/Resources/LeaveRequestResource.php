@@ -49,7 +49,8 @@ class LeaveRequestResource extends Resource
                             ->getOptionLabelFromRecordUsing(fn (Employer $record) => $record->getTranslation('full_name', 'en'))
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->helperText('The employee who is requesting time off.'),
                         Select::make('branch_id')
                             ->native(false)
                             ->label('Branch')
@@ -57,7 +58,8 @@ class LeaveRequestResource extends Resource
                             ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->helperText('The branch the employee belongs to. Leave policies are branch-specific.'),
                         Select::make('leave_type_id')
                             ->native(false)
                             ->label('Leave Type')
@@ -65,7 +67,8 @@ class LeaveRequestResource extends Resource
                             ->getOptionLabelFromRecordUsing(fn (LeaveType $record) => $record->getTranslation('name', 'en'))
                             ->required()
                             ->searchable()
-                            ->preload(),
+                            ->preload()
+                            ->helperText('The category of leave being requested (e.g. Annual, Sick, Maternity).'),
                         Select::make('policy_id')
                             ->native(false)
                             ->label('Leave Policy')
@@ -73,7 +76,8 @@ class LeaveRequestResource extends Resource
                             ->getOptionLabelFromRecordUsing(fn ($record) => "Policy #{$record->id} — " . ($record->branch?->getTranslation('name', 'en') ?? ''))
                             ->searchable()
                             ->preload()
-                            ->nullable(),
+                            ->nullable()
+                            ->helperText('The rule set that controls approval steps, limits, and accrual for this request. Leave empty to use the default policy for this branch and leave type.'),
                     ])
                     ->columns(2),
 
@@ -88,6 +92,7 @@ class LeaveRequestResource extends Resource
                                 'HOURLY' => 'Hourly',
                             ])
                             ->required()
+                            ->helperText('Full Day = 8 hrs per day. Half Day AM/PM = 4 hrs. Hourly = exact hours between start and end times. This affects the calculated duration below.')
                             ->live()
                             ->afterStateUpdated(function (callable $get, callable $set) {
                                 $result = self::calculateDuration($get('start_at'), $get('end_at'), $get('day_part'));

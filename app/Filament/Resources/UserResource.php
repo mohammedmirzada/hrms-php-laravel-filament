@@ -8,7 +8,6 @@ use BackedEnum;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Actions;
@@ -42,15 +41,18 @@ class UserResource extends Resource
                     ->maxSize(5120)
                     ->imageEditor()
                     ->circleCropper()
-                    ->columnSpanFull(),
+                    ->columnSpanFull()
+                    ->helperText('Optional profile photo shown next to the user\'s name in the admin panel. Max 5MB.'),
                 TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->helperText('The display name shown in the admin panel and in audit logs (e.g. "Created by").'),
                 TextInput::make('email')
                     ->email()
                     ->required()
                     ->unique(ignoreRecord: true)
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->helperText('Used to log in. Must be unique across all users.'),
                 TextInput::make('password')
                     ->password()
                     ->dehydrateStateUsing(fn ($state) => Hash::make($state))
@@ -59,11 +61,13 @@ class UserResource extends Resource
                     ->minLength(8)
                     ->maxLength(64)
                     ->revealable(true)
-                    ->rules(['nullable', 'min:8', 'max:64']),
+                    ->rules(['nullable', 'min:8', 'max:64'])
+                    ->helperText('Required when creating a new user. Leave blank when editing to keep the existing password. Minimum 8 characters, maximum 64.'),
                 Select::make('roles')
                     ->relationship('roles', 'name')
                     ->native(false)
                     ->label('Roles')
+                    ->helperText('Roles control what this user can see and do in the system. Assign the role that matches their responsibilities (e.g. HR, Manager, Admin).')
             ]);
     }
 

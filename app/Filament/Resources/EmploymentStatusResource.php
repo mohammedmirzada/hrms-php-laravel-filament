@@ -35,7 +35,8 @@ class EmploymentStatusResource extends Resource
                 TextInput::make('code')
                     ->required()
                     ->maxLength(50)
-                    ->unique(ignoreRecord: true),
+                    ->unique(ignoreRecord: true)
+                    ->helperText('A short unique key used in reports and payroll badges (e.g. active, suspended, resigned). Once saved, avoid changing it as other records may depend on it.'),
             ]);
     }
 

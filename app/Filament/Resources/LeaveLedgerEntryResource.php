@@ -66,7 +66,8 @@ class LeaveLedgerEntryResource extends Resource
                         ->label('Leave Request')
                         ->relationship('leaveRequest', 'id')
                         ->searchable()
-                        ->preload(),
+                        ->preload()
+                        ->helperText('Optional. Link this entry to the leave request that caused it. Leave empty for manual adjustments not tied to a specific request.'),
                     Select::make('entry_type')
                         ->native(false)
                         ->options([
@@ -76,20 +77,24 @@ class LeaveLedgerEntryResource extends Resource
                             'REVERSAL' => 'Reversal',
                             'EXPIRY' => 'Expiry',
                         ])
-                        ->required(),
+                        ->required()
+                        ->helperText('Accrual = leave added automatically. Deduction = leave used by a request. Adjustment = manual correction by HR. Reversal = undoing a previous entry. Expiry = leave removed because it expired.'),
                     TextInput::make('amount_minutes')
                         ->label('Amount')
                         ->numeric()
                         ->required()
-                        ->suffix('min'),
+                        ->suffix('min')
+                        ->helperText('In minutes. 480 = 1 full day (8 hrs). Use positive numbers — the entry type above determines whether this adds or removes leave.'),
                 ]),
                 Grid::make(2)->schema([
                     DatePicker::make('occurred_on')
                         ->native(false)
                         ->label('Occurred On')
-                        ->required(),
+                        ->required()
+                        ->helperText('The date this transaction actually happened (not necessarily today). Used for the leave balance timeline.'),
                     Textarea::make('note')
-                        ->maxLength(65535),
+                        ->maxLength(65535)
+                        ->helperText('Optional. Briefly explain why this entry exists, especially for manual adjustments (e.g. "Correction for miscalculated accrual in Jan 2026").'),
                 ]),
             ]);
     }

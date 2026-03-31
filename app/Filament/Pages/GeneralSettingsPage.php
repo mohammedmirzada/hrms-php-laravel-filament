@@ -6,7 +6,6 @@ use App\Settings\GeneralSettings;
 use BackedEnum;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Pages\SettingsPage;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -30,13 +29,15 @@ class GeneralSettingsPage extends SettingsPage
                     ->label('Default Currency')
                     ->options(config('currency'))
                     ->required()
-                    ->searchable(),
+                    ->searchable()
+                    ->helperText('The system-wide fallback currency used in reports and displays when no specific currency is set elsewhere.'),
                 Select::make('default_language')
                     ->native(false)
                     ->label('Default Language')
                     ->options(config('languages'))
                     ->required()
-                    ->searchable(),
+                    ->searchable()
+                    ->helperText('The language used to display translated fields (employee names, departments, positions) when no specific language is requested.'),
                 Repeater::make('shortcuts')
                     ->label('Dashboard Shortcuts')
                     ->schema([

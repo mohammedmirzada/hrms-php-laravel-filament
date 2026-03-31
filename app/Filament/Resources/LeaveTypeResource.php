@@ -43,11 +43,13 @@ class LeaveTypeResource extends Resource
                         'HOUR' => 'Hour',
                         'DAY' => 'Day',
                     ])
-                    ->required(),
+                    ->required()
+                    ->helperText('How leave duration is measured for this type. Day-based types count in full or half days. Hour-based types count exact hours worked.'),
                 Toggle::make('is_paid')
                     ->label('Paid Leave')
                     ->columnSpanFull()
-                    ->default(true),
+                    ->default(true)
+                    ->helperText('Turn on if employees continue to receive their normal salary while on this type of leave (e.g. Annual Leave). Turn off for unpaid types (e.g. Unpaid Leave).'),
                 Toggle::make('is_system')
                     ->label('System Type')
                     ->columnSpanFull()
@@ -58,7 +60,8 @@ class LeaveTypeResource extends Resource
                     ->options(Document::getDocumentTypeOptions())
                     ->searchable()
                     ->preload()
-                    ->nullable(),
+                    ->nullable()
+                    ->helperText('If set, employees must upload this document type when submitting a request for this leave. Leave empty if no proof is required (e.g. no document needed for Annual Leave).'),
             ]);
     }
 

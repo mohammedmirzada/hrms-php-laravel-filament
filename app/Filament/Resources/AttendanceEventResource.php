@@ -53,43 +53,50 @@ class AttendanceEventResource extends Resource
                                 ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
                                 ->required()
                                 ->searchable()
-                                ->preload(),
+                                ->preload()
+                                ->helperText('The branch where this clock-in/out happened.'),
                             Select::make('employer_id')
                                 ->native(false)
                                 ->label('Employee')
                                 ->relationship('employer', 'full_name')
                                 ->getOptionLabelFromRecordUsing(fn (Employer $record) => $record->getTranslation('full_name', 'en'))
                                 ->searchable()
-                                ->preload(),
+                                ->preload()
+                                ->helperText('Optional. The employee this event belongs to. Leave empty if the device user hasn\'t been matched to an employee profile yet.'),
                             Select::make('device_id')
                                 ->native(false)
                                 ->label('Device')
                                 ->relationship('device', 'name')
                                 ->searchable()
-                                ->preload(),
+                                ->preload()
+                                ->helperText('Optional. The attendance device that recorded this event.'),
                         ]),
                         Grid::make(3)->schema([
                             TextInput::make('device_user_code')
                                 ->label('Device User Code')
-                                ->maxLength(255),
+                                ->maxLength(255)
+                                ->helperText('The employee\'s ID number as stored in the attendance device (e.g. 00042). Used to match device records to employee profiles.'),
                             Select::make('source')
                                 ->native(false)
                                 ->options([
                                     'BIOMETRIC' => 'Biometric',
                                     'MOBILE' => 'Mobile'
                                 ])
-                                ->required(),
+                                ->required()
+                                ->helperText('Biometric = recorded by a fingerprint/face scanner. Mobile = recorded via the employee\'s phone app.'),
                             Select::make('event_type')
                                 ->native(false)
                                 ->options([
                                     'IN' => 'In',
                                     'OUT' => 'Out',
-                                ]),
+                                ])
+                                ->helperText('In = employee clocked in (arrived). Out = employee clocked out (left).'),
                         ]),
                         DateTimePicker::make('event_at')
                             ->native(false)
                             ->label('Event Time')
-                            ->required(),
+                            ->required()
+                            ->helperText('The exact date and time the clock-in or clock-out happened.'),
                     ]),
 
                 Section::make('Validation')
@@ -102,15 +109,18 @@ class AttendanceEventResource extends Resource
                             ->disk('public')
                             ->image()
                             ->maxSize(5120)
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->helperText('Optional. A photo taken by the employee at clock-in time. Required only if the branch setting "Require Selfie" is enabled.'),
                         Toggle::make('is_valid')
                             ->label('Valid')
                             ->default(true)
-                            ->reactive(),
+                            ->reactive()
+                            ->helperText('Turn off to flag this record as invalid (e.g. duplicate, device error, tampered data). Invalid records are excluded from attendance calculations.'),
                         TextInput::make('invalid_reason')
                             ->label('Invalid Reason')
                             ->maxLength(255)
-                            ->visible(fn ($get) => !$get('is_valid')),
+                            ->visible(fn ($get) => !$get('is_valid'))
+                            ->helperText('Briefly explain why this record is invalid (e.g. "Duplicate entry", "Device malfunction at 09:15").'),
                     ]),
             ]);
     }

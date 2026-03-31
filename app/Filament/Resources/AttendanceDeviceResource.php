@@ -39,20 +39,25 @@ class AttendanceDeviceResource extends Resource
                     ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
                     ->required()
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->helperText('The branch where this device is physically installed.'),
                 TextInput::make('name')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->helperText('A friendly label for this device (e.g. "Main Entrance", "Warehouse Gate"). Shown when linking attendance events to a device.'),
                 TextInput::make('vendor')
                     ->maxLength(255)
-                    ->nullable(),
+                    ->nullable()
+                    ->helperText('Optional. The manufacturer name (e.g. ZKTeco, Hikvision). Useful for maintenance records.'),
                 TextInput::make('ip_address')
                     ->label('IP Address')
                     ->maxLength(45)
-                    ->nullable(),
+                    ->nullable()
+                    ->helperText('The device\'s local network IP address. Required for Push and Pull sync modes (e.g. 192.168.1.100).'),
                 TextInput::make('port')
                     ->numeric()
-                    ->nullable(),
+                    ->nullable()
+                    ->helperText('The network port the device listens on. Commonly 4370 for ZKTeco devices. Check your device manual if unsure.'),
                 Select::make('sync_mode')
                     ->native(false)
                     ->options([
@@ -60,12 +65,14 @@ class AttendanceDeviceResource extends Resource
                         'pull' => 'Pull',
                         'manual' => 'Manual',
                     ])
-                    ->nullable(),
+                    ->nullable()
+                    ->helperText('Push = device sends data to the system automatically. Pull = the system fetches data from the device on a schedule. Manual = data is imported by hand.'),
                 DateTimePicker::make('last_sync_at')
                     ->native(false)
                     ->label('Last Sync')
                     ->disabled()
-                    ->nullable(),
+                    ->nullable()
+                    ->helperText('Read-only. Automatically updated by the system each time data is received from this device.'),
             ]);
     }
 

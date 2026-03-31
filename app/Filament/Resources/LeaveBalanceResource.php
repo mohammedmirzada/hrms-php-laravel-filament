@@ -48,7 +48,8 @@ class LeaveBalanceResource extends Resource
                         ->getOptionLabelFromRecordUsing(fn (Employer $record) => $record->getTranslation('full_name', 'en'))
                         ->required()
                         ->searchable()
-                        ->preload(),
+                        ->preload()
+                        ->helperText('The employee whose leave balance this record represents.'),
                     Select::make('branch_id')
                         ->native(false)
                         ->label('Branch')
@@ -56,31 +57,36 @@ class LeaveBalanceResource extends Resource
                         ->getOptionLabelFromRecordUsing(fn (Branch $record) => $record->getTranslation('name', 'en'))
                         ->required()
                         ->searchable()
-                        ->preload(),
+                        ->preload()
+                        ->helperText('The branch this balance belongs to. Balances are tracked per branch.'),
                     Select::make('leave_type_id')
                         ->native(false)
                         ->label('Leave Type')
                         ->relationship('leaveType', 'name')
                         ->required()
                         ->searchable()
-                        ->preload(),
+                        ->preload()
+                        ->helperText('Which type of leave this balance is for (e.g. Annual, Sick).'),
                 ]),
                 Grid::make(3)->schema([
                     TextInput::make('balance_minutes')
                         ->numeric()
                         ->default(0)
                         ->minValue(0)
-                        ->suffix('min'),
+                        ->suffix('min')
+                        ->helperText('Total available leave in minutes. 480 = 1 full day (8 hrs). Usually managed automatically — only edit manually for corrections.'),
                     TextInput::make('balance_days')
                         ->numeric()
                         ->default(0)
                         ->minValue(0)
                         ->step(0.01)
-                        ->suffix('days'),
+                        ->suffix('days')
+                        ->helperText('Same balance expressed in days (minutes ÷ 480). Both fields should stay in sync.'),
                     DateTimePicker::make('as_of')
                         ->native(false)
                         ->label('As Of')
-                        ->required(),
+                        ->required()
+                        ->helperText('The date and time this balance snapshot was recorded. The most recent snapshot is what employees see as their current balance.'),
                 ]),
             ]);
     }

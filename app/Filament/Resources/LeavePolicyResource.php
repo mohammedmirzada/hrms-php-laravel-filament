@@ -7,7 +7,6 @@ use App\Models\Branch;
 use App\Models\LeavePolicy;
 use App\Models\LeaveType;
 use BackedEnum;
-use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -67,7 +66,8 @@ class LeavePolicyResource extends Resource
                             ->columnSpanFull(),
                         TextInput::make('accrual_rate')
                             ->numeric()
-                            ->nullable(),
+                            ->nullable()
+                            ->helperText('How much leave to add in each cycle. E.g. 1.5 with "Days per Month" means 1.5 days are added every month.'),
                         Select::make('accrual_unit')
                             ->native(false)
                             ->options([
@@ -76,7 +76,8 @@ class LeavePolicyResource extends Resource
                                 'DAY_PER_YEAR' => 'Days per Year',
                                 'HOUR_PER_YEAR' => 'Hours per Year',
                             ])
-                            ->nullable(),
+                            ->nullable()
+                            ->helperText('How often and in what unit leave is added to employee balances.'),
                         Select::make('accrual_start_rule')
                             ->native(false)
                             ->options([
@@ -84,13 +85,15 @@ class LeavePolicyResource extends Resource
                                 'AFTER_PROBATION' => 'After Probation',
                                 'FIXED_DATE' => 'Fixed Date',
                             ])
-                            ->nullable(),
+                            ->nullable()
+                            ->helperText('When accrual begins for each employee. "After Probation" uses the employee\'s probation end date. "Fixed Date" uses the MM-DD field below.'),
                         TextInput::make('accrual_start_month_day')
                             ->label('Fixed Start (MM-DD)')
                             ->placeholder('01-01')
                             ->maxLength(5)
                             ->nullable()
-                            ->rules(['nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/']),
+                            ->rules(['nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])/'])
+                            ->helperText('Only required when "Fixed Date" is selected above. Format: MM-DD. E.g. 01-01 means accrual resets every January 1st for all employees under this policy.'),
                         TextInput::make('annual_cap')
                             ->label('Annual Cap')
                             ->numeric()
@@ -109,7 +112,8 @@ class LeavePolicyResource extends Resource
                         TextInput::make('carryover_cap')
                             ->label('Carryover Cap')
                             ->numeric()
-                            ->nullable(),
+                            ->nullable()
+                            ->helperText('Maximum days an employee can carry to the next year. Leave empty for unlimited carryover.'),
                         TextInput::make('carryover_expiry_date')
                             ->label('Carryover Expiry (MM-DD)')
                             ->placeholder('03-31')
@@ -123,13 +127,16 @@ class LeavePolicyResource extends Resource
                     ->compact()
                     ->schema([
                         Toggle::make('allow_hourly')
-                            ->label('Allow Hourly Requests'),
+                            ->label('Allow Hourly Requests')
+                            ->helperText('If on, employees can submit leave in exact hours (e.g. 2 hours for a doctor visit). Requires the leave type unit to support hours.'),
                         Toggle::make('allow_half_day')
-                            ->label('Allow Half-Day'),
+                            ->label('Allow Half-Day')
+                            ->helperText('If on, employees can request just the morning (AM) or afternoon (PM) instead of a full day.'),
                         TextInput::make('min_request_unit_minutes')
                             ->label('Minimum Request (minutes)')
                             ->numeric()
-                            ->nullable(),
+                            ->nullable()
+                            ->helperText('The shortest leave request allowed, in minutes. E.g. 60 = no requests under 1 hour. 480 = must take at least a full 8-hour day. Leave empty for no minimum.'),
                     ])
                     ->columns(3),
 
@@ -137,11 +144,14 @@ class LeavePolicyResource extends Resource
                     ->compact()
                     ->schema([
                         Toggle::make('requires_manager_approval')
-                            ->label('Manager Approval'),
+                            ->label('Manager Approval')
+                            ->helperText('If on, the employee\'s direct manager must approve before the request moves forward.'),
                         Toggle::make('requires_hr_approval')
-                            ->label('HR Approval'),
+                            ->label('HR Approval')
+                            ->helperText('If on, an HR user must approve after the manager. Can be used alone without manager approval.'),
                         Toggle::make('requires_final_approval')
-                            ->label('Final Approval'),
+                            ->label('Final Approval')
+                            ->helperText('If on, a final sign-off is required (e.g. by a director or CEO) after HR approval. Enable only if your company has a three-step approval process.'),
                     ])
                     ->columns(3),
             ]);
