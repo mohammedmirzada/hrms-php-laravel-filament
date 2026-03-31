@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LeaveRequestStatus;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,7 +13,7 @@ class LeaveRequest extends Model {
     protected static function booted(): void
     {
         static::creating(function (LeaveRequest $request) {
-            $request->status ??= 'DRAFT';
+            $request->status ??= LeaveRequestStatus::Draft->value;
         });
 
         static::saving(function (LeaveRequest $request) {
@@ -39,14 +40,8 @@ class LeaveRequest extends Model {
             }
 
             $allowed = [
-                null                 => ['DRAFT', 'SUBMITTED'],
-                'DRAFT'              => ['SUBMITTED', 'CANCELLED'],
-                'SUBMITTED'          => ['MANAGER_APPROVED', 'HR_APPROVED', 'FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
-                'MANAGER_APPROVED'   => ['HR_APPROVED', 'FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
-                'HR_APPROVED'        => ['FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
-                'FINAL_APPROVED'     => [],
-                'REJECTED'           => [],
-                'CANCELLED'          => [],
+                null => [LeaveRequestStatus::Draft->value, LeaveRequestStatus::Submitted->value],
+                ...LeaveRequestStatus::transitions(),
             ];
 
             if (array_key_exists($original, $allowed) && ! in_array($new, $allowed[$original])) {
@@ -58,11 +53,11 @@ class LeaveRequest extends Model {
             $now = now();
 
             match ($new) {
-                'SUBMITTED'      => $request->submitted_at = $request->submitted_at ?? $now,
-                'FINAL_APPROVED' => $request->approved_at = $now,
-                'REJECTED'       => $request->rejected_at = $now,
-                'CANCELLED'      => $request->canceled_at = $now,
-                default          => null,
+                LeaveRequestStatus::Submitted->value     => $request->submitted_at = $request->submitted_at ?? $now,
+                LeaveRequestStatus::FinalApproved->value => $request->approved_at = $now,
+                LeaveRequestStatus::Rejected->value      => $request->rejected_at = $now,
+                LeaveRequestStatus::Cancelled->value     => $request->canceled_at = $now,
+                default                                  => null,
             };
         });
     }
@@ -113,16 +108,9 @@ class LeaveRequest extends Model {
         return $this->hasMany(LeaveRequestApproval::class);
     }
 
-    public function statusses() {
-        return [
-            'DRAFT' => 'Draft',
-            'SUBMITTED' => 'Submitted',
-            'MANAGER_APPROVED' => 'Manager Approved',
-            'HR_APPROVED' => 'HR Approved',
-            'FINAL_APPROVED' => 'Final Approved',
-            'REJECTED' => 'Rejected',
-            'CANCELLED' => 'Cancelled'
-        ];
+    public function statusses(): array
+    {
+        return LeaveRequestStatus::labels();
     }
 
 }

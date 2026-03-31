@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeaveRequestStatus;
 use App\Filament\Resources\LeaveRequestResource\Pages;
 use App\Filament\Resources\LeaveRequestResource\RelationManagers;
 use App\Models\Branch;
@@ -146,36 +147,18 @@ class LeaveRequestResource extends Resource
                             ->openable(),
                         Select::make('status')
                             ->native(false)
-                            ->options([
-                                'DRAFT'            => 'Draft',
-                                'SUBMITTED'        => 'Submitted',
-                                'MANAGER_APPROVED' => 'Manager Approved',
-                                'HR_APPROVED'      => 'HR Approved',
-                                'FINAL_APPROVED'   => 'Final Approved',
-                                'REJECTED'         => 'Rejected',
-                                'CANCELLED'        => 'Cancelled',
-                            ])
+                            ->options(LeaveRequestStatus::labels())
                             ->disableOptionWhen(function (string $value, $record): bool {
                                 if (! $record) {
                                     return false;
                                 }
 
-                                $transitions = [
-                                    'DRAFT'            => ['SUBMITTED', 'CANCELLED'],
-                                    'SUBMITTED'        => ['MANAGER_APPROVED', 'HR_APPROVED', 'FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
-                                    'MANAGER_APPROVED' => ['HR_APPROVED', 'FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
-                                    'HR_APPROVED'      => ['FINAL_APPROVED', 'REJECTED', 'CANCELLED'],
-                                    'FINAL_APPROVED'   => [],
-                                    'REJECTED'         => [],
-                                    'CANCELLED'        => [],
-                                ];
-
                                 $current = $record->status;
-                                $allowed = $transitions[$current] ?? [];
+                                $allowed = LeaveRequestStatus::transitions()[$current] ?? [];
 
                                 return $value !== $current && ! in_array($value, $allowed);
                             })
-                            ->default('DRAFT')
+                            ->default(LeaveRequestStatus::Draft->value)
                             ->required()
                             ->hiddenOn('create'),
                     ])
@@ -210,16 +193,8 @@ class LeaveRequestResource extends Resource
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'DRAFT' => 'gray',
-                        'SUBMITTED' => 'info',
-                        'MANAGER_APPROVED' => 'warning',
-                        'HR_APPROVED' => 'warning',
-                        'FINAL_APPROVED' => 'success',
-                        'REJECTED' => 'danger',
-                        'CANCELLED' => 'gray',
-                        default => 'gray',
-                    })
+                    ->color(fn (string $state) => LeaveRequestStatus::tryFrom($state)?->color() ?? 'gray')
+                    ->formatStateUsing(fn (string $state) => LeaveRequestStatus::tryFrom($state)?->label() ?? $state)
                     ->sortable(),
                 TextColumn::make('branch.name')
                     ->formatStateUsing(fn ($record) => $record->branch?->getTranslation('name', 'en'))
@@ -231,15 +206,7 @@ class LeaveRequestResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('status')
-                    ->options([
-                        'DRAFT' => 'Draft',
-                        'SUBMITTED' => 'Submitted',
-                        'MANAGER_APPROVED' => 'Manager Approved',
-                        'HR_APPROVED' => 'HR Approved',
-                        'FINAL_APPROVED' => 'Final Approved',
-                        'REJECTED' => 'Rejected',
-                        'CANCELLED' => 'Cancelled',
-                    ])
+                    ->options(LeaveRequestStatus::labels())
                     ->searchable()
                     ->native(false),
                 SelectFilter::make('leave_type_id')

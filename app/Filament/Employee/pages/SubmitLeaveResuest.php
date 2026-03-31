@@ -12,13 +12,14 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 
 class SubmitLeaveResuest extends Page implements HasForms {
 
     use InteractsWithForms;
 
     protected string $view = 'filament.employee.pages.submit-leave-resuest';
-    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-document-text';
+    protected static BackedEnum|string|null $navigationIcon = Heroicon::DocumentDuplicate;
     protected static ?int $navigationSort = 2;
 
     public ?array $data = [];
