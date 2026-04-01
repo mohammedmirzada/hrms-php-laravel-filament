@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeaveAccrualStartRule;
+use App\Enums\LeaveAccrualUnit;
 use App\Filament\Resources\LeavePolicyResource\Pages;
 use App\Models\Branch;
 use App\Models\LeavePolicy;
@@ -70,21 +72,12 @@ class LeavePolicyResource extends Resource
                             ->helperText('How much leave to add in each cycle. E.g. 1.5 with "Days per Month" means 1.5 days are added every month.'),
                         Select::make('accrual_unit')
                             ->native(false)
-                            ->options([
-                                'DAY_PER_MONTH' => 'Days per Month',
-                                'HOUR_PER_MONTH' => 'Hours per Month',
-                                'DAY_PER_YEAR' => 'Days per Year',
-                                'HOUR_PER_YEAR' => 'Hours per Year',
-                            ])
+                            ->options(LeaveAccrualUnit::labels())
                             ->nullable()
                             ->helperText('How often and in what unit leave is added to employee balances.'),
                         Select::make('accrual_start_rule')
                             ->native(false)
-                            ->options([
-                                'HIRE_DATE' => 'From Hire Date',
-                                'AFTER_PROBATION' => 'After Probation',
-                                'FIXED_DATE' => 'Fixed Date',
-                            ])
+                            ->options(LeaveAccrualStartRule::labels())
                             ->nullable()
                             ->helperText('When accrual begins for each employee. "After Probation" uses the employee\'s probation end date. "Fixed Date" uses the MM-DD field below.'),
                         TextInput::make('accrual_start_month_day')

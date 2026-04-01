@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LeaveLedgerEntryType;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,6 +25,7 @@ class LeaveLedgerEntry extends Model {
     ];
 
     protected $casts = [
+        'entry_type' => LeaveLedgerEntryType::class,
         'occurred_on' => 'date',
     ];
 
@@ -44,13 +46,7 @@ class LeaveLedgerEntry extends Model {
     }
 
     public function entryTypes() {
-        return [
-            'ACCRUAL',
-            'DEDUCTION',
-            'ADJUSTMENT',
-            'REVERSAL',
-            'EXPIRY'
-        ];
+        return LeaveLedgerEntryType::labels();
     }
 
 }

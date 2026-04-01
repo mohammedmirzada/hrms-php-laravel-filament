@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\LeaveRequestResource\RelationManagers;
 
+use App\Enums\ApprovalRole;
+use App\Enums\ApprovalStatus;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -24,11 +26,7 @@ class ApprovalsRelationManager extends RelationManager
                     ->required(),
                 Select::make('role')
                     ->native(false)
-                    ->options([
-                        'MANAGER' => 'Manager',
-                        'HR' => 'HR',
-                        'FINAL' => 'Final Approver',
-                    ])
+                    ->options(ApprovalRole::labels())
                     ->required(),
                 Select::make('assigned_to_user_id')
                     ->native(false)
@@ -39,13 +37,8 @@ class ApprovalsRelationManager extends RelationManager
                     ->required(),
                 Select::make('status')
                     ->native(false)
-                    ->options([
-                        'PENDING' => 'Pending',
-                        'APPROVED' => 'Approved',
-                        'REJECTED' => 'Rejected',
-                        'SKIPPED' => 'Skipped',
-                    ])
-                    ->default('PENDING')
+                    ->options(ApprovalStatus::labels())
+                    ->default(ApprovalStatus::Pending->value)
                     ->required(),
                 Textarea::make('comment')
                     ->rows(2)
@@ -66,13 +59,7 @@ class ApprovalsRelationManager extends RelationManager
                     ->label('Assigned To'),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'PENDING' => 'warning',
-                        'APPROVED' => 'success',
-                        'REJECTED' => 'danger',
-                        'SKIPPED' => 'gray',
-                        default => 'gray',
-                    })
+                    ->color(fn (string $state): string => ApprovalStatus::tryFrom($state)?->color() ?? 'gray')
                     ->sortable(),
                 TextColumn::make('actionByUser.name')
                     ->label('Actioned By'),

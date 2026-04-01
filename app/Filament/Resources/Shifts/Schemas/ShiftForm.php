@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Shifts\Schemas;
 
+use App\Enums\ShiftCode;
 use App\Filament\Concerns\HasTranslatableFields;
 use App\Models\Branch;
 use Filament\Forms\Components\CheckboxList;
@@ -28,11 +29,7 @@ class ShiftForm
                 Select::make('code')
                     ->native(false)
                     ->label('Shift')
-                    ->options([
-                        'MORNING' => 'Morning',
-                        'AFTERNOON' => 'Afternoon',
-                        'NIGHT' => 'Night',
-                    ])
+                    ->options(ShiftCode::labels())
                     ->required(),
                 static::translatableTabs('name', 'Shift Name', required: true),
                 TimePicker::make('start_time')

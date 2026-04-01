@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\EmploymentType;
+use App\Enums\SocialSecurityBaseRule;
 use App\Filament\Resources\SocialSecurityRuleResource\Pages;
 use App\Models\Branch;
 use App\Models\SocialSecurityRule;
@@ -48,20 +50,12 @@ class SocialSecurityRuleResource extends Resource
                             ->helperText('The branch this rule applies to. Different branches or countries may have different social security laws.'),
                         Select::make('employment_type')
                             ->native(false)
-                            ->options([
-                                'full_time' => 'Full Time',
-                                'part_time' => 'Part Time',
-                                'contract' => 'Contract',
-                            ])
+                            ->options(EmploymentType::labels())
                             ->required()
                             ->helperText('Social security rates often differ by employment type. This rule will only apply to employees of the selected type.'),
                         Select::make('base_rule')
                             ->native(false)
-                            ->options([
-                                'basic_only' => 'Basic Only',
-                                'basic_plus_marked' => 'Basic + Marked Items',
-                                'gross' => 'Gross Salary',
-                            ])
+                            ->options(SocialSecurityBaseRule::labels())
                             ->required()
                             ->helperText('Which part of the salary to calculate contributions on. "Basic Only" uses the fixed base salary. "Basic + Marked Items" includes specific allowances. "Gross" uses the full total before deductions.'),
                         Select::make('currency_code')
@@ -179,11 +173,7 @@ class SocialSecurityRuleResource extends Resource
                     ->native(false)
                     ->preload(),
                 SelectFilter::make('employment_type')
-                    ->options([
-                        'full_time' => 'Full Time',
-                        'part_time' => 'Part Time',
-                        'contract' => 'Contract',
-                    ])
+                    ->options(EmploymentType::labels())
                     ->searchable()
                     ->native(false)
             ])

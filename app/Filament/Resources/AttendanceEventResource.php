@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AttendanceEventSource;
+use App\Enums\AttendanceEventType;
 use App\Filament\Resources\AttendanceEventResource\Pages;
 use App\Models\AttendanceEvent;
 use App\Models\Branch;
@@ -78,18 +80,12 @@ class AttendanceEventResource extends Resource
                                 ->helperText('The employee\'s ID number as stored in the attendance device (e.g. 00042). Used to match device records to employee profiles.'),
                             Select::make('source')
                                 ->native(false)
-                                ->options([
-                                    'BIOMETRIC' => 'Biometric',
-                                    'MOBILE' => 'Mobile'
-                                ])
+                                ->options(AttendanceEventSource::labels())
                                 ->required()
                                 ->helperText('Biometric = recorded by a fingerprint/face scanner. Mobile = recorded via the employee\'s phone app.'),
                             Select::make('event_type')
                                 ->native(false)
-                                ->options([
-                                    'IN' => 'In',
-                                    'OUT' => 'Out',
-                                ])
+                                ->options(AttendanceEventType::labels())
                                 ->helperText('In = employee clocked in (arrived). Out = employee clocked out (left).'),
                         ]),
                         DateTimePicker::make('event_at')
@@ -146,11 +142,7 @@ class AttendanceEventResource extends Resource
                 TextColumn::make('event_type')
                     ->label('Type')
                     ->badge()
-                    ->color(fn (?string $state): string => match ($state) {
-                        'IN' => 'success',
-                        'OUT' => 'danger',
-                        default => 'gray',
-                    })
+                    ->color(fn (?string $state): string => AttendanceEventType::tryFrom($state)?->color() ?? 'gray')
                     ->sortable(),
                 TextColumn::make('event_at')
                     ->label('Event Time')
@@ -172,18 +164,12 @@ class AttendanceEventResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('source')
-                    ->options([
-                        'BIOMETRIC' => 'Biometric',
-                        'MOBILE' => 'Mobile'
-                    ])
+                    ->options(AttendanceEventSource::labels())
                     ->searchable()
                     ->preload()
                     ->native(false),
                 SelectFilter::make('event_type')
-                    ->options([
-                        'IN' => 'In',
-                        'OUT' => 'Out',
-                    ])
+                    ->options(AttendanceEventType::labels())
                     ->searchable()
                     ->preload()
                     ->native(false),

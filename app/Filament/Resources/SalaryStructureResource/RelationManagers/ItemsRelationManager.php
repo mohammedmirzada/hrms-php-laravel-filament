@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\SalaryStructureResource\RelationManagers;
 
+use App\Enums\SalaryCalculationType;
+use App\Enums\SalaryItemType;
 use App\Filament\Concerns\HasTranslatableFields;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -24,18 +26,12 @@ class ItemsRelationManager extends RelationManager
                 static::translatableTabs('name', 'Item Name', required: true),
                 Select::make('type')
                     ->native(false)
-                    ->options([
-                        'earning' => 'Earning',
-                        'deduction' => 'Deduction',
-                    ])
+                    ->options(SalaryItemType::labels())
                     ->required()
                     ->helperText('Earnings add to the employee\'s pay (e.g. housing allowance, bonus). Deductions reduce it (e.g. loan repayment, penalty).'),
                 Select::make('calculation_type')
                     ->native(false)
-                    ->options([
-                        'fixed' => 'Fixed Amount',
-                        'percentage' => 'Percentage',
-                    ])
+                    ->options(SalaryCalculationType::labels())
                     ->required()
                     ->live()
                     ->helperText('Fixed: same amount every month. Percentage: calculated as a % of the employee\'s basic salary.'),
@@ -43,11 +39,11 @@ class ItemsRelationManager extends RelationManager
                     ->numeric()
                     ->required()
                     ->minValue(0)
-                    ->maxValue(fn ($get) => $get('calculation_type') === 'percentage' ? 100 : PHP_INT_MAX)
+                    ->maxValue(fn ($get) => $get('calculation_type') === SalaryCalculationType::Percentage->value ? 100 : PHP_INT_MAX)
                     ->helperText(fn ($get) => match ($get('calculation_type')) {
-                        'fixed'      => 'Enter the flat amount paid every month in the structure\'s currency (e.g. 200 means $200/month).',
-                        'percentage' => 'Enter the percentage of the basic salary (e.g. 10 means 10% of basic).',
-                        default      => 'Select a calculation type first.',
+                        SalaryCalculationType::Fixed->value      => 'Enter the flat amount paid every month in the structure\'s currency (e.g. 200 means $200/month).',
+                        SalaryCalculationType::Percentage->value => 'Enter the percentage of the basic salary (e.g. 10 means 10% of basic).',
+                        default                                  => 'Select a calculation type first.',
                     }),
             ]);
     }
@@ -61,11 +57,7 @@ class ItemsRelationManager extends RelationManager
                     ->sortable(),
                 TextColumn::make('type')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'earning' => 'success',
-                        'deduction' => 'danger',
-                        default => 'gray',
-                    })
+                    ->color(fn (string $state): string => SalaryItemType::tryFrom($state)?->color() ?? 'gray')
                     ->sortable(),
                 TextColumn::make('calculation_type')
                     ->badge()

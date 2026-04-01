@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\PayrollPeriodStatus;
 use App\Filament\Resources\PayrollPeriodResource\Pages;
 use App\Models\Branch;
 use App\Models\ExchangeRate;
@@ -101,11 +102,7 @@ class PayrollPeriodResource extends Resource
                             ->helperText('Automatically set to the most recent exchange rate available for the selected currency. Read-only.'),
                         Select::make('status')
                             ->native(false)
-                            ->options([
-                                'open' => 'Open',
-                                'calculated' => 'Calculated',
-                                'approved' => 'Approved',
-                            ])
+                            ->options(PayrollPeriodStatus::labels())
                             ->default('open')
                             ->required()
                             ->disabled()
@@ -145,12 +142,7 @@ class PayrollPeriodResource extends Resource
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'open' => 'info',
-                        'calculated' => 'primary',
-                        'approved' => 'success',
-                        default => 'gray',
-                    })
+                    ->color(fn (string $state): string => PayrollPeriodStatus::tryFrom($state)?->color() ?? 'gray')
                     ->sortable(),
                 IconColumn::make('immutable')
                     ->label('Finalized')
@@ -174,11 +166,7 @@ class PayrollPeriodResource extends Resource
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('status')
-                    ->options([
-                        'open' => 'Open',
-                        'calculated' => 'Calculated',
-                        'approved' => 'Approved',
-                    ])
+                    ->options(PayrollPeriodStatus::labels())
                     ->native(false)
                     ->searchable()
                     ->preload(),

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LeaveRequestDayPart;
 use App\Enums\LeaveRequestStatus;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
@@ -80,6 +81,7 @@ class LeaveRequest extends Model {
     ];
 
     protected $casts = [
+        'day_part' => LeaveRequestDayPart::class,
         'start_at' => 'datetime',
         'end_at' => 'datetime',
         'submitted_at' => 'datetime',

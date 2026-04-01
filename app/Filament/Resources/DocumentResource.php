@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\DocumentType;
 use App\Filament\Resources\DocumentResource\Pages;
 use App\Models\Document;
 use App\Models\Employer;
@@ -43,18 +44,7 @@ class DocumentResource extends Resource
                     ->preload(),
                 Select::make('document_type')
                     ->native(false)
-                    ->options([
-                        'ID Card' => 'ID Card',
-                        'Passport' => 'Passport',
-                        'Driver License' => 'Driver License',
-                        'Work Permit' => 'Work Permit',
-                        'Visa' => 'Visa',
-                        'Contract' => 'Contract',
-                        'Certificate' => 'Certificate',
-                        'Degree' => 'Degree',
-                        'CV' => 'CV',
-                        'Other' => 'Other',
-                    ])
+                    ->options(DocumentType::labels())
                     ->required(),
                 FileUpload::make('file_path')
                     ->label('File')
@@ -111,7 +101,7 @@ class DocumentResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('document_type')
-                    ->options(Document::getDocumentTypeOptions())
+                    ->options(DocumentType::labels())
                     ->native(false)
                     ->multiple(true)
                     ->searchable(),

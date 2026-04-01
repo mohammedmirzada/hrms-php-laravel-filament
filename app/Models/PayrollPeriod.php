@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PayrollPeriodStatus;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use App\Models\ExchangeRate;
 use Illuminate\Database\Eloquent\Model;
@@ -52,6 +53,7 @@ class PayrollPeriod extends Model {
     ];
 
     protected $casts = [
+        'status' => PayrollPeriodStatus::class,
         'period_start' => 'date',
         'period_end' => 'date',
         'exchange_rate_date' => 'date',
@@ -68,11 +70,7 @@ class PayrollPeriod extends Model {
     }
 
     public function statuses() {
-        return [
-            'open',
-            'calculated',
-            'approved'
-        ];
+        return PayrollPeriodStatus::labels();
     }
 
 }

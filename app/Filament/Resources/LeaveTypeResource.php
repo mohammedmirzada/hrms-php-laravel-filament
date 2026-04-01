@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\DocumentType;
+use App\Enums\LeaveUnit;
 use App\Filament\Concerns\HasTranslatableFields;
 use App\Filament\Resources\LeaveTypeResource\Pages;
-use App\Models\Document;
 use App\Models\LeaveType;
 use BackedEnum;
 use Filament\Forms\Components\Select;
@@ -39,10 +40,7 @@ class LeaveTypeResource extends Resource
                 static::translatableTabs('description', 'Description'),
                 Select::make('default_unit')
                     ->native(false)
-                    ->options([
-                        'HOUR' => 'Hour',
-                        'DAY' => 'Day',
-                    ])
+                    ->options(LeaveUnit::labels())
                     ->required()
                     ->helperText('How leave duration is measured for this type. Day-based types count in full or half days. Hour-based types count exact hours worked.'),
                 Toggle::make('is_paid')
@@ -57,7 +55,7 @@ class LeaveTypeResource extends Resource
                 Select::make('document_type')
                     ->native(false)
                     ->label('Required Document Type')
-                    ->options(Document::getDocumentTypeOptions())
+                    ->options(DocumentType::labels())
                     ->searchable()
                     ->preload()
                     ->nullable()

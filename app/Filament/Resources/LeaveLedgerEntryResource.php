@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\LeaveLedgerEntryType;
 use App\Filament\Resources\LeaveLedgerEntryResource\Pages;
 use App\Models\Branch;
 use App\Models\Employer;
@@ -70,13 +71,7 @@ class LeaveLedgerEntryResource extends Resource
                         ->helperText('Optional. Link this entry to the leave request that caused it. Leave empty for manual adjustments not tied to a specific request.'),
                     Select::make('entry_type')
                         ->native(false)
-                        ->options([
-                            'ACCRUAL' => 'Accrual',
-                            'DEDUCTION' => 'Deduction',
-                            'ADJUSTMENT' => 'Adjustment',
-                            'REVERSAL' => 'Reversal',
-                            'EXPIRY' => 'Expiry',
-                        ])
+                        ->options(LeaveLedgerEntryType::labels())
                         ->required()
                         ->helperText('Accrual = leave added automatically. Deduction = leave used by a request. Adjustment = manual correction by HR. Reversal = undoing a previous entry. Expiry = leave removed because it expired.'),
                     TextInput::make('amount_minutes')
@@ -120,14 +115,7 @@ class LeaveLedgerEntryResource extends Resource
                     ->sortable(),
                 TextColumn::make('entry_type')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'ACCRUAL' => 'success',
-                        'DEDUCTION' => 'danger',
-                        'ADJUSTMENT' => 'warning',
-                        'REVERSAL' => 'info',
-                        'EXPIRY' => 'gray',
-                        default => 'gray',
-                    })
+                    ->color(fn (string $state): string => LeaveLedgerEntryType::tryFrom($state)?->color() ?? 'gray')
                     ->sortable(),
                 TextColumn::make('amount_minutes')
                     ->label('Amount (min)')
@@ -148,13 +136,7 @@ class LeaveLedgerEntryResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('entry_type')
-                    ->options([
-                        'ACCRUAL' => 'Accrual',
-                        'DEDUCTION' => 'Deduction',
-                        'ADJUSTMENT' => 'Adjustment',
-                        'REVERSAL' => 'Reversal',
-                        'EXPIRY' => 'Expiry',
-                    ])
+                    ->options(LeaveLedgerEntryType::labels())
                     ->searchable()
                     ->native(false),
                 SelectFilter::make('branch_id')

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ApprovalRole;
+use App\Enums\ApprovalStatus;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +22,7 @@ class LeaveRequestApproval extends Model {
                 return;
             }
 
-            if (in_array($new, ['APPROVED', 'REJECTED', 'SKIPPED'])) {
+            if (in_array($new, [ApprovalStatus::Approved->value, ApprovalStatus::Rejected->value, ApprovalStatus::Skipped->value])) {
                 $approval->action_by_user_id = Auth::id();
                 $approval->action_at = now();
             }
@@ -41,6 +43,8 @@ class LeaveRequestApproval extends Model {
     ];
 
     protected $casts = [
+        'role' => ApprovalRole::class,
+        'status' => ApprovalStatus::class,
         'action_at' => 'datetime',
     ];
 

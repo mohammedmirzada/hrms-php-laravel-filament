@@ -2,6 +2,10 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\DocumentType;
+use App\Enums\EmergencyContactRelation;
+use App\Enums\Gender;
+use App\Enums\MaritalStatus;
 use App\Filament\Concerns\HasTranslatableFields;
 use App\Filament\Resources\EmployerResource\Pages;
 use App\Filament\Resources\EmployerResource\RelationManagers;
@@ -87,10 +91,7 @@ class EmployerResource extends Resource
                                                 Select::make('genre')
                                                     ->native(false)
                                                     ->label('Gender')
-                                                    ->options([
-                                                        'male' => 'Male',
-                                                        'female' => 'Female',
-                                                    ])
+                                                    ->options(Gender::labels())
                                                     ->required()
                                                     ->helperText('Used for HR reporting and compliance records.'),
                                                 DatePicker::make('date_of_birth')
@@ -102,12 +103,7 @@ class EmployerResource extends Resource
                                                 Select::make('marital_status')
                                                     ->native(false)
                                                     ->label('Marital Status')
-                                                    ->options([
-                                                        'single' => 'Single',
-                                                        'married' => 'Married',
-                                                        'divorced' => 'Divorced',
-                                                        'widowed' => 'Widowed',
-                                                    ])
+                                                    ->options(MaritalStatus::labels())
                                                     ->required()
                                                     ->helperText('Used for tax and benefits calculations in some countries.'),
                                             ]),
@@ -214,14 +210,7 @@ class EmployerResource extends Resource
                                                 Select::make('relation')
                                                     ->native(false)
                                                     ->label('Relationship')
-                                                    ->options([
-                                                        'spouse' => 'Spouse',
-                                                        'parent' => 'Parent',
-                                                        'sibling' => 'Sibling',
-                                                        'child' => 'Child',
-                                                        'friend' => 'Friend',
-                                                        'other' => 'Other',
-                                                    ])
+                                                    ->options(EmergencyContactRelation::labels())
                                                     ->required()
                                                     ->helperText('How this person is related to the employee.'),
                                             ])
@@ -353,18 +342,7 @@ class EmployerResource extends Resource
                                             ->schema([
                                                 Select::make('document_type')
                                                     ->native(false)
-                                                    ->options([
-                                                        'ID Card' => 'ID Card',
-                                                        'Passport' => 'Passport',
-                                                        'Driver License' => 'Driver License',
-                                                        'Work Permit' => 'Work Permit',
-                                                        'Visa' => 'Visa',
-                                                        'Contract' => 'Contract',
-                                                        'Certificate' => 'Certificate',
-                                                        'Degree' => 'Degree',
-                                                        'CV' => 'CV',
-                                                        'Other' => 'Other',
-                                                    ])
+                                                    ->options(DocumentType::labels())
                                                     ->required()
                                                     ->helperText('Choose the category that best describes this file.'),
                                                 FileUpload::make('file_path')
@@ -482,12 +460,7 @@ class EmployerResource extends Resource
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('marital_status')
-                    ->options([
-                        'single' => 'Single',
-                        'married' => 'Married',
-                        'divorced' => 'Divorced',
-                        'widowed' => 'Widowed',
-                    ])
+                    ->options(MaritalStatus::labels())
                     ->searchable()
                     ->native(false),
                 Filter::make('hire_date')

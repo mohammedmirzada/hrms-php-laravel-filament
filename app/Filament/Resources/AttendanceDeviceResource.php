@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AttendanceDeviceSyncMode;
 use App\Filament\Resources\AttendanceDeviceResource\Pages;
 use App\Models\AttendanceDevice;
 use App\Models\Branch;
@@ -60,11 +61,7 @@ class AttendanceDeviceResource extends Resource
                     ->helperText('The network port the device listens on. Commonly 4370 for ZKTeco devices. Check your device manual if unsure.'),
                 Select::make('sync_mode')
                     ->native(false)
-                    ->options([
-                        'push' => 'Push',
-                        'pull' => 'Pull',
-                        'manual' => 'Manual',
-                    ])
+                    ->options(AttendanceDeviceSyncMode::labels())
                     ->nullable()
                     ->helperText('Push = device sends data to the system automatically. Pull = the system fetches data from the device on a schedule. Manual = data is imported by hand.'),
                 DateTimePicker::make('last_sync_at')

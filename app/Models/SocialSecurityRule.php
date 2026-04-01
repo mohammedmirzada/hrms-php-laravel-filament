@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\EmploymentType;
+use App\Enums\SocialSecurityBaseRule;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +55,8 @@ class SocialSecurityRule extends Model {
     ];
 
     protected $casts = [
+        'employment_type' => EmploymentType::class,
+        'base_rule' => SocialSecurityBaseRule::class,
         'effective_from' => 'date',
         'effective_to' => 'date',
         'cap_enabled' => 'boolean',
@@ -63,19 +67,11 @@ class SocialSecurityRule extends Model {
     }
 
     public function employmentTypes() {
-        return [
-            'full_time' => 'Full Time',
-            'part_time' => 'Part Time',
-            'contract' => 'Contract',
-        ];
+        return EmploymentType::labels();
     }
 
     public function baseRules() {
-        return [
-            'basic_only' => 'Basic Only',
-            'basic_plus_marked' => 'Basic + Marked Items',
-            'gross' => 'Gross Salary',
-        ];
+        return SocialSecurityBaseRule::labels();
     }
     
 }

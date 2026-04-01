@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\Gender;
+use App\Enums\MaritalStatus;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Translatable\HasTranslations;
@@ -47,6 +49,8 @@ class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasNa
 
     protected $casts = [
         'emergency_contact' => 'array',
+        'genre' => Gender::class,
+        'marital_status' => MaritalStatus::class,
         'date_of_birth' => 'date',
         'hire_date' => 'date',
         'probation_period_start_date' => 'date',

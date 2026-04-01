@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\LeaveAccrualStartRule;
+use App\Enums\LeaveAccrualUnit;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
@@ -40,6 +42,8 @@ class LeavePolicy extends Model {
         'requires_hr_approval' => 'boolean',
         'requires_final_approval' => 'boolean',
         // carryover_expiry_date is stored as "MM-DD" string, not a full date
+        'accrual_unit' => LeaveAccrualUnit::class,
+        'accrual_start_rule' => LeaveAccrualStartRule::class,
     ];
 
     public function branch() {
@@ -51,20 +55,11 @@ class LeavePolicy extends Model {
     }
 
     public function accuralUnits() {
-        return [
-            'DAY_PER_MONTH',
-            'HOUR_PER_MONTH',
-            'DAY_PER_YEAR',
-            'HOUR_PER_YEAR',
-        ];
+        return LeaveAccrualUnit::labels();
     }
 
     public function accuralStartRules() {
-        return [
-            'HIRE_DATE',
-            'AFTER_PROBATION',
-            'FIXED_DATE',
-        ];
+        return LeaveAccrualStartRule::labels();
     }
     
 }
