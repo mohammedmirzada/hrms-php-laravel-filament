@@ -189,8 +189,19 @@ class LeaveRequestResource extends Resource
                     ->dateTime('M d, Y H:i')
                     ->sortable(),
                 TextColumn::make('duration_days')
-                    ->label('Days')
-                    ->sortable(),
+                    ->label('Duration')
+                    ->sortable()
+                    ->formatStateUsing(function ($record) {
+                        if (! $record->duration_minutes) {
+                            return '—';
+                        }
+                        if ($record->leaveType?->default_unit === 'HOUR') {
+                            $hours = round($record->duration_minutes / 60, 1);
+                            return $hours == 1 ? '1 hr' : "{$hours} hrs";
+                        }
+                        $days = round($record->duration_minutes / 480, 2);
+                        return $days == 1 ? '1 day' : "{$days} days";
+                    }),
                 TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state) => LeaveRequestStatus::tryFrom($state)?->color() ?? 'gray')

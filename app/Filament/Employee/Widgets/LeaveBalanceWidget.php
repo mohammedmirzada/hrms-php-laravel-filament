@@ -2,7 +2,8 @@
 
 namespace App\Filament\Employee\Widgets;
 
-use App\Models\LeaveBalances;
+use App\Models\LeavePolicy;
+use App\Services\LeaveBalanceCalculator;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
@@ -12,41 +13,52 @@ class LeaveBalanceWidget extends StatsOverviewWidget {
     protected static ?int $sort = 1;
 
     protected function getStats(): array {
-        $employer = Auth::guard('employer')->user();
-        $locale   = app()->getLocale();
+        $employer    = Auth::guard('employer')->user();
+        $locale      = app()->getLocale();
+        $calculator  = app(LeaveBalanceCalculator::class);
 
-        $balances = LeaveBalances::with('leaveType')
-            ->where('employer_id', $employer->id)
+        $policies = LeavePolicy::where('branch_id', $employer->branch_id)
+            ->where('accrual_enabled', true)
+            ->with('leaveType')
             ->get();
 
-        if ($balances->isEmpty()) {
+        if ($policies->isEmpty()) {
             return [
                 Stat::make('Leave Balance', 'No Data')
-                    ->description('No leave balances assigned yet.')
+                    ->description('No leave policies with accrual configured for your branch.')
                     ->color('gray'),
             ];
         }
 
-        return $balances->map(function (LeaveBalances $balance) use ($locale) {
-            $type  = $balance->leaveType;
-            $name  = $type?->getTranslation('name', $locale)
-                  ?: $type?->getTranslation('name', 'en')
-                  ?: 'Leave';
+        return $policies->map(function (LeavePolicy $policy) use ($employer, $locale, $calculator) {
+            $type   = $policy->leaveType;
+            $result = $calculator->getBalance($employer, $type->id);
 
-            $isHour = $type?->default_unit === 'HOUR';
-            $value  = $isHour
-                ? round($balance->balance_minutes / 60, 1)
-                : $balance->balance_days;
-            $unit   = $isHour ? 'hrs' : 'days';
+            $name   = $type?->getTranslation('name', $locale)
+                   ?: $type?->getTranslation('name', 'en')
+                   ?: 'Leave';
+
+            $isHour    = $type?->default_unit === 'HOUR';
+            $unit      = $isHour ? 'hrs' : 'days';
+            $available = $isHour ? round($result['minutes'] / 60, 1) : round($result['minutes'] / 480, 1);
+            $used      = $isHour ? round($result['used']    / 60, 1) : round($result['used']    / 480, 1);
+            $pending   = $isHour ? round($result['pending'] / 60, 1) : round($result['pending'] / 480, 1);
 
             $color = match (true) {
-                $value > 0  => 'success',
-                $value === 0 => 'gray',
-                default     => 'danger',
+                $available > 0  => 'success',
+                $available == 0 => 'gray',
+                default         => 'danger',
             };
 
-            return Stat::make($name, $value . ' ' . $unit)
-                ->description('As of ' . ($balance->as_of?->format('M d, Y') ?? 'N/A'))
+            $availableLabel = ($available >= 0 ? '+' : '') . "{$available} {$unit} available";
+
+            $desc = $used > 0 ? "Used: -{$used} {$unit}" : 'No leave used yet';
+            if ($pending > 0) {
+                $desc .= " · Pending: {$pending} {$unit}";
+            }
+
+            return Stat::make($name, $availableLabel)
+                ->description($desc)
                 ->color($color);
         })->toArray();
     }

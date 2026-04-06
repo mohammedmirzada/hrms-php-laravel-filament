@@ -60,59 +60,66 @@ class LeavePolicyResource extends Resource
 
                 Section::make('Accrual Settings')
                     ->compact()
-                    ->description('If accrual is enabled, leave will be automatically added to employee balances based on the defined rate and unit. Accrual can start from hire date, after probation, or a fixed date each year.')
+                    ->description('How does this employee earn leave? Turn on accrual and the system will automatically give employees their leave balance based on the rules below. No manual work needed.')
                     ->schema([
                         Toggle::make('accrual_enabled')
                             ->label('Enable Accrual')
                             ->reactive()
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->helperText('Turn on so employees automatically get a leave balance. Turn off for leave types with no balance limit, like unpaid leave.'),
                         TextInput::make('accrual_rate')
                             ->numeric()
                             ->nullable()
-                            ->helperText('How much leave to add in each cycle. E.g. 1.5 with "Days per Month" means 1.5 days are added every month.'),
+                            ->required(fn ($get) => $get('accrual_enabled'))
+                            ->helperText('How many days (or hours) the employee gets. e.g. 21 = 21 days per year.'),
                         Select::make('accrual_unit')
                             ->native(false)
                             ->options(LeaveAccrualUnit::labels())
                             ->nullable()
-                            ->helperText('How often and in what unit leave is added to employee balances.'),
+                            ->required(fn ($get) => $get('accrual_enabled'))
+                            ->helperText('"Days per Year" gives all days at once every year. "Days per Month" gives a small amount each month — better for new hires joining mid-year.'),
                         Select::make('accrual_start_rule')
                             ->native(false)
                             ->options(LeaveAccrualStartRule::labels())
                             ->nullable()
-                            ->helperText('When accrual begins for each employee. "After Probation" uses the employee\'s probation end date. "Fixed Date" uses the MM-DD field below.'),
+                            ->required(fn ($get) => $get('accrual_enabled'))
+                            ->live()
+                            ->helperText('When does the employee start earning leave? From their hire date, after their probation ends, or on a fixed date every year (e.g. Jan 1).'),
                         TextInput::make('accrual_start_month_day')
-                            ->label('Fixed Start (MM-DD)')
+                            ->label('Fixed Start Date (MM-DD)')
                             ->placeholder('01-01')
                             ->maxLength(5)
                             ->nullable()
+                            ->required(fn ($get) => $get('accrual_start_rule') === 'FIXED_DATE')
                             ->rules(['nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])/'])
-                            ->helperText('Only required when "Fixed Date" is selected above. Format: MM-DD. E.g. 01-01 means accrual resets every January 1st for all employees under this policy.'),
+                            ->helperText('The date leave resets every year for all employees. Format: MM-DD. e.g. 01-01 = every January 1st.'),
                         TextInput::make('annual_cap')
-                            ->label('Annual Cap')
+                            ->label('Annual Cap (days)')
                             ->numeric()
                             ->nullable()
-                            ->helperText('Maximum leave that can be accrued in a year. Leave will stop accruing once this cap is reached.')
+                            ->helperText('The most leave an employee can earn in one year. Leave empty for no limit.'),
                     ])
                     ->columns(3),
 
                 Section::make('Carryover Settings')
                     ->compact()
-                    ->description('If carryover is enabled, unused leave at the end of the period (usually year-end) can be carried over to the next period. You can set a cap on how many days can be carried over and an optional expiry date for the carried days.')
+                    ->description('What happens to unused leave at year-end? By default it expires. Turn on carryover to let employees keep some or all of it for next year.')
                     ->schema([
                         Toggle::make('carryover_enabled')
                             ->label('Enable Carryover')
-                            ->reactive(),
+                            ->reactive()
+                            ->helperText('Off = unused leave expires at year-end. On = unused leave rolls over to next year.'),
                         TextInput::make('carryover_cap')
-                            ->label('Carryover Cap')
+                            ->label('Carryover Cap (days)')
                             ->numeric()
                             ->nullable()
-                            ->helperText('Maximum days an employee can carry to the next year. Leave empty for unlimited carryover.'),
+                            ->helperText('Max days that can roll over. e.g. 5 = only 5 days carry over, the rest expire. Leave empty to carry over everything.'),
                         TextInput::make('carryover_expiry_date')
-                            ->label('Carryover Expiry (MM-DD)')
+                            ->label('Carried Leave Expires On (MM-DD)')
                             ->placeholder('03-31')
-                            ->helperText('e.g. 03-31 for March 31st every year')
                             ->nullable()
-                            ->rules(['nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/']),
+                            ->rules(['nullable', 'regex:/^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/'])
+                            ->helperText('Carried days expire on this date. e.g. 03-31 = employees must use them before March 31st. Leave empty if carried leave never expires.'),
                     ])
                     ->columns(1),
 
@@ -128,8 +135,9 @@ class LeavePolicyResource extends Resource
                         TextInput::make('min_request_unit_minutes')
                             ->label('Minimum Request (minutes)')
                             ->numeric()
-                            ->nullable()
-                            ->helperText('The shortest leave request allowed, in minutes. E.g. 60 = no requests under 1 hour. 480 = must take at least a full 8-hour day. Leave empty for no minimum.'),
+                            ->default(0)
+                            ->minValue(0)
+                            ->helperText('The shortest leave request allowed, in minutes. E.g. 60 = no requests under 1 hour. 480 = must take at least a full 8-hour day. Set to 0 for no minimum.'),
                     ])
                     ->columns(3),
 

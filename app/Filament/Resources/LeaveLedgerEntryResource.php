@@ -115,7 +115,8 @@ class LeaveLedgerEntryResource extends Resource
                     ->sortable(),
                 TextColumn::make('entry_type')
                     ->badge()
-                    ->color(fn (string $state): string => LeaveLedgerEntryType::tryFrom($state)?->color() ?? 'gray')
+                    ->color(fn ($state): string => ($state instanceof LeaveLedgerEntryType ? $state : LeaveLedgerEntryType::tryFrom($state))?->color() ?? 'gray')
+                    ->formatStateUsing(fn ($state): string => ($state instanceof LeaveLedgerEntryType ? $state : LeaveLedgerEntryType::tryFrom($state))?->label() ?? $state)
                     ->sortable(),
                 TextColumn::make('amount_minutes')
                     ->label('Amount (min)')

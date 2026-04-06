@@ -17,6 +17,12 @@ class LeaveRequest extends Model {
             $request->status ??= LeaveRequestStatus::Draft->value;
         });
 
+        static::deleting(function (LeaveRequest $request) {
+            if ($request->status === LeaveRequestStatus::FinalApproved->value) {
+                app(\App\Services\LeaveBalanceService::class)->reverseForRequest($request);
+            }
+        });
+
         static::saving(function (LeaveRequest $request) {
             if ($request->start_at && $request->end_at) {
                 $overlap = static::where('employer_id', $request->employer_id)

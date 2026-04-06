@@ -2,7 +2,7 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\DocumentType;
+use App\Enums\LeaveDocumentType;
 use App\Enums\LeaveUnit;
 use App\Filament\Concerns\HasTranslatableFields;
 use App\Filament\Resources\LeaveTypeResource\Pages;
@@ -55,7 +55,7 @@ class LeaveTypeResource extends Resource
                 Select::make('document_type')
                     ->native(false)
                     ->label('Required Document Type')
-                    ->options(DocumentType::labels())
+                    ->options(LeaveDocumentType::labels())
                     ->searchable()
                     ->preload()
                     ->nullable()
