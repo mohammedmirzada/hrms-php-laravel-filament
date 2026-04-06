@@ -6,26 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('holidays', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->nullable()->constrained()->onDelete('cascade'); // -- null = public holiday
+            $table->foreignId('branch_id')->nullable()->constrained()->cascadeOnDelete();
             $table->date('date');
             $table->json('name');
             $table->boolean('is_working_day_override')->default(false);
             $table->unique(['branch_id', 'date']);
             $table->index('date');
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('holidays');

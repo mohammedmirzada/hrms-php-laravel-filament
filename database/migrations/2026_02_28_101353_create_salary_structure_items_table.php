@@ -6,25 +6,21 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('salary_structure_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('salary_structure_id')->constrained()->onDelete('cascade');
+            $table->foreignId('salary_structure_id')->constrained()->cascadeOnDelete();
             $table->json('name');
             $table->enum('type', ['earning', 'deduction']);
             $table->enum('calculation_type', ['fixed', 'percentage']);
             $table->decimal('value', 15, 2);
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('salary_structure_items');

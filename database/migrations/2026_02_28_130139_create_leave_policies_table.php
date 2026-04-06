@@ -6,15 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('leave_policies', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->constrained()->onDelete('cascade');
-            $table->foreignId('leave_type_id')->constrained()->onDelete('cascade');
+            $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('leave_type_id')->constrained()->cascadeOnDelete();
             // Accrual
             $table->boolean('accrual_enabled')->default(false);
             $table->decimal('accrual_rate', 10, 4)->nullable();
@@ -25,24 +22,21 @@ return new class extends Migration
             $table->decimal('annual_cap', 10, 4)->nullable();
             $table->boolean('carryover_enabled')->default(false);
             $table->decimal('carryover_cap', 10, 4)->nullable();
-            $table->date('carryover_expiry_date')->nullable();
+            $table->string('carryover_expiry_date', 5)->nullable(); // MM-DD format
             // Request rules
             $table->boolean('allow_hourly');
             $table->boolean('allow_half_day');
             $table->integer('min_request_unit_minutes');
-            $table->boolean('negative_balance_allowed');
-            $table->decimal('negative_balance_limit', 10, 4)->nullable();
             $table->boolean('requires_manager_approval')->default(true);
             $table->boolean('requires_hr_approval')->default(true);
             $table->boolean('requires_final_approval')->default(true);
             $table->unique(['branch_id', 'leave_type_id']);
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('leave_policies');

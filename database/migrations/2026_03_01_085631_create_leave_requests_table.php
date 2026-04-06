@@ -6,17 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('leave_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('employer_id')->constrained()->onDelete('cascade');
-            $table->foreignId('branch_id')->constrained()->onDelete('cascade');
-            $table->foreignId('leave_type_id')->constrained()->onDelete('cascade');
-            $table->foreignId('policy_id')->constrained('leave_policies')->onDelete('cascade');
+            $table->foreignId('employer_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('branch_id')->constrained()->restrictOnDelete();
+            $table->foreignId('leave_type_id')->constrained()->restrictOnDelete();
+            $table->foreignId('policy_id')->nullable()->constrained('leave_policies')->nullOnDelete();
             $table->dateTime('start_at');
             $table->dateTime('end_at');
             $table->integer('duration_minutes');
@@ -37,16 +34,14 @@ return new class extends Migration
             $table->dateTime('approved_at')->nullable();
             $table->dateTime('rejected_at')->nullable();
             $table->dateTime('canceled_at')->nullable();
-            $table->foreignId('created_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->index('status');
             $table->index(['employer_id', 'status']);
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('leave_requests');

@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('leave_types', function (Blueprint $table) {
@@ -17,15 +14,14 @@ return new class extends Migration
             $table->json('description')->nullable();
             $table->boolean('is_system')->default(false);
             $table->boolean('is_paid')->default(false);
-            $table->enum('document_type', ['Medical Certificate', 'Marriage Certificate', 'Court Order', 'Travel Document', 'Other'])->nullable();
+            $table->enum('document_type', ['Medical Certificate', 'Death Certificate', 'Marriage Certificate', 'Court Order', 'Travel Document', 'Other'])->nullable();
             $table->enum('default_unit', ['HOUR', 'DAY'])->default('DAY');
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }
-    
-    /**
-     * Reverse the migrations.
-     */
+
     public function down(): void
     {
         Schema::dropIfExists('leave_types');
