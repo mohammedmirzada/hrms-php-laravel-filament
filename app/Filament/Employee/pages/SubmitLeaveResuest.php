@@ -246,6 +246,7 @@ class SubmitLeaveResuest extends Page implements HasForms {
                                     ? "Required Document: {$leaveType->document_type}"
                                     : 'Attachment';
                             })
+                            ->disk('public')
                             ->directory('leave-attachments')
                             ->maxSize(5120)
                             ->acceptedFileTypes(['application/pdf', 'image/*'])

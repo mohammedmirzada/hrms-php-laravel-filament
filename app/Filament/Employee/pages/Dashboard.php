@@ -2,6 +2,7 @@
 
 namespace App\Filament\Employee\Pages;
 
+use App\Filament\Employee\Widgets\TodayAttendanceWidget;
 use App\Filament\Employee\Widgets\LeaveBalanceWidget;
 use App\Filament\Employee\Widgets\LeaveRequestHistoryWidget;
 use BackedEnum;
@@ -17,6 +18,7 @@ class Dashboard extends Page {
     public function getWidgets(): array
     {
         return [
+            TodayAttendanceWidget::class,
             LeaveBalanceWidget::class,
             LeaveRequestHistoryWidget::class,
         ];

@@ -141,6 +141,7 @@ class LeaveRequestResource extends Resource
                             ->columnSpanFull(),
                         FileUpload::make('attachment_path')
                             ->label('Attachment')
+                            ->disk('public')
                             ->directory('leave-attachments')
                             ->maxSize(5120)
                             ->nullable()
