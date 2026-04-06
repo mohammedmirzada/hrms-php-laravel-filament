@@ -2,13 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 // Balance = Current Snapshot
 class LeaveBalances extends Model {
 
+    use HasActivityLogging;
     use HasCreatedUpdatedBy;
+
+    public function getActivitylogOptions(): \Spatie\Activitylog\Support\LogOptions
+    {
+        return $this->defaultLogOptions()->useLogName('leave');
+    }
     
     protected $fillable = [
         'employer_id',

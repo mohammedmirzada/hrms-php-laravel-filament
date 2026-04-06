@@ -3,13 +3,20 @@
 namespace App\Models;
 
 use App\Enums\PayrollPeriodStatus;
+use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use App\Models\ExchangeRate;
 use Illuminate\Database\Eloquent\Model;
 
 class PayrollPeriod extends Model {
 
+    use HasActivityLogging;
     use HasCreatedUpdatedBy;
+
+    public function getActivitylogOptions(): \Spatie\Activitylog\Support\LogOptions
+    {
+        return $this->defaultLogOptions()->useLogName('payroll');
+    }
 
     protected static function booted() {
         static::updating(function ($payrollPeriod) {

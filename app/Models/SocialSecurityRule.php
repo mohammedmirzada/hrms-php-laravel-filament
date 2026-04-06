@@ -4,13 +4,20 @@ namespace App\Models;
 
 use App\Enums\EmploymentType;
 use App\Enums\SocialSecurityBaseRule;
+use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class SocialSecurityRule extends Model {
 
+    use HasActivityLogging;
     use HasCreatedUpdatedBy;
+
+    public function getActivitylogOptions(): \Spatie\Activitylog\Support\LogOptions
+    {
+        return $this->defaultLogOptions()->useLogName('payroll');
+    }
 
     protected static function booted(): void {
         static::saving(function ($rule) {

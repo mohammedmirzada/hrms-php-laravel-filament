@@ -10,6 +10,7 @@ use BackedEnum;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
+use Illuminate\Validation\Rule;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -47,7 +48,15 @@ class HolidayResource extends Resource
                 static::translatableTabs('name', 'Holiday Name', required: true),
                 DatePicker::make('date')
                     ->native(false)
-                    ->required(),
+                    ->required()
+                    ->rules(fn ($get, $record) => [
+                        Rule::unique('holidays', 'date')
+                            ->where('branch_id', $get('branch_id'))
+                            ->ignore($record?->id),
+                    ])
+                    ->validationMessages([
+                        'unique' => 'A holiday already exists for this branch on the selected date.',
+                    ]),
                 Toggle::make('is_working_day_override')
                     ->label('Working Day Override')
                     ->helperText('Enable if this overrides a normal day off as a working day'),

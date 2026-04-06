@@ -500,6 +500,7 @@ class EmployerResource extends Resource
             RelationManagers\DocumentsRelationManager::class,
             RelationManagers\CompensationsRelationManager::class,
             RelationManagers\ShiftsRelationManager::class,
+            RelationManagers\ActivitiesRelationManager::class,
         ];
     }
 

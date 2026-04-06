@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Settings\GeneralSettings;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Pages\SettingsPage;
@@ -11,8 +12,10 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use UnitEnum;
 
-class GeneralSettingsPage extends SettingsPage
-{
+class GeneralSettingsPage extends SettingsPage {
+
+    use HasPageShield;
+    
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Cog6Tooth;
     protected static string|UnitEnum|null $navigationGroup = 'Settings';
     protected static ?string $navigationLabel = 'General';

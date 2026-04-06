@@ -100,7 +100,6 @@ class UserResource extends Resource
             ->recordActions([
                 Actions\EditAction::make(),
                 Impersonate::make()
-                    ->guard('another-guard')
                     ->redirectTo(route('filament.admin.home'))
             ])
             ->toolbarActions([])

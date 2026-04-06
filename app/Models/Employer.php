@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Gender;
 use App\Enums\MaritalStatus;
+use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Spatie\Translatable\HasTranslations;
@@ -15,9 +16,15 @@ use Illuminate\Notifications\Notifiable;
 
 class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasName {
 
+    use HasActivityLogging;
     use HasCreatedUpdatedBy;
     use HasTranslations;
     use Notifiable;
+
+    public function getActivitylogOptions(): \Spatie\Activitylog\Support\LogOptions
+    {
+        return $this->defaultLogOptions()->useLogName('employee');
+    }
 
     public array $translatable = ['full_name'];
 

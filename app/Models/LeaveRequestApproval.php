@@ -4,13 +4,20 @@ namespace App\Models;
 
 use App\Enums\ApprovalRole;
 use App\Enums\ApprovalStatus;
+use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class LeaveRequestApproval extends Model {
 
+    use HasActivityLogging;
     use HasCreatedUpdatedBy;
+
+    public function getActivitylogOptions(): \Spatie\Activitylog\Support\LogOptions
+    {
+        return $this->defaultLogOptions()->useLogName('leave');
+    }
 
     protected static function booted(): void
     {

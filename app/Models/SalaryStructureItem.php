@@ -4,14 +4,21 @@ namespace App\Models;
 
 use App\Enums\SalaryCalculationType;
 use App\Enums\SalaryItemType;
+use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Translatable\HasTranslations;
 
 class SalaryStructureItem extends Model {
 
+    use HasActivityLogging;
     use HasCreatedUpdatedBy;
     use HasTranslations;
+
+    public function getActivitylogOptions(): \Spatie\Activitylog\Support\LogOptions
+    {
+        return $this->defaultLogOptions()->useLogName('payroll');
+    }
 
     public array $translatable = ['name'];
 

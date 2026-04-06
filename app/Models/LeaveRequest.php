@@ -4,12 +4,19 @@ namespace App\Models;
 
 use App\Enums\LeaveRequestDayPart;
 use App\Enums\LeaveRequestStatus;
+use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
 class LeaveRequest extends Model {
 
+    use HasActivityLogging;
     use HasCreatedUpdatedBy;
+
+    public function getActivitylogOptions(): \Spatie\Activitylog\Support\LogOptions
+    {
+        return $this->defaultLogOptions()->useLogName('leave');
+    }
 
     protected static function booted(): void
     {
