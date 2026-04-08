@@ -32,37 +32,34 @@ class CompensationsRelationManager extends RelationManager
     {
         return $schema
             ->schema([
-                Grid::make(2)
-                    ->schema([
-                        Select::make('salary_structure_id')
-                            ->native(false)
-                            ->relationship('salaryStructure', 'name', fn ($query) => $query->where('is_active', true))
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->helperText('The pay template to use. Only active structures are shown. The structure defines which allowances and deductions apply on top of the basic salary.'),
-                        Select::make('currency_code')
-                            ->native(false)
-                            ->label('Currency')
-                            ->options(config('currency'))
-                            ->default('USD')
-                            ->searchable()
-                            ->required()
-                            ->helperText('The currency this salary is paid in. Can differ from the payroll processing currency — the system will convert automatically.'),
-                        TextInput::make('basic_salary')
-                            ->numeric()
-                            ->minValue(0.01)
-                            ->required()
-                            ->helperText('The employee\'s base monthly salary. All percentage-based items in the salary structure are calculated from this number (e.g. a 10% housing allowance = 10% of this amount).'),
-                        DatePicker::make('effective_from')
-                            ->native(false)
-                            ->required()
-                            ->helperText('The date this salary takes effect. Adding a new compensation automatically closes the previous one on this date.'),
-                        DatePicker::make('effective_to')
-                            ->native(false)
-                            ->after('effective_from')
-                            ->helperText('Leave empty — this is set automatically when a newer compensation is added. Only fill it manually if you are entering historical records.'),
-                    ]),
+                Select::make('salary_structure_id')
+                    ->native(false)
+                    ->relationship('salaryStructure', 'name', fn ($query) => $query->where('is_active', true))
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->helperText('The pay template to use. Only active structures are shown. The structure defines which allowances and deductions apply on top of the basic salary.'),
+                Select::make('currency_code')
+                    ->native(false)
+                    ->label('Currency')
+                    ->options(config('currency'))
+                    ->default('USD')
+                    ->searchable()
+                    ->required()
+                    ->helperText('The currency this salary is paid in. Can differ from the payroll processing currency — the system will convert automatically.'),
+                TextInput::make('basic_salary')
+                    ->numeric()
+                    ->minValue(0.01)
+                    ->required()
+                    ->helperText('The employee\'s base monthly salary. All percentage-based items in the salary structure are calculated from this number (e.g. a 10% housing allowance = 10% of this amount).'),
+                DatePicker::make('effective_from')
+                    ->native(false)
+                    ->required()
+                    ->helperText('The date this salary takes effect. Adding a new compensation automatically closes the previous one on this date.'),
+                DatePicker::make('effective_to')
+                    ->native(false)
+                    ->after('effective_from')
+                    ->helperText('Leave empty — this is set automatically when a newer compensation is added. Only fill it manually if you are entering historical records.'),
             ]);
     }
 

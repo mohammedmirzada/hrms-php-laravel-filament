@@ -57,7 +57,7 @@ class ItemsRelationManager extends RelationManager
                     ->sortable(),
                 TextColumn::make('type')
                     ->badge()
-                    ->color(fn (string $state): string => SalaryItemType::tryFrom($state)?->color() ?? 'gray')
+                    ->color(fn ($state): string => ($state instanceof SalaryItemType ? $state : SalaryItemType::tryFrom($state))?->color() ?? 'gray')
                     ->sortable(),
                 TextColumn::make('calculation_type')
                     ->badge()
