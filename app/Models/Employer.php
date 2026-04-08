@@ -139,4 +139,9 @@ class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasNa
             ?: $this->getTranslation('full_name', 'en');
     }
 
+    public function activities()
+    {
+        return $this->morphMany(Activity::class, 'causer');
+    }
+
 }
