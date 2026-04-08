@@ -188,6 +188,6 @@ class PayrollRegisterReport extends Page implements HasTable
         $deductions = $this->calculateDeductions($employer);
         $ssEmployee = $this->calculateSS($employer, 'employee');
 
-        return $basic + $earnings - $deductions - $ssEmployee;
+        return $earnings - $deductions - $ssEmployee;
     }
 }
