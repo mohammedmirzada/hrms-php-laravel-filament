@@ -3,3 +3,18 @@
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 @source '../../../../vendor/bezhansalleh/filament-language-switch/resources/views/**/*.blade.php';
+
+/* Reports navigation group accent */
+.reports-nav-group {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.75rem;
+    border-left: 3px solid var(--c-400);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--c-50) 40%, transparent), transparent);
+    padding: 0.25rem 0;
+}
+
+:is(.dark .reports-nav-group) {
+    border-left-color: var(--c-500);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--c-950) 30%, transparent), transparent);
+}

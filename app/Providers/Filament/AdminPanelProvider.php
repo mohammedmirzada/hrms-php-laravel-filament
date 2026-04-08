@@ -10,6 +10,7 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Navigation\NavigationGroup;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\Widgets\AccountWidget;
@@ -92,6 +93,12 @@ class AdminPanelProvider extends PanelProvider
                 'Leave Management',
                 'Attendance',
                 'Payroll & Compensation',
+                NavigationGroup::make('Reports')
+                    ->icon('heroicon-o-chart-bar-square')
+                    ->collapsible(true)
+                    ->extraSidebarAttributes([
+                        'class' => 'reports-nav-group',
+                    ]),
                 'Settings',
             ])
             ->globalSearch(position: GlobalSearchPosition::Topbar)
