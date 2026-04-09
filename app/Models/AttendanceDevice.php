@@ -20,6 +20,8 @@ class AttendanceDevice extends Model {
         'branch_id',
         'vendor',
         'name',
+        'device_identifier',
+        'isup_key',
         'ip_address',
         'port',
         'sync_mode',

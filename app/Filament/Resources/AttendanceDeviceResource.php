@@ -50,6 +50,18 @@ class AttendanceDeviceResource extends Resource
                     ->maxLength(255)
                     ->nullable()
                     ->helperText('Optional. The manufacturer name (e.g. ZKTeco, Hikvision). Useful for maintenance records.'),
+                TextInput::make('device_identifier')
+                    ->label('Device Identifier (ISUP ID)')
+                    ->maxLength(255)
+                    ->nullable()
+                    ->helperText('The Device ID configured on the device under ISUP settings (e.g. DeviceLF1). Must match exactly.'),
+                TextInput::make('isup_key')
+                    ->label('ISUP Key')
+                    ->password()
+                    ->revealable()
+                    ->maxLength(255)
+                    ->nullable()
+                    ->helperText('The ISUP authentication key set on the device. Leave empty to skip key validation.'),
                 TextInput::make('ip_address')
                     ->label('IP Address')
                     ->maxLength(45)
@@ -85,6 +97,10 @@ class AttendanceDeviceResource extends Resource
                 TextColumn::make('branch.name')
                     ->formatStateUsing(fn ($record) => $record->branch?->getTranslation('name', 'en'))
                     ->sortable(),
+                TextColumn::make('device_identifier')
+                    ->label('ISUP ID')
+                    ->searchable()
+                    ->placeholder('—'),
                 TextColumn::make('vendor')
                     ->searchable()
                     ->sortable()
