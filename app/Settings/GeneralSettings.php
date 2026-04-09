@@ -8,7 +8,7 @@ class GeneralSettings extends Settings {
 
     public string $default_currency = 'USD';
     public string $default_language = 'en';
-    public array $shortcuts = [""];
+    public array $shortcuts = [];
 
     public static function group(): string
     {
