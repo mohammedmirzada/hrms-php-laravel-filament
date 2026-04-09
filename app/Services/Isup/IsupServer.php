@@ -9,8 +9,9 @@ use SimpleXMLElement;
 /**
  * Non-blocking TCP server for ISUP 5.0.
  *
- * Uses stream_socket_server + stream_select so multiple Hikvision devices
- * can maintain persistent connections simultaneously.
+ * Accepts ALL device connections regardless of DB match.
+ * Every punch is printed to the terminal and saved to DB.
+ * Unmatched devices / employees are stored with is_valid=false — nothing is lost.
  */
 class IsupServer
 {
@@ -25,11 +26,16 @@ class IsupServer
     private array $clients = [];
 
     private AttendanceEventHandler $handler;
+
+    /** Output callback → writes a line to the Artisan terminal */
+    private \Closure $out;
+
     private bool $running = false;
 
-    public function __construct(AttendanceEventHandler $handler)
+    public function __construct(AttendanceEventHandler $handler, \Closure $out)
     {
         $this->handler = $handler;
+        $this->out     = $out;
     }
 
     // -------------------------------------------------------------------------
@@ -49,14 +55,13 @@ class IsupServer
         stream_set_blocking($this->server, false);
         $this->running = true;
 
-        Log::info("[ISUP] Listening on {$host}:{$port} (PID=" . getmypid() . ')');
+        $this->print("Listening on {$host}:{$port} — waiting for devices...");
 
         while ($this->running) {
-            $read    = array_merge([$this->server], array_column($this->clients, 'socket'));
-            $write   = null;
-            $except  = null;
+            $read   = array_merge([$this->server], array_column($this->clients, 'socket'));
+            $write  = null;
+            $except = null;
 
-            // 1-second timeout so signal handlers (pcntl) are checked regularly
             $changed = @stream_select($read, $write, $except, 1);
 
             if ($changed === false || $changed === 0) {
@@ -76,7 +81,7 @@ class IsupServer
                         'deviceId'      => null,
                         'authenticated' => false,
                     ];
-                    Log::info("[ISUP] Connected: {$id}");
+                    $this->print("→ Device connected from {$id}");
                 }
                 unset($read[array_search($this->server, $read, true)]);
             }
@@ -100,12 +105,12 @@ class IsupServer
             unset($meta);
         }
 
-        foreach ($this->clients as $id => $_) {
+        foreach (array_keys($this->clients) as $id) {
             $this->disconnect($id);
         }
 
         fclose($this->server);
-        Log::info('[ISUP] Server stopped.');
+        $this->print('Server stopped.');
     }
 
     public function stop(): void
@@ -135,7 +140,7 @@ class IsupServer
 
             case IsupFrame::MSG_KEEPALIVE_REQ:
                 $this->send($meta['socket'], IsupFrame::keepaliveAck($frame->sequence));
-                Log::debug("[ISUP] Keepalive ← {$id}");
+                // keepalives are silent — no terminal noise
                 break;
 
             case IsupFrame::MSG_EVENT:
@@ -143,7 +148,7 @@ class IsupServer
                 break;
 
             default:
-                Log::debug('[ISUP] Unknown msgType 0x' . dechex($frame->msgType) . " from {$id}");
+                $this->print('  [?] Unknown frame type 0x' . dechex($frame->msgType) . " from {$id}");
         }
     }
 
@@ -152,61 +157,89 @@ class IsupServer
     private function onRegister(string $id, array &$meta, IsupFrame $frame): void
     {
         try {
-            $xml = $this->stripNamespaces($frame->data);
+            $xml  = $this->stripNamespaces($frame->data);
             $root = new SimpleXMLElement(empty($xml) ? '<ISUPRegister/>' : $xml);
 
             $deviceId = trim((string) ($root->deviceID ?? $root->DeviceID ?? ''));
             $isupKey  = trim((string) ($root->ISUPKey  ?? $root->isupKey  ?? ''));
 
-            // Look up device by device_identifier column
+            // Always ACK — accept even unknown devices so punches come through
             $device = $deviceId !== ''
                 ? AttendanceDevice::where('device_identifier', $deviceId)->first()
                 : null;
 
             if ($device === null) {
-                Log::warning("[ISUP] Unknown device_identifier '{$deviceId}' from {$id}");
-                $this->send($meta['socket'], IsupFrame::registerReject($frame->sequence, 404, 'Device not found'));
-                return;
-            }
-
-            // Validate ISUP key only when one is stored on the device record
-            if (!empty($device->isup_key) && !hash_equals((string) $device->isup_key, $isupKey)) {
-                Log::warning("[ISUP] Bad ISUP key for device '{$deviceId}' from {$id}");
-                $this->send($meta['socket'], IsupFrame::registerReject($frame->sequence, 401, 'Unauthorized'));
-                return;
+                $this->print("  [WARN] Device '{$deviceId}' not in DB — accepting anyway (add it to Attendance Devices)");
+            } elseif (!empty($device->isup_key) && !hash_equals((string) $device->isup_key, $isupKey)) {
+                $this->print("  [WARN] Device '{$deviceId}' ISUP key mismatch — accepting anyway");
+            } else {
+                $this->print("  [OK]  Device '{$deviceId}' registered (db id={$device->id})");
             }
 
             $meta['authenticated'] = true;
-            $meta['deviceId']      = $deviceId;
-            $meta['deviceRowId']   = $device->id;
+            $meta['deviceId']      = $deviceId ?: $id;
+            $meta['deviceRowId']   = $device?->id;
 
             $this->send($meta['socket'], IsupFrame::registerAck($frame->sequence));
-            Log::info("[ISUP] Registered device '{$deviceId}' (id={$device->id}) from {$id}");
+
         } catch (\Throwable $e) {
-            Log::error("[ISUP] Register error: " . $e->getMessage());
-            $this->send($meta['socket'], IsupFrame::registerReject($frame->sequence, 500, 'Server error'));
+            $this->print("  [ERR] Register parse error: " . $e->getMessage());
+            // Still ACK so the device stays connected and sends punches
+            $meta['authenticated'] = true;
+            $meta['deviceId']      = $id;
+            $this->send($meta['socket'], IsupFrame::registerAck($frame->sequence));
         }
     }
 
     private function onEvent(string $id, array &$meta, IsupFrame $frame): void
     {
-        // Always ACK first so device doesn't time out
+        // ACK immediately so device never times out
         $this->send($meta['socket'], IsupFrame::eventAck($frame->sequence));
-
-        if (!$meta['authenticated']) {
-            Log::warning("[ISUP] Event from unauthenticated {$id}, ignoring.");
-            return;
-        }
 
         if (empty($frame->data)) {
             return;
         }
 
+        // Print raw punch info to terminal regardless of DB match
+        $this->printPunch($meta['deviceId'] ?? $id, $frame->data);
+
         try {
             $this->handler->handle($frame->data, $meta['deviceRowId']);
         } catch (\Throwable $e) {
-            Log::error("[ISUP] Event handler exception: " . $e->getMessage());
+            $this->print("  [ERR] Failed to save event: " . $e->getMessage());
+            Log::error('[ISUP] Event save failed: ' . $e->getMessage());
         }
+    }
+
+    // ── Output ────────────────────────────────────────────────────────────────
+
+    private function printPunch(string $deviceId, string $xml): void
+    {
+        try {
+            $clean = $this->stripNamespaces($xml);
+            $root  = new SimpleXMLElement($clean);
+            $ac    = $root->AccessControllerEvent;
+
+            $employee = trim((string) ($ac->employeeNoString ?? '?'));
+            $status   = trim((string) ($ac->attendanceStatus ?? '?'));
+            $dt       = trim((string) ($root->dateTime ?? now()->toISOString()));
+            $mode     = trim((string) ($ac->operateType ?? '?'));
+
+            $this->print(sprintf(
+                '  [PUNCH] device=%-12s  employee=%-8s  type=%-10s  mode=%-12s  time=%s',
+                $deviceId, $employee, strtoupper($status), $mode, $dt
+            ));
+        } catch (\Throwable) {
+            // XML parse failed — dump raw so nothing is hidden
+            $this->print('  [PUNCH] (raw) ' . substr($xml, 0, 200));
+        }
+    }
+
+    private function print(string $message): void
+    {
+        $ts = now()->format('H:i:s');
+        ($this->out)("[{$ts}] {$message}");
+        Log::info('[ISUP] ' . $message);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -231,7 +264,7 @@ class IsupServer
         }
         @fclose($this->clients[$id]['socket']);
         $label = $this->clients[$id]['deviceId'] ?? $id;
-        Log::info("[ISUP] Disconnected: {$label}");
+        $this->print("← Device disconnected: {$label}");
         unset($this->clients[$id]);
     }
 

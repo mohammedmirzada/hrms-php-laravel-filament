@@ -20,7 +20,10 @@ class IsupListenCommand extends Command
         $host = (string) $this->option('host');
         $port = (int)    $this->option('port');
 
-        $server = new IsupServer(new AttendanceEventHandler());
+        $server = new IsupServer(
+            new AttendanceEventHandler(),
+            fn (string $msg) => $this->line($msg),
+        );
 
         // Graceful shutdown on SIGINT / SIGTERM
         if (extension_loaded('pcntl')) {
@@ -29,8 +32,7 @@ class IsupListenCommand extends Command
             pcntl_signal(SIGTERM, static fn () => $server->stop());
         }
 
-        $this->info("ISUP 5.0 listener starting on {$host}:{$port}");
-        Log::info("[ISUP] Command started on {$host}:{$port}");
+        $this->info("ISUP 5.0 listener starting on {$host}:{$port} (Ctrl+C to stop)");
 
         try {
             $server->start($host, $port);
