@@ -10,8 +10,10 @@ class IsupListenCommand extends Command
     protected $signature   = 'isup:listen';
     protected $description = 'ISUP 5.0 TCP listener for Hikvision biometric device';
 
-    private const HOST = '0.0.0.0';
-    private const PORT = 7660;
+    private const HOST      = '0.0.0.0';
+    private const PORT      = 7660;
+    private const DEVICE_ID = 'DeviceLF1';
+    private const ISUP_KEY  = 'LionsFortErbil';
 
     private const MAGIC       = 'ISUP';
     private const HEADER_SIZE = 20;
@@ -47,8 +49,12 @@ class IsupListenCommand extends Command
         }
 
         $this->info('ISUP listener started on port ' . self::PORT . ' — Ctrl+C to stop');
+        $this->line('  Expected device : ' . self::DEVICE_ID);
+        $this->line('  Expected key    : ' . self::ISUP_KEY);
+        $this->line($this->ts() . ' Waiting for device to connect...');
 
-        $clients = [];
+        $clients   = [];
+        $lastBeat  = time();
 
         while ($this->running) {
             $read  = array_merge([$server], array_column($clients, 'socket'));
@@ -56,6 +62,12 @@ class IsupListenCommand extends Command
 
             if (@stream_select($read, $write, $except, 1) === false) {
                 continue;
+            }
+
+            // Print a heartbeat every 30 seconds when no device is connected
+            if (empty($clients) && time() - $lastBeat >= 30) {
+                $this->line($this->ts() . ' Still waiting for device...');
+                $lastBeat = time();
             }
 
             if (in_array($server, $read, true)) {
@@ -110,7 +122,9 @@ class IsupListenCommand extends Command
                                 $root     = new SimpleXMLElement(empty($xml) ? '<r/>' : $xml);
                                 $deviceId = trim((string) ($root->deviceID ?? ''));
                                 $key      = trim((string) ($root->ISUPKey  ?? ''));
-                                $this->line($this->ts() . "   REGISTER  device={$deviceId}  key={$key}");
+                                $idMatch  = $deviceId === self::DEVICE_ID ? '✓' : '✗ expected ' . self::DEVICE_ID;
+                                $keyMatch = $key      === self::ISUP_KEY  ? '✓' : '✗ expected ' . self::ISUP_KEY;
+                                $this->line($this->ts() . "   REGISTER  device={$deviceId} [{$idMatch}]  key={$key} [{$keyMatch}]");
                             } catch (\Throwable) {
                                 $this->line($this->ts() . "   REGISTER  (could not parse XML)");
                             }
