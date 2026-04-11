@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 
 Route::prefix('hikvision')->group(function () {
 
-    Route::post('/hikvision/events', function (Request $request) {
+    Route::post('/events', function (Request $request) {
         Log::info('Hikvision Event Received', [
             'headers' => $request->headers->all(),
             'body' => $request->getContent(),
