@@ -20,9 +20,31 @@ Route::prefix('hikvision')->group(function () {
             return response('OK', 200);
         }
 
-        Log::info('Hikvision Attendance Event', $data);
+        if (!isset($data["AccessControllerEvent"])) {
+            return response('Not Data Found', 200);
+        }
 
-        return response('OK', 200);
+        $macAddress = $data['macAddress'] ?? 'unknown';
+        $ipAddress = $data['ipAddress'] ?? 'unknown';
+        $portNo = $data['portNo'] ?? 'unknown';
+        $dateTime = $data['dateTime'] ?? 'unknown';
+        $deviceID = $data['deviceID'] ?? 'unknown';
+        $emplyeeName = $data["AccessControllerEvent"]['name'] ?? 'unknown';
+        $employeeId = (int) $data["AccessControllerEvent"]['employeeNo'] ?? 0;
+        $attendanceStatus = $data["AccessControllerEvent"]['attendanceStatus'] ?? 'unknown';
+
+        Log::info('Hikvision Event Received', [
+            'macAddress' => $macAddress,
+            'ipAddress' => $ipAddress,
+            'portNo' => $portNo,
+            'dateTime' => $dateTime,
+            'deviceID' => $deviceID,
+            'employeeName' => $emplyeeName,
+            'employeeId' => $employeeId,
+            'attendanceStatus' => $attendanceStatus
+        ]);
+
+        return response('Data Saved to Log File.', 200);
     });
 
 });
