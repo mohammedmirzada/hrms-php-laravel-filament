@@ -30,7 +30,7 @@ Route::prefix('hikvision')->group(function () {
         $dateTime = $data['dateTime'] ?? 'unknown';
         $deviceID = $data['deviceID'] ?? 'unknown';
         $emplyeeName = $data["AccessControllerEvent"]['name'] ?? 'unknown';
-        $employeeId = (int) $data["AccessControllerEvent"]['employeeNo'] ?? 0;
+        $employeeId = (int) ($data["AccessControllerEvent"]['employeeNo'] ?? 0);
         $attendanceStatus = $data["AccessControllerEvent"]['attendanceStatus'] ?? 'unknown';
 
         Log::info('Hikvision Event Received', [
