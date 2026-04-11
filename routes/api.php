@@ -13,13 +13,15 @@ use Illuminate\Http\Request;
 Route::prefix('hikvision')->group(function () {
 
     Route::post('/events', function (Request $request) {
-        Log::info('Hikvision Event Received', [
-            'headers' => $request->headers->all(),
-            'body' => $request->getContent(),
-            'all' => $request->all(),
-            'raw' => file_get_contents('php://input'),
-        ]);
-        
+        $data = json_decode($request->input('AccessControllerEvent'), true);
+
+        // Ignore heartbeats and non-attendance events
+        if (!$data || $data['eventType'] !== 'AccessControllerEvent') {
+            return response('OK', 200);
+        }
+
+        Log::info('Hikvision Attendance Event', $data);
+
         return response('OK', 200);
     });
 
