@@ -20,7 +20,7 @@ Route::prefix('hikvision')->group(function () {
             return response('OK', 200);
         }
 
-        if (!isset($data["AccessControllerEvent"])) {
+        if (!isset($data["AccessControllerEvent"]) || $data['eventType'] !== 'AccessControllerEvent') {
             return response('Not Data Found', 200);
         }
 
