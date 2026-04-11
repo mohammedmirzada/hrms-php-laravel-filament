@@ -18,7 +18,6 @@ return new class extends Migration
             $table->enum('event_type', ['IN', 'OUT'])->nullable();
             $table->dateTime('event_at');
             $table->string('selfie_path')->nullable();
-            $table->json('raw_payload')->nullable();
             $table->boolean('is_valid')->default(true);
             $table->string('invalid_reason')->nullable();
             $table->index('event_at');

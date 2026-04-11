@@ -69,3 +69,16 @@ Each branch has its own:
 ## Migration
 Import: employees (with status), leave balances, optional attendance & payroll history, document mapping  
 Must validate required fields, map branch/dept, and log import errors.
+
+## Steps to setup Hikvision FingerPrint Device
+1- Turn Off DHCP
+2- Set a static IP out of router IP Ranges. eg: 192.168.1.200
+3- login via browser: https://192.168.1.200/
+4- System Maintenance
+5- Go to Network Service
+6- Go to HTTP Listening
+7- Fill it in like this:
+Event Alarm IP/Domain Name: hrm.example.com
+URL: /api/hikvision/events
+Port: 443
+Protocol: HTTPS

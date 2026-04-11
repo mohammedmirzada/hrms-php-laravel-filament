@@ -25,7 +25,6 @@ class AttendanceEvent extends Model {
         'event_type',
         'event_at',
         'selfie_path',
-        'raw_payload',
         'is_valid',
         'invalid_reason',
         'created_by',

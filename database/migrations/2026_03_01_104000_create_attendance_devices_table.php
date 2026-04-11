@@ -15,8 +15,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('ip_address')->nullable();
             $table->integer('port')->nullable();
-            $table->enum('sync_mode', ['push', 'pull', 'manual']);
-            $table->timestamp('last_sync_at')->nullable();
+            $table->string('mac_address')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

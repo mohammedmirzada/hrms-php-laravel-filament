@@ -50,18 +50,11 @@ class AttendanceDeviceResource extends Resource
                     ->maxLength(255)
                     ->nullable()
                     ->helperText('Optional. The manufacturer name (e.g. ZKTeco, Hikvision). Useful for maintenance records.'),
-                TextInput::make('device_identifier')
-                    ->label('Device Identifier (ISUP ID)')
+                TextInput::make('mac_address')
+                    ->label('MAC Address')
                     ->maxLength(255)
                     ->nullable()
-                    ->helperText('The Device ID configured on the device under ISUP settings (e.g. DeviceLF1). Must match exactly.'),
-                TextInput::make('isup_key')
-                    ->label('ISUP Key')
-                    ->password()
-                    ->revealable()
-                    ->maxLength(255)
-                    ->nullable()
-                    ->helperText('The ISUP authentication key set on the device. Leave empty to skip key validation.'),
+                    ->helperText('Optional. The device\'s MAC address for network identification. Format: XX:XX:XX:XX:XX:XX'),
                 TextInput::make('ip_address')
                     ->label('IP Address')
                     ->maxLength(45)
@@ -70,18 +63,7 @@ class AttendanceDeviceResource extends Resource
                 TextInput::make('port')
                     ->numeric()
                     ->nullable()
-                    ->helperText('The network port the device listens on. Commonly 4370 for ZKTeco devices. Check your device manual if unsure.'),
-                Select::make('sync_mode')
-                    ->native(false)
-                    ->options(AttendanceDeviceSyncMode::labels())
-                    ->nullable()
-                    ->helperText('Push = device sends data to the system automatically. Pull = the system fetches data from the device on a schedule. Manual = data is imported by hand.'),
-                DateTimePicker::make('last_sync_at')
-                    ->native(false)
-                    ->label('Last Sync')
-                    ->disabled()
-                    ->nullable()
-                    ->helperText('Read-only. Automatically updated by the system each time data is received from this device.'),
+                    ->helperText('The network port the device listens on. Commonly 4370 for ZKTeco devices. Check your device manual if unsure.')
             ]);
     }
 
@@ -97,10 +79,10 @@ class AttendanceDeviceResource extends Resource
                 TextColumn::make('branch.name')
                     ->formatStateUsing(fn ($record) => $record->branch?->getTranslation('name', 'en'))
                     ->sortable(),
-                TextColumn::make('device_identifier')
-                    ->label('ISUP ID')
+                TextColumn::make('mac_address')
+                    ->label('MAC Address')
                     ->searchable()
-                    ->placeholder('—'),
+                    ->placeholder('XX:XX:XX:XX:XX:XX'),
                 TextColumn::make('vendor')
                     ->searchable()
                     ->sortable()
@@ -111,15 +93,6 @@ class AttendanceDeviceResource extends Resource
                 TextColumn::make('port')
                     ->sortable()
                     ->placeholder('—'),
-                TextColumn::make('sync_mode')
-                    ->badge()
-                    ->sortable()
-                    ->placeholder('—'),
-                TextColumn::make('last_sync_at')
-                    ->label('Last Sync')
-                    ->dateTime()
-                    ->sortable()
-                    ->placeholder('Never'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
