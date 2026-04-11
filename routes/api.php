@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
-use Symfony\Component\HttpFoundation\Request;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 Route::prefix('hikvision')->group(function () {
 
-    Route::get('/events', function (Request $request) {
+    Route::post('/events', function (Request $request) {
         Log::info('Hikvision Event Received', [
             'headers' => $request->headers->all(),
             'body' => $request->getContent(),
