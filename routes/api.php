@@ -31,7 +31,11 @@ Route::prefix('hikvision')->group(function () {
         $deviceID = $data['deviceID'] ?? 'unknown';
         $emplyeeName = $data["AccessControllerEvent"]['name'] ?? 'unknown';
         $employeeId = (int) ($data["AccessControllerEvent"]['employeeNo'] ?? 0);
-        $attendanceStatus = $data["AccessControllerEvent"]['attendanceStatus'] ?? 'unknown';
+        $attendanceStatus = $data["AccessControllerEvent"]['attendanceStatus'] ?? null;
+
+        if (!in_array($attendanceStatus, ['checkIn', 'checkOut'])) {
+            return response('Not Data Found', 200);
+        }
 
         Log::info('Hikvision Event Received', [
             'macAddress' => $macAddress,
