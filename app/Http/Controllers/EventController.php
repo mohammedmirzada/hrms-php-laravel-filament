@@ -14,6 +14,8 @@ class EventController extends Controller {
         // Decode the incoming JSON data
         $data = json_decode($request->input('AccessControllerEvent'), true);
 
+        return Log::info('Received event data', ['data' => $data]);
+
         // Ignore heartbeats and non-attendance events
         if (!$data || $data['eventType'] !== 'AccessControllerEvent') {
             Log::error('Received non-attendance event or invalid data', ['data' => $data]);
