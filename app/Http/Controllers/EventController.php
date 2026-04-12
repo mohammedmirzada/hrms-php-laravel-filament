@@ -52,7 +52,7 @@ class EventController extends Controller {
         }
 
         // Check if the employee exists in the database
-        if (Employer::where('employee_id', $employeeId)->doesntExist()) {
+        if (Employer::find($employeeId) === null) {
             return response('Employee Not Found', 404);
         }
 
