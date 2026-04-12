@@ -37,8 +37,8 @@ class EventController extends Controller {
         $ipAddress = $data['ipAddress'] ?? 'unknown';
         $portNo = $data['portNo'] ?? 'unknown';
         $dateTime = $data['dateTime'] ?? 'unknown';
-        $emplyeeName = $data["AccessControllerEvent"]['name'] ?? 'unknown';
-        $employeeId = (int) ($data["AccessControllerEvent"]['employeeNo'] ?? 0);
+        $employerName = $data["AccessControllerEvent"]['name'] ?? 'unknown';
+        $employerId = (int) ($data["AccessControllerEvent"]['employeeNo'] ?? 0);
 
         // Get the attendance device based on IP, port, and MAC address
         $getAttendanceDevice = AttendanceDevice::where('ip_address', $ipAddress)
@@ -51,14 +51,14 @@ class EventController extends Controller {
             return response('Device Not Registered', 404);
         }
 
-        // Check if the employee exists in the database
-        if (Employer::find($employeeId) === null) {
-            return response('Employee Not Found', 404);
+        // Check if the employer exists in the database
+        if (Employer::find($employerId) === null) {
+            return response('Employer Not Found', 404);
         }
 
         Log::info('Hikvision Event Received', [
-            'employee_id' => $employeeId,
-            'employee_name' => $emplyeeName,
+            'employer_id' => $employerId,
+            'employer_name' => $employerName,
             'attendance_status' => $attendanceStatus,
             'date_time' => $dateTime
         ]);
