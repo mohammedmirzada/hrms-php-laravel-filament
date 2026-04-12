@@ -76,6 +76,10 @@ class EventController extends Controller {
         // Decode the incoming JSON data
         $data = json_decode($request->input('AccessControllerEvent'), true);
 
+        return Log::info('Hikvision Event Received', [
+            'data' => $data
+        ]);
+
         // Ignore heartbeats and non-attendance events
         if (!$data || $data['eventType'] !== 'AccessControllerEvent') {
             return response('Heartbeats Ignored!', 503);
