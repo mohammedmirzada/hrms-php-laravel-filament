@@ -81,8 +81,8 @@ class EventController extends Controller {
             return response('Heartbeats Ignored!', 503);
         }
 
-        // Validate required fields
-        if (!isset($data["AccessControllerEvent"])) {
+        // Validate required fields and attendance status
+        if (!isset($data["AccessControllerEvent"]) || $data['eventType'] !== 'AccessControllerEvent') {
             return response('Not Data Found', 404);
         }
 
@@ -91,12 +91,6 @@ class EventController extends Controller {
 
         // Validate attendance status (checkIn or checkOut)
         if (!in_array($attendanceStatus, ['checkIn', 'checkOut'])) {
-            if ($attendanceStatus !== null) {
-                Log::warning('Hikvision Event Rejected - unexpected attendanceStatus', [
-                    'attendanceStatus' => $attendanceStatus,
-                    'AccessControllerEvent' => $data["AccessControllerEvent"],
-                ]);
-            }
             return response('Not Data Found', 404);
         }
 
