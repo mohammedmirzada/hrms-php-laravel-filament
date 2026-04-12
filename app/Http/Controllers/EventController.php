@@ -16,11 +16,13 @@ class EventController extends Controller {
 
         // Ignore heartbeats and non-attendance events
         if (!$data || $data['eventType'] !== 'AccessControllerEvent') {
+            Log::error('Received non-attendance event or invalid data', ['data' => $data]);
             return response('Heartbeats Ignored!', 503);
         }
 
         // Validate required fields and attendance status
         if (!isset($data["AccessControllerEvent"]) || $data['eventType'] !== 'AccessControllerEvent') {
+            Log::error('Invalid event data received', ['data' => $data]);
             return response('Not Data Found', 404);
         }
 
@@ -29,6 +31,7 @@ class EventController extends Controller {
 
         // Validate attendance status (checkIn or checkOut)
         if (!in_array($attendanceStatus, ['checkIn', 'checkOut'])) {
+            Log::error('Invalid attendance status received', ['attendanceStatus' => $attendanceStatus]);
             return response('Not Data Found', 404);
         }
 
@@ -48,11 +51,17 @@ class EventController extends Controller {
 
         // Check if the device is registered in the database
         if (!$getAttendanceDevice) {
+            Log::error('Device Not Registered', [
+                'ip_address' => $ipAddress,
+                'port' => $portNo,
+                'mac_address' => $macAddress
+            ]);
             return response('Device Not Registered', 404);
         }
 
         // Check if the employer exists in the database
         if (Employer::find($employerId) === null) {
+            Log::error('Employer Not Found', ['employer_id' => $employerId]);
             return response('Employer Not Found', 404);
         }
 
