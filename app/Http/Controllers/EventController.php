@@ -37,7 +37,6 @@ class EventController extends Controller {
         $ipAddress = $data['ipAddress'] ?? 'unknown';
         $portNo = $data['portNo'] ?? 'unknown';
         $dateTime = $data['dateTime'] ?? 'unknown';
-        $deviceID = $data['deviceID'] ?? 'unknown';
         $emplyeeName = $data["AccessControllerEvent"]['name'] ?? 'unknown';
         $employeeId = (int) ($data["AccessControllerEvent"]['employeeNo'] ?? 0);
 
@@ -45,7 +44,6 @@ class EventController extends Controller {
         $getAttendanceDevice = AttendanceDevice::where('ip_address', $ipAddress)
             ->where('port', $portNo)
             ->where('mac_address', $macAddress)
-            ->where('device_id', $deviceID)
             ->first();
 
         // Check if the device is registered in the database
