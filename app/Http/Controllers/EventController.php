@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AttendanceEventSource;
+use App\Enums\AttendanceEventType;
 use App\Models\AttendanceDevice;
+use App\Models\AttendanceEvent;
 use App\Models\Employer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -86,6 +89,7 @@ class EventController extends Controller {
             return response('OK', 200);
         }
 
+        // Extract attendance status to determine if this is a check-in/check-out event
         $ac               = $data['AccessControllerEvent'] ?? null;
         $attendanceStatus = $ac['attendanceStatus'] ?? null;
 
@@ -94,7 +98,7 @@ class EventController extends Controller {
             return response('OK', 200);
         }
 
-
+        // Extract relevant fields with fallbacks
         $macAddress   = $data['macAddress']         ?? null;
         $dateTime     = $data['dateTime']           ?? now()->toIso8601String();
         $employerName = $ac['name']                ?? 'unknown';
@@ -118,13 +122,23 @@ class EventController extends Controller {
             return response('OK', 200);
         }
 
-        Log::info('Hikvision Punch', [
-            'employer_id'       => $employer->id,
-            'employer_name'     => $employerName,
-            'attendance_status' => $attendanceStatus,
-            'date_time'         => $dateTime,
-        ]);
+        if (!$employer->branch_id) {
+            Log::warning('Hikvision: employer has no branch', ['employer_id' => $employer->id, 'name' => $employerName]);
+            return response('OK', 200);
+        }
 
+        AttendanceEvent::create([
+            'branch_id'        => $employer->branch_id,
+            'employer_id'      => $employer->id,
+            'device_id'        => $device->id,
+            'device_user_code' => $employeeCode,
+            'source'           => AttendanceEventSource::Biometric->value,
+            'event_type'       => $attendanceStatus === 'checkIn' ? AttendanceEventType::In->value : AttendanceEventType::Out->value,
+            'event_at'         => $dateTime,
+            'is_valid'         => true,
+        ]);
+        
+        
         return response('OK', 200);
     }
 
