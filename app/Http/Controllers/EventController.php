@@ -127,13 +127,33 @@ class EventController extends Controller {
             return response('OK', 200);
         }
 
+        $serialNo = $ac['serialNo'] ?? null;
+        $newType  = $attendanceStatus === 'checkIn' ? AttendanceEventType::In->value : AttendanceEventType::Out->value;
+
+        // Guard 1: idempotency — block device retries sending the same event twice
+        if ($serialNo && AttendanceEvent::where('device_id', $device->id)->where('device_serial_no', $serialNo)->exists()) {
+            return response('OK', 200);
+        }
+
+        // Guard 2: business rule — punches must alternate IN→OUT→IN, never IN→IN or OUT→OUT
+        $lastType = AttendanceEvent::where('employer_id', $employer->id)->latest('event_at')->value('event_type');
+        if ($lastType === $newType) {
+            Log::warning('Hikvision: consecutive same-type punch ignored', [
+                'employer_id' => $employer->id,
+                'type'        => $newType,
+                'serial_no'   => $serialNo,
+            ]);
+            return response('OK', 200);
+        }
+
         AttendanceEvent::create([
             'branch_id'        => $employer->branch_id,
             'employer_id'      => $employer->id,
             'device_id'        => $device->id,
             'device_user_code' => $employeeCode,
+            'device_serial_no' => $serialNo,
             'source'           => AttendanceEventSource::Biometric->value,
-            'event_type'       => $attendanceStatus === 'checkIn' ? AttendanceEventType::In->value : AttendanceEventType::Out->value,
+            'event_type'       => $newType,
             'event_at'         => $dateTime,
             'is_valid'         => true,
         ]);

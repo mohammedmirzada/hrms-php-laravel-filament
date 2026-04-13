@@ -21,6 +21,7 @@ class AttendanceEvent extends Model {
         'employer_id',
         'device_id',
         'device_user_code',
+        'device_serial_no',
         'source',
         'event_type',
         'event_at',
