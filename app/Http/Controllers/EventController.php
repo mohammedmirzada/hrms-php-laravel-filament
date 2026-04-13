@@ -138,11 +138,6 @@ class EventController extends Controller {
         // Guard 2: business rule — punches must alternate IN→OUT→IN, never IN→IN or OUT→OUT
         $lastType = AttendanceEvent::where('employer_id', $employer->id)->latest('event_at')->value('event_type');
         if ($lastType === $newType) {
-            Log::warning('Hikvision: consecutive same-type punch ignored', [
-                'employer_id' => $employer->id,
-                'type'        => $newType,
-                'serial_no'   => $serialNo,
-            ]);
             return response('OK', 200);
         }
 
