@@ -109,9 +109,9 @@ class EventController extends Controller {
             return response('OK', 200);
         }
 
-        // Look up employer by biometric_code
+        // Look up employer by id (employeeNoString from device matches employer id for now)
         $employer = $employeeCode
-            ? Employer::where('biometric_code', $employeeCode)->first()
+            ? Employer::find((int) $employeeCode)
             : null;
 
         if (!$employer) {
