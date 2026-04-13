@@ -86,15 +86,14 @@ class EventController extends Controller {
             return response('OK', 200);
         }
 
-        Log::info('Hikvision Event Received', ['raw_data' => $request->all()]);
-
         $ac               = $data['AccessControllerEvent'] ?? null;
         $attendanceStatus = $ac['attendanceStatus'] ?? null;
 
-        // Only process actual check-in / check-out punches
+        // Only process actual check-in / check-out punches, ignore door/system events
         if (!$ac || !in_array($attendanceStatus, ['checkIn', 'checkOut'])) {
             return response('OK', 200);
         }
+
 
         $macAddress   = $data['macAddress']         ?? null;
         $dateTime     = $data['dateTime']           ?? now()->toIso8601String();
