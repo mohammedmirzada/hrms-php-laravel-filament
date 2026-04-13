@@ -2,12 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\AttendanceDeviceSyncMode;
 use App\Filament\Resources\AttendanceDeviceResource\Pages;
 use App\Models\AttendanceDevice;
 use App\Models\Branch;
 use BackedEnum;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
@@ -52,18 +50,18 @@ class AttendanceDeviceResource extends Resource
                     ->helperText('Optional. The manufacturer name (e.g. ZKTeco, Hikvision). Useful for maintenance records.'),
                 TextInput::make('mac_address')
                     ->label('MAC Address')
-                    ->maxLength(255)
+                    ->maxLength(17)
                     ->nullable()
-                    ->helperText('Optional. The device\'s MAC address for network identification. Format: XX:XX:XX:XX:XX:XX'),
+                    ->placeholder('a4:d5:c2:62:3e:31')
+                    ->helperText('The device MAC address. Used to match incoming events to this device record.'),
                 TextInput::make('ip_address')
                     ->label('IP Address')
                     ->maxLength(45)
                     ->nullable()
-                    ->helperText('The device\'s local network IP address. Required for Push and Pull sync modes (e.g. 192.168.1.100).'),
+                    ->helperText('The device\'s local network IP address (e.g. 192.168.1.200).'),
                 TextInput::make('port')
                     ->numeric()
                     ->nullable()
-                    ->helperText('The network port the device listens on. Commonly 4370 for ZKTeco devices. Check your device manual if unsure.')
             ]);
     }
 

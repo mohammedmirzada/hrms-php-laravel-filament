@@ -77,58 +77,56 @@ class EventController extends Controller {
         $data = json_decode($request->input('AccessControllerEvent'), true);
 
         Log::info('Hikvision Event Received', ['raw_data' => $request->all()]);
-        return response('Data Received', 200);
 
-        // Ignore heartbeats and non-attendance events
-        if (!$data || $data['eventType'] !== 'AccessControllerEvent') {
-            return response('Heartbeats Ignored!', 503);
+        // Always return 200 immediately — device must not retry
+        if (!$data) {
+            return response('OK', 200);
         }
 
-        // Validate required fields and attendance status
-        if (!isset($data["AccessControllerEvent"]) || $data['eventType'] !== 'AccessControllerEvent') {
-            return response('Not Data Found', 404);
+        // Ignore heartbeats and non-attendance events silently
+        if (($data['eventType'] ?? '') !== 'AccessControllerEvent') {
+            return response('OK', 200);
         }
 
-        // Extract attendance status with a default value
-        $attendanceStatus = $data["AccessControllerEvent"]['attendanceStatus'] ?? null;
+        $ac               = $data['AccessControllerEvent'] ?? null;
+        $attendanceStatus = $ac['attendanceStatus'] ?? null;
 
-        // Validate attendance status (checkIn or checkOut)
-        if (!in_array($attendanceStatus, ['checkIn', 'checkOut'])) {
-            return response('Not Data Found', 404);
+        // Only process actual check-in / check-out punches
+        if (!$ac || !in_array($attendanceStatus, ['checkIn', 'checkOut'])) {
+            return response('OK', 200);
         }
 
-        // Extract relevant information with default values
-        $macAddress = $data['macAddress'] ?? 'unknown';
-        $ipAddress = $data['ipAddress'] ?? 'unknown';
-        $portNo = $data['portNo'] ?? 'unknown';
-        $dateTime = $data['dateTime'] ?? 'unknown';
-        $employerName = $data["AccessControllerEvent"]['name'] ?? 'unknown';
-        $employerId = (int) ($data["AccessControllerEvent"]['employeeNoString'] ?? 0);
+        $macAddress   = $data['macAddress']         ?? null;
+        $dateTime     = $data['dateTime']           ?? now()->toIso8601String();
+        $employerName = $ac['name']                ?? 'unknown';
+        $employeeCode = $ac['employeeNoString']    ?? null;
 
-        // Get the attendance device based on IP, port, and MAC address
-        $getAttendanceDevice = AttendanceDevice::where('ip_address', $ipAddress)
-            ->where('port', $portNo)
-            ->where('mac_address', $macAddress)
-            ->first();
+        // Look up device by MAC address
+        $device = AttendanceDevice::where('mac_address', $macAddress)->first();
 
-        // Check if the device is registered in the database
-        if (!$getAttendanceDevice) {
-            return response('Device Not Registered', 404);
+        if (!$device) {
+            Log::warning('Hikvision: device not registered', ['mac_address' => $macAddress]);
+            return response('OK', 200);
         }
 
-        // Check if the employer exists in the database
-        if (Employer::find($employerId) === null) {
-            return response('Employer Not Found', 404);
+        // Look up employer by biometric_code
+        $employer = $employeeCode
+            ? Employer::where('biometric_code', $employeeCode)->first()
+            : null;
+
+        if (!$employer) {
+            Log::warning('Hikvision: employer not found', ['employee_code' => $employeeCode, 'name' => $employerName]);
+            return response('OK', 200);
         }
 
-        Log::info('Hikvision Event Received', [
-            'employer_id' => $employerId,
-            'employer_name' => $employerName,
+        Log::info('Hikvision Punch', [
+            'employer_id'       => $employer->id,
+            'employer_name'     => $employerName,
             'attendance_status' => $attendanceStatus,
-            'date_time' => $dateTime
+            'date_time'         => $dateTime,
         ]);
 
-        return response('Data Saved to Log File.', 200);
+        return response('OK', 200);
     }
 
 }
