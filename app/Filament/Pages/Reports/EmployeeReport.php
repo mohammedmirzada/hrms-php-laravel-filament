@@ -14,16 +14,16 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use UnitEnum;
 
-class EmployeeRosterReport extends Page implements HasTable
+class EmployeeReport extends Page implements HasTable
 {
     use HasPageShield;
     use InteractsWithTable;
 
     protected static BackedEnum|string|null $navigationIcon = Heroicon::UserGroup;
     protected static string|UnitEnum|null $navigationGroup = 'Reports';
-    protected static ?string $navigationLabel = 'Employee Roster';
+    protected static ?string $navigationLabel = 'Employee Directory';
     protected static ?int $navigationSort = 4;
-    protected static ?string $title = 'Employee Roster / Directory';
+    protected static ?string $title = 'Employee Directory';
 
     protected string $view = 'filament.pages.reports.report';
 

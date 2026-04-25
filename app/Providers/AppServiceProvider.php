@@ -41,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
                     ->flags([
                         'en' => asset('flags/en.svg'),
                         'ckb' => asset('flags/ckb.svg'),      
-                        'ar' => asset('flags/sr.svg')
+                        'ar' => asset('flags/iq.svg')
                     ])
                     ->circular();
         });

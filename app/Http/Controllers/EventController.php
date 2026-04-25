@@ -136,7 +136,10 @@ class EventController extends Controller {
         }
 
         // Guard 2: business rule — punches must alternate IN→OUT→IN, never IN→IN or OUT→OUT
-        $lastType = AttendanceEvent::where('employer_id', $employer->id)->latest('event_at')->value('event_type');
+        $lastType = AttendanceEvent::where('employer_id', $employer->id)
+            ->whereDate('event_at', today())
+            ->latest('event_at')
+            ->value('event_type');
         if ($lastType === $newType) {
             return response('OK', 200);
         }

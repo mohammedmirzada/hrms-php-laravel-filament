@@ -87,19 +87,25 @@ class AdminPanelProvider extends PanelProvider
             ->revealablePasswords(true)
             ->brandName(config('app.name'))
             ->navigationGroups([
-                'Main',
-                'Employees',
-                'Organization',
-                'Leave Management',
-                'Attendance',
-                'Payroll & Compensation',
+                NavigationGroup::make('Main')
+                    ->collapsible(false),
+                NavigationGroup::make('Employees')
+                    ->collapsible(false),
+                NavigationGroup::make('Organization')
+                    ->collapsible(false),
+                NavigationGroup::make('Leave Management')
+                    ->collapsible(false),
+                NavigationGroup::make('Attendance')
+                    ->collapsible(false),
+                NavigationGroup::make('Payroll & Compensation')
+                    ->collapsible(false),
                 NavigationGroup::make('Reports')
                     ->icon('heroicon-o-chart-bar-square')
-                    ->collapsible(true)
+                    ->collapsible(false)
                     ->extraSidebarAttributes([
                         'class' => 'reports-nav-group',
                     ]),
-                'Settings',
+                NavigationGroup::make('Settings')->collapsible(false),
             ])
             ->globalSearch(position: GlobalSearchPosition::Topbar)
             ->plugins([
