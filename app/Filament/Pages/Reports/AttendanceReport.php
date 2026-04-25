@@ -5,17 +5,15 @@ namespace App\Filament\Pages\Reports;
 use App\Models\AttendanceEvent;
 use App\Models\Employer;
 use App\Models\Holiday;
-use App\Models\EmployerShift;
+use App\Models\Shift;
 use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
-use Filament\Forms\Components\DatePicker;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,196 +32,207 @@ class AttendanceReport extends Page implements HasTable
 
     protected string $view = 'filament.pages.reports.report';
 
+    private array $metricsCache = [];
+
+    public function getSubheading(): ?string
+    {
+        $month     = $this->selectedMonth();
+        $shiftId   = $this->tableFilters['shift_id']['value'] ?? null;
+        $shiftName = $shiftId
+            ? (Shift::find($shiftId)?->getTranslation('name', 'en') ?? 'Unknown shift')
+            : 'All shifts';
+
+        return $shiftName . ' • ' . $month->format('F Y') . ' (' . $month->daysInMonth . ' days)';
+    }
+
+    private function selectedMonth(): Carbon
+    {
+        $value = $this->tableFilters['month']['value'] ?? now()->format('Y-m');
+        return Carbon::createFromFormat('Y-m', $value)->startOfMonth();
+    }
+
+    private function monthOptions(): array
+    {
+        $options = [];
+        for ($i = 0; $i < 12; $i++) {
+            $m = now()->startOfMonth()->subMonths($i);
+            $options[$m->format('Y-m')] = $m->format('F Y');
+        }
+        return $options;
+    }
+
+    private function shiftOptions(): array
+    {
+        return Shift::all()
+            ->mapWithKeys(fn ($s) => [$s->id => $s->getTranslation('name', 'en')])
+            ->toArray();
+    }
+
     public function table(Table $table): Table
     {
         return $table
-            ->query(
-                Employer::query()->with(['department', 'branch'])
-            )
+            ->query(Employer::query()->with(['department', 'branch']))
             ->columns([
-                TextColumn::make('id')
-                    ->label('#')
-                    ->sortable(),
                 TextColumn::make('full_name')
                     ->label('Employee')
                     ->formatStateUsing(fn ($record) => $record->getTranslation('full_name', 'en'))
                     ->searchable()
                     ->sortable(),
-                TextColumn::make('department.name')
-                    ->label('Department')
-                    ->formatStateUsing(fn ($record) => $record->department?->getTranslation('name', 'en'))
-                    ->sortable(),
                 TextColumn::make('branch.name')
                     ->label('Branch')
                     ->formatStateUsing(fn ($record) => $record->branch?->getTranslation('name', 'en'))
                     ->sortable(),
+                TextColumn::make('working_days')
+                    ->label('Working Days')
+                    ->alignCenter()
+                    ->getStateUsing(fn ($record) => $this->metrics($record)['working_days'] ?: null)
+                    ->placeholder('—'),
                 TextColumn::make('days_present')
-                    ->label('Days Present')
-                    ->getStateUsing(fn ($record) => $this->getDaysPresent($record, $this->getFilterDateRange()))
-                    ->color('success'),
+                    ->label('Present')
+                    ->alignCenter()
+                    ->getStateUsing(fn ($record) => $this->metrics($record)['days_present'] ?: null)
+                    ->placeholder('—'),
                 TextColumn::make('days_absent')
-                    ->label('Days Absent')
-                    ->getStateUsing(fn ($record) => $this->getDaysAbsent($record, $this->getFilterDateRange()))
-                    ->color('danger'),
-                TextColumn::make('late_count')
-                    ->label('Late')
-                    ->getStateUsing(fn ($record) => $this->getLateCount($record, $this->getFilterDateRange()))
-                    ->color('warning'),
-                TextColumn::make('early_leave_count')
-                    ->label('Early Leave')
-                    ->getStateUsing(fn ($record) => $this->getEarlyLeaveCount($record, $this->getFilterDateRange()))
-                    ->color('warning'),
-                TextColumn::make('total_hours')
-                    ->label('Total Hours')
-                    ->getStateUsing(fn ($record) => $this->getTotalHours($record, $this->getFilterDateRange()))
-                    ->numeric(decimalPlaces: 1),
+                    ->label('Absent')
+                    ->alignCenter()
+                    ->getStateUsing(fn ($record) => $this->metrics($record)['days_absent'] ?: null)
+                    ->placeholder('—')
+                    ->color(fn ($state) => $state ? 'danger' : null)
+                    ->weight(fn ($state) => $state ? 'bold' : null),
+                TextColumn::make('total_late')
+                    ->label('Late (min)')
+                    ->alignCenter()
+                    ->getStateUsing(fn ($record) => $this->metrics($record)['total_late'] ?: null)
+                    ->placeholder('—')
+                    ->color(fn ($state) => $state > 60 ? 'warning' : null),
+                TextColumn::make('avg_late')
+                    ->label('Avg Late (min)')
+                    ->alignCenter()
+                    ->getStateUsing(fn ($record) => $this->metrics($record)['avg_late'] ?: null)
+                    ->placeholder('—')
+                    ->color(fn ($state) => $state > 15 ? 'warning' : null),
+                TextColumn::make('overtime')
+                    ->label('Overtime (min)')
+                    ->alignCenter()
+                    ->getStateUsing(fn ($record) => $this->metrics($record)['overtime'] ?: null)
+                    ->placeholder('—'),
             ])
             ->filters([
-                SelectFilter::make('branch_id')
-                    ->label('Branch')
-                    ->relationship('branch', 'name')
+                SelectFilter::make('month')
+                    ->label('Month')
+                    ->options($this->monthOptions())
+                    ->default(now()->format('Y-m'))
+                    ->native(false)
+                    ->query(fn (Builder $query) => $query),
+                SelectFilter::make('shift_id')
+                    ->label('Shift')
+                    ->options($this->shiftOptions())
                     ->native(false)
                     ->searchable()
-                    ->preload(),
-                SelectFilter::make('department_id')
-                    ->label('Department')
-                    ->relationship('department', 'name')
-                    ->native(false)
-                    ->searchable()
-                    ->preload(),
-                Filter::make('date_range')
-                    ->schema([
-                        DatePicker::make('date_from')
-                            ->native(false)
-                            ->label('From')
-                            ->default(now()->startOfMonth()),
-                        DatePicker::make('date_to')
-                            ->native(false)
-                            ->label('To')
-                            ->default(now()->endOfMonth()),
-                    ])
-                    ->query(fn (Builder $query, array $data) => $query),
+                    ->query(fn (Builder $query, array $data) => $query->when(
+                        $data['value'] ?? null,
+                        fn ($q, $shiftId) => $q->whereHas(
+                            'employerShifts',
+                            fn ($s) => $s->whereNull('effective_to')->where('shift_id', $shiftId)
+                        )
+                    )),
             ])
+            ->striped()
+            ->paginationPageOptions([10, 25, 50, 100])
+            ->defaultPaginationPageOption(100)
             ->defaultSort('id');
     }
 
-    private function getFilterDateRange(): array
+    private function metrics(Employer $employer): array
     {
-        $data = $this->tableFilters['date_range'] ?? [];
-        return [
-            'from' => Carbon::parse($data['date_from'] ?? now()->startOfMonth()),
-            'to' => Carbon::parse($data['date_to'] ?? now()->endOfMonth()),
-        ];
+        return $this->metricsCache[$employer->id] ??= $this->computeMetrics($employer);
     }
 
-    private function getAttendanceEvents(Employer $employer, array $range): \Illuminate\Support\Collection
+    private function computeMetrics(Employer $employer): array
     {
-        return AttendanceEvent::where('employer_id', $employer->id)
-            ->where('is_valid', true)
-            ->whereBetween('event_at', [$range['from']->startOfDay(), $range['to']->endOfDay()])
-            ->orderBy('event_at')
-            ->get();
-    }
+        $month = $this->selectedMonth();
+        $from  = $month->copy()->startOfMonth();
+        $to    = $month->copy()->endOfMonth();
 
-    private function getDaysPresent(Employer $employer, array $range): int
-    {
-        return AttendanceEvent::where('employer_id', $employer->id)
-            ->where('is_valid', true)
-            ->where('event_type', 'IN')
-            ->whereBetween('event_at', [$range['from']->startOfDay(), $range['to']->endOfDay()])
-            ->selectRaw('COUNT(DISTINCT DATE(event_at)) as days_present')
-            ->value('days_present') ?? 0;
-    }
+        // Stop counting at today — future days can't be "absent"
+        $countUntil = $to->isFuture() ? now()->startOfDay() : $to->copy()->endOfDay();
 
-    private function getWorkingDays(Employer $employer, array $range): int
-    {
+        // Pick the shift that was active during the selected month (not just the current one)
+        $shift = $employer->employerShifts()
+            ->where('effective_from', '<=', $to->toDateString())
+            ->where(function ($q) use ($from) {
+                $q->whereNull('effective_to')->orWhere('effective_to', '>=', $from->toDateString());
+            })
+            ->latest('effective_from')
+            ->with('shift')
+            ->first()?->shift;
+
+        // Working days of the week from shift (default: all 7 if no shift configured)
+        $workingDow = $shift?->days_of_week ?: [1, 2, 3, 4, 5, 6, 7];
+
         $holidays = Holiday::where('branch_id', $employer->branch_id)
-            ->whereBetween('date', [$range['from'], $range['to']])
-            ->where('is_working_day_override', false)
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->pluck('date')
             ->map(fn ($d) => $d->format('Y-m-d'))
-            ->toArray();
+            ->all();
 
-        $days = 0;
-        $date = $range['from']->copy();
-        while ($date <= $range['to']) {
-            if ($date->isWeekday() && ! in_array($date->format('Y-m-d'), $holidays)) {
-                $days++;
+        $isWorkingDate = fn (string $date) => in_array(Carbon::parse($date)->dayOfWeekIso, $workingDow)
+            && ! in_array($date, $holidays);
+
+        // Count working days = working day-of-week, not a holiday, not in the future
+        $workingDays = 0;
+        for ($d = $from->copy(); $d->lte($countUntil); $d->addDay()) {
+            if ($isWorkingDate($d->format('Y-m-d'))) {
+                $workingDays++;
             }
-            $date->addDay();
         }
 
-        return $days;
-    }
-
-    private function getDaysAbsent(Employer $employer, array $range): int
-    {
-        $workingDays = $this->getWorkingDays($employer, $range);
-        $daysPresent = $this->getDaysPresent($employer, $range);
-        return max(0, $workingDays - $daysPresent);
-    }
-
-    private function getLateCount(Employer $employer, array $range): int
-    {
-        $shift = EmployerShift::where('employer_id', $employer->id)
-            ->whereNull('effective_to')
-            ->with('shift')
-            ->first();
-
-        if (! $shift?->shift?->start_time) return 0;
-
-        $shiftStart = $shift->shift->start_time;
-
-        return AttendanceEvent::where('employer_id', $employer->id)
+        $eventsByDay = AttendanceEvent::where('employer_id', $employer->id)
             ->where('is_valid', true)
-            ->where('event_type', 'IN')
-            ->whereBetween('event_at', [$range['from']->startOfDay(), $range['to']->endOfDay()])
+            ->whereBetween('event_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->orderBy('event_at')
             ->get()
-            ->filter(fn ($event) => $event->event_at->format('H:i:s') > $shiftStart)
-            ->groupBy(fn ($event) => $event->event_at->format('Y-m-d'))
-            ->count();
-    }
+            ->groupBy(fn ($e) => $e->event_at->format('Y-m-d'));
 
-    private function getEarlyLeaveCount(Employer $employer, array $range): int
-    {
-        $shift = EmployerShift::where('employer_id', $employer->id)
-            ->whereNull('effective_to')
-            ->with('shift')
-            ->first();
+        $daysPresent = 0;
+        $totalLate   = 0;
+        $lateDays    = 0;
+        $overtime    = 0;
 
-        if (! $shift?->shift?->end_time) return 0;
+        foreach ($eventsByDay as $date => $dayEvents) {
+            $firstIn = $dayEvents->firstWhere('event_type', 'IN');
+            $lastOut = $dayEvents->where('event_type', 'OUT')->last();
 
-        $shiftEnd = $shift->shift->end_time;
+            if (! $firstIn) continue;
 
-        return AttendanceEvent::where('employer_id', $employer->id)
-            ->where('is_valid', true)
-            ->where('event_type', 'OUT')
-            ->whereBetween('event_at', [$range['from']->startOfDay(), $range['to']->endOfDay()])
-            ->get()
-            ->filter(fn ($event) => $event->event_at->format('H:i:s') < $shiftEnd)
-            ->groupBy(fn ($event) => $event->event_at->format('Y-m-d'))
-            ->count();
-    }
+            // Only count presence on actual working days — punches on off days don't offset absences
+            if (! $isWorkingDate($date)) continue;
 
-    private function getTotalHours(Employer $employer, array $range): float
-    {
-        $events = $this->getAttendanceEvents($employer, $range);
-        $totalMinutes = 0;
+            $daysPresent++;
 
-        $grouped = $events->groupBy(fn ($e) => $e->event_at->format('Y-m-d'));
+            if ($shift?->start_time) {
+                $shiftStart = Carbon::parse("$date {$shift->start_time}");
+                if ($firstIn->event_at->gt($shiftStart)) {
+                    $totalLate += $shiftStart->diffInMinutes($firstIn->event_at);
+                    $lateDays++;
+                }
+            }
 
-        foreach ($grouped as $dayEvents) {
-            $ins = $dayEvents->where('event_type', 'IN')->sortBy('event_at');
-            $outs = $dayEvents->where('event_type', 'OUT')->sortBy('event_at');
-
-            foreach ($ins as $in) {
-                $out = $outs->first(fn ($o) => $o->event_at->gt($in->event_at));
-                if ($out) {
-                    $totalMinutes += $in->event_at->diffInMinutes($out->event_at);
+            if ($shift?->end_time && $lastOut) {
+                $shiftEnd = Carbon::parse("$date {$shift->end_time}");
+                if ($lastOut->event_at->gt($shiftEnd)) {
+                    $overtime += $shiftEnd->diffInMinutes($lastOut->event_at);
                 }
             }
         }
 
-        return round($totalMinutes / 60, 1);
+        return [
+            'working_days' => $workingDays,
+            'days_present' => $daysPresent,
+            'days_absent'  => max(0, $workingDays - $daysPresent),
+            'total_late'   => (int) $totalLate,
+            'avg_late'     => $lateDays > 0 ? (int) round($totalLate / $lateDays) : 0,
+            'overtime'     => (int) $overtime,
+        ];
     }
 }

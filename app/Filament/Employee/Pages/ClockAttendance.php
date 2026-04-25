@@ -4,7 +4,6 @@ namespace App\Filament\Employee\Pages;
 
 use App\Enums\AttendanceEventSource;
 use App\Enums\AttendanceEventType;
-use App\Models\AttendanceBranchSetting;
 use App\Models\AttendanceEvent;
 use App\Models\Employer;
 use BackedEnum;
@@ -36,14 +35,6 @@ class ClockAttendance extends Page implements HasForms
     private function getEmployee(): Employer
     {
         return auth()->guard('employer')->user();
-    }
-
-    private function requiresSelfie(): bool
-    {
-        $employee = $this->getEmployee();
-        $settings = AttendanceBranchSetting::where('branch_id', $employee->branch_id)->first();
-
-        return (bool) ($settings?->settings['require_selfie'] ?? false);
     }
 
     private function getLastEvent(): ?AttendanceEvent
@@ -83,8 +74,7 @@ class ClockAttendance extends Page implements HasForms
                     ->directory('attendance-selfies')
                     ->maxSize(5120)
                     ->extraInputAttributes(['capture' => 'user'])
-                    ->required(fn () => $this->requiresSelfie())
-                    ->visible(fn () => $this->requiresSelfie())
+                    ->required()
                     ->helperText('Take a selfie to confirm your attendance.'),
             ])
             ->statePath('data');
@@ -92,9 +82,7 @@ class ClockAttendance extends Page implements HasForms
 
     public function clock(): void
     {
-        if ($this->requiresSelfie()) {
-            $this->form->validate();
-        }
+        $this->form->validate();
 
         $employee = $this->getEmployee();
         $nextType = $this->isClockedIn()
