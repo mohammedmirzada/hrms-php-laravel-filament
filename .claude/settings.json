@@ -4,7 +4,9 @@
       "Bash(php -l app/Filament/Pages/Reports/AttendanceCalendar.php)",
       "Bash(npm -v)",
       "Bash(node_modules/.bin/vite --version)",
-      "Bash(echo \"vite binary: NOW EXISTS \\($\\(node_modules/.bin/vite --version\\)\\)\")"
+      "Bash(echo \"vite binary: NOW EXISTS \\($\\(node_modules/.bin/vite --version\\)\\)\")",
+      "Bash(grep -n '\\\\$signature' vendor/bezhansalleh/filament-shield/src/Commands/GenerateCommand.php)",
+      "Bash(grep -n '\\\\$signature' vendor/bezhansalleh/filament-shield/src/Commands/SuperAdminCommand.php)"
     ]
   }
 }
