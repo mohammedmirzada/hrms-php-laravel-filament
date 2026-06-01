@@ -4,7 +4,9 @@ namespace App\Filament\Pages;
 
 use App\Settings\GeneralSettings;
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Support\Utils;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Pages\SettingsPage;
@@ -22,6 +24,12 @@ class GeneralSettingsPage extends SettingsPage {
     protected static ?int $navigationSort = 1;
 
     protected static string $settings = GeneralSettings::class;
+
+    public static function canAccess(): bool
+    {
+        $user = Filament::auth()?->user();
+        return $user?->hasRole(Utils::getSuperAdminName()) || parent::canAccess();
+    }
 
     public function form(Schema $schema): Schema
     {

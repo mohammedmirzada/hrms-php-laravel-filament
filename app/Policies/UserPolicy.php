@@ -11,7 +11,8 @@ class UserPolicy
     
     public function viewAny(AuthUser $authUser): bool
     {
-        return $authUser->can('ViewAny:User');
+        return $authUser->hasRole(\BezhanSalleh\FilamentShield\Support\Utils::getSuperAdminName())
+            || $authUser->can('ViewAny:User');
     }
 
     public function view(AuthUser $authUser): bool

@@ -6,7 +6,9 @@
       "Bash(node_modules/.bin/vite --version)",
       "Bash(echo \"vite binary: NOW EXISTS \\($\\(node_modules/.bin/vite --version\\)\\)\")",
       "Bash(grep -n '\\\\$signature' vendor/bezhansalleh/filament-shield/src/Commands/GenerateCommand.php)",
-      "Bash(grep -n '\\\\$signature' vendor/bezhansalleh/filament-shield/src/Commands/SuperAdminCommand.php)"
+      "Bash(grep -n '\\\\$signature' vendor/bezhansalleh/filament-shield/src/Commands/SuperAdminCommand.php)",
+      "Bash(git log *)",
+      "Bash(php -r \"require '/Users/mirzada/Desktop/hrms-php-laravel-filament/vendor/autoload.php'; echo \\(new ReflectionClass\\('Spatie\\\\Activitylog\\\\Models\\\\Activity'\\)\\)->getName\\(\\);\")"
     ]
   }
 }

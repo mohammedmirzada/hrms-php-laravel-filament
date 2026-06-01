@@ -14,7 +14,8 @@ class ActivityPolicy
     
     public function viewAny(AuthUser $authUser): bool
     {
-        return $authUser->can('ViewAny:Activity');
+        return $authUser->hasRole(\BezhanSalleh\FilamentShield\Support\Utils::getSuperAdminName())
+            || $authUser->can('ViewAny:Activity');
     }
 
     public function view(AuthUser $authUser, Activity $activity): bool
