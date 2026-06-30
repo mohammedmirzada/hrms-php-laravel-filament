@@ -3,9 +3,9 @@ name: Server Deployment
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ "lionsfort" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "lionsfort" ]
 
 jobs:
   deploy_prod:
@@ -25,10 +25,10 @@ jobs:
             ssh-add /root/.ssh/id_rsa
             ssh -T git@github.com
             git remote add origin git@github.com:mohammedmirzada/hrms-php-laravel-filament.git
-            git reset --hard origin/main
             git fetch origin
-            git checkout main
-            git pull origin main
+            git reset --hard origin/lionsfort
+            git checkout lionsfort
+            git pull origin lionsfort
             composer i
             composer dump-autoload
             php artisan cache:clear && php artisan route:clear && php artisan config:clear && php artisan view:clear && php artisan event:clear && php artisan icons:cache && php artisan icons:clear
