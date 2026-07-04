@@ -19,7 +19,14 @@ return [
     |
     | NOTE: default below is Sun–Thu — adjust to Lionsfort's actual week.
     */
-    'working_days' => [7, 1, 2, 3, 4], // Sun, Mon, Tue, Wed, Thu
+    'working_days' => [6, 7, 1, 2, 3, 4], // Sat, Sun, Mon, Tue, Wed, Thu (only Friday off)
+
+    /*
+    | Fallback required hours per working day. Used to value an absent day as
+    | "missing hours" when an employee has no Work Start / Work End set.
+    | (If they do, that per-employee span is used instead.)
+    */
+    'daily_hours' => 7.5,
 
     /*
     | The single fingerprint device. Punches are received at

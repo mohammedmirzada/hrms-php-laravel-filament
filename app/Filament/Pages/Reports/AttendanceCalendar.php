@@ -107,6 +107,7 @@ class AttendanceCalendar extends Page
 
         $employers = Employer::query()
             ->with('branch')
+            ->whereHas('employmentStatus', fn ($q) => $q->where('code', 'active'))
             ->when($this->branchId, fn ($q) => $q->where('branch_id', $this->branchId))
             ->when($this->search, fn ($q) => $q->where('full_name', 'like', '%' . $this->search . '%'))
             ->orderBy('id')
@@ -149,6 +150,11 @@ class AttendanceCalendar extends Page
             $workStart  = $employer->work_start_time;
             $workEnd    = $employer->work_end_time;
             $holidays   = $holidaysByBranch[$employer->branch_id] ?? [];
+
+            // Required minutes for one working day (per-employee span, else the fallback).
+            $dailyMin = ($workStart && $workEnd)
+                ? (int) round(Carbon::parse($workStart)->diffInMinutes(Carbon::parse($workEnd)))
+                : (int) round(config('attendance.daily_hours', 7.5) * 60);
 
             $eventsByDay = ($eventsByEmployer[$employer->id] ?? collect())
                 ->groupBy(fn ($e) => $e->event_at->format('Y-m-d'));
@@ -230,6 +236,7 @@ class AttendanceCalendar extends Page
                 } else {
                     $status = 'absent';
                     $sumAbsent++;
+                    $sumMissing += $dailyMin; // a full absent working day = a full day of missing hours
                 }
 
                 $cells[$date] = [

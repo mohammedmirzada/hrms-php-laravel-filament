@@ -23,8 +23,8 @@
         .att-dow { font-size: 0.6875rem; font-weight: 400; text-transform: uppercase; margin-top: 0.15rem; }
 
         .att-emp-head, .att-emp {
-            position: sticky; left: 0; z-index: 2;
-            background: white; min-width: 11rem; max-width: 11rem;
+            position: sticky; left: 0; z-index: 2; overflow: hidden;
+            background: white; min-width: 12.5rem; max-width: 12.5rem; width: 12.5rem;
             padding: 0.5rem 0.85rem; text-align: left;
             border-right: 1px solid rgb(226 232 240); border-bottom: 1px solid rgb(229 231 235);
         }
@@ -69,11 +69,10 @@
         .att-total { font-weight: 800; font-size: 0.85rem; }
 
         /* expand arrow + per-agent detail row */
-        .att-toggle {
-            border: 0; background: transparent; cursor: pointer; color: rgb(148 163 184);
-            font-size: 0.7rem; line-height: 1; padding: 0 0.4rem 0 0; width: 1.15rem; text-align: left;
-        }
-        .att-toggle:hover { color: rgb(100 116 139); }
+        .att-emp-row { display: flex; align-items: center; cursor: pointer; padding: 0.2rem 0; margin: -0.2rem 0; user-select: none; }
+        .att-arrow { flex: 0 0 auto; width: 1.3rem; text-align: left; color: rgb(148 163 184); font-size: 0.8rem; line-height: 1; }
+        .att-emp-row:hover .att-arrow { color: rgb(100 116 139); }
+        .att-emp-row:hover .att-emp-name { text-decoration: underline; }
         .att-detail-row td { padding: 0; border-bottom: 1px solid rgb(229 231 235); background: rgb(248 250 252); }
         .dark .att-detail-row td { border-color: rgb(55 65 81); background: rgb(15 23 42); }
         .att-detail {
@@ -106,7 +105,7 @@
         }
         .att-input:focus { outline: none; border-color: var(--primary-500, #f59e0b); box-shadow: 0 0 0 2px rgba(245,158,11,0.25); }
         .dark .att-input { background: rgb(31 41 55); border-color: rgb(55 65 81); color: rgb(229 231 235); }
-        .att-emp-name { font-weight: 600; color: rgb(31 41 55); }
+        .att-emp-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: rgb(31 41 55); }
         .dark .att-emp-name { color: rgb(243 244 246); }
         .att-num { color: rgb(55 65 81); }
         .dark .att-num { color: rgb(229 231 235); }
@@ -147,7 +146,7 @@
                 <span><span class="att-swatch {{ $info['class'] }}"></span>{{ $info['label'] }}</span>
             @endif
         @endforeach
-        <span class="att-legend-note">· hover a cell for in/out times · click ▸ for each agent's breakdown · Total = lost hours (late + leave + missing)</span>
+        <span class="att-legend-note">· hover a cell for in/out times · click ▸ for each agent's breakdown · Missing = total missing hours this month</span>
     </div>
 
     {{-- Matrix --}}
@@ -162,23 +161,23 @@
                     <tr>
                         <th class="att-emp-head">Employee</th>
                         @foreach($days as $day)
-                            <th class="att-day-head {{ in_array($day['iso'], [6, 7]) ? 'att-weekend' : '' }} {{ $day['date'] === $todayDate ? 'att-today' : '' }}">
+                            <th class="att-day-head {{ $day['iso'] === 5 ? 'att-weekend' : '' }} {{ $day['date'] === $todayDate ? 'att-today' : '' }}">
                                 <div>{{ $day['num'] }}</div>
                                 <div class="att-dow">{{ $day['letter'] }}</div>
                             </th>
                         @endforeach
-                        <th class="att-sum-head att-sfix">Total</th>
+                        <th class="att-sum-head att-sfix">Missing</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($rows as $row)
                         <tr>
                             <td class="att-emp">
-                                <div style="display:flex;align-items:center;">
-                                    <button type="button" class="att-toggle" data-row="{{ $row['id'] }}" aria-label="Toggle details">▸</button>
-                                    <span class="att-emp-name">{{ $row['name'] }}</span>
+                                <div class="att-emp-row" data-row="{{ $row['id'] }}" role="button" tabindex="0">
+                                    <span class="att-arrow">►</span>
+                                    <span class="att-emp-name" title="{{ $row['name'] }}">{{ $row['name'] }}</span>
                                 </div>
-                                <div class="att-sub" style="padding-left:1.15rem;">{{ $row['branch'] ?? '—' }}</div>
+                                <div class="att-sub" style="padding-left:1.5rem;">{{ $row['branch'] ?? '—' }}</div>
                             </td>
                             @foreach($days as $day)
                                 @php
@@ -208,7 +207,7 @@
                                     <div class="att-cell {{ $m['class'] }}" data-tip="{{ $tip }}">{{ $text }}</div>
                                 </td>
                             @endforeach
-                            <td class="att-num att-sfix att-total">{{ $row['total_h'] ?: '—' }}</td>
+                            <td class="att-num att-sfix att-total">{{ $row['missing_h'] }}</td>
                         </tr>
                         <tr class="att-detail-row" id="det-{{ $row['id'] }}" style="display:none">
                             <td colspan="{{ $colspan }}">
@@ -274,15 +273,16 @@
             if (t) t.style.display = 'none';
         });
 
-        // Expand / collapse each agent's breakdown row.
+        // Expand / collapse each agent's breakdown row (click anywhere on the name).
         document.addEventListener('click', function (e) {
-            var btn = e.target.closest && e.target.closest('.att-toggle');
-            if (!btn) return;
-            var row = document.getElementById('det-' + btn.getAttribute('data-row'));
+            var head = e.target.closest && e.target.closest('.att-emp-row');
+            if (!head) return;
+            var row = document.getElementById('det-' + head.getAttribute('data-row'));
             if (!row) return;
             var open = row.style.display !== 'none';
             row.style.display = open ? 'none' : '';
-            btn.textContent = open ? '▸' : '▾';
+            var arrow = head.querySelector('.att-arrow');
+            if (arrow) arrow.textContent = open ? '►' : '▼';
         });
     })();
     </script>
