@@ -35,13 +35,6 @@ class GeneralSettingsPage extends SettingsPage {
     {
         return $schema
             ->components([
-                Select::make('default_currency')
-                    ->native(false)
-                    ->label('Default Currency')
-                    ->options(config('currency'))
-                    ->required()
-                    ->searchable()
-                    ->helperText('The system-wide fallback currency used in reports and displays when no specific currency is set elsewhere.'),
                 Select::make('default_language')
                     ->native(false)
                     ->label('Default Language')

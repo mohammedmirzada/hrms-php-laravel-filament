@@ -59,7 +59,6 @@ class ActivityLogResource extends Resource {
                         'organization' => 'warning',
                         'leave' => 'success',
                         'attendance' => 'primary',
-                        'payroll' => 'gray',
                         default => 'gray',
                     })
                     ->sortable(),
@@ -101,16 +100,15 @@ class ActivityLogResource extends Resource {
                         'organization' => 'Organization',
                         'leave' => 'Leave',
                         'attendance' => 'Attendance',
-                        'payroll' => 'Payroll',
-                    ]),
-
+                    ])
+                    ->native(false),
                 SelectFilter::make('event')
                     ->options([
                         'created' => 'Created',
                         'updated' => 'Updated',
                         'deleted' => 'Deleted',
-                    ]),
-
+                    ])
+                    ->native(false),
                 SelectFilter::make('subject_type')
                     ->label('Subject Type')
                     ->options(fn () => Activity::query()
@@ -120,8 +118,8 @@ class ActivityLogResource extends Resource {
                         ->mapWithKeys(fn ($type) => [$type => class_basename($type)])
                         ->sort()
                         ->toArray()
-                    ),
-
+                    )
+                    ->native(false),
                 SelectFilter::make('causer_id')
                     ->label('User')
                     ->options(fn () => User::query()
@@ -133,7 +131,8 @@ class ActivityLogResource extends Resource {
                         $data['value'],
                         fn ($q, $value) => $q->where('causer_type', User::class)->where('causer_id', $value)
                     ))
-                    ->searchable(),
+                    ->searchable()
+                    ->native(false)
             ]);
     }
 

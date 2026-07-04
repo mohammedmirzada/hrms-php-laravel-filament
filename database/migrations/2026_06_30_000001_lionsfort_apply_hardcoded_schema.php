@@ -25,6 +25,16 @@ return new class extends Migration
             }
         });
 
+        // 1b. Employees no longer log in — drop auth columns.
+        Schema::table('employers', function (Blueprint $table) {
+            if (Schema::hasColumn('employers', 'password')) {
+                $table->dropColumn('password');
+            }
+            if (Schema::hasColumn('employers', 'remember_token')) {
+                $table->dropColumn('remember_token');
+            }
+        });
+
         // 2. attendance_events: drop the now-unused device_id (single hardcoded
         //    device lives in config/attendance.php). Existing DBs only.
         if (Schema::hasColumn('attendance_events', 'device_id')) {

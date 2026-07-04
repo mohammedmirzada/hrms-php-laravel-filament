@@ -93,11 +93,7 @@ class AdminPanelProvider extends PanelProvider
                     ->collapsible(false),
                 NavigationGroup::make('Organization')
                     ->collapsible(false),
-                NavigationGroup::make('Leave Management')
-                    ->collapsible(false),
                 NavigationGroup::make('Attendance')
-                    ->collapsible(false),
-                NavigationGroup::make('Payroll & Compensation')
                     ->collapsible(false),
                 NavigationGroup::make('Reports')
                     ->icon('heroicon-o-chart-bar-square')

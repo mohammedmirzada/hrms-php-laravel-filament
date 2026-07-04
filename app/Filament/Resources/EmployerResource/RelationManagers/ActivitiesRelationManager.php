@@ -53,7 +53,6 @@ class ActivitiesRelationManager extends RelationManager
                         'organization' => 'warning',
                         'leave' => 'success',
                         'attendance' => 'primary',
-                        'payroll' => 'gray',
                         default => 'gray',
                     }),
 
