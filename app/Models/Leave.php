@@ -6,9 +6,12 @@ use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
 
-// Balance = Current Snapshot
-class LeaveBalances extends Model {
-
+/**
+ * A simple leave record — the employee was on leave for X hours on a given date.
+ * Replaces the old LeaveRequest/LeaveType/LeavePolicy/balance/ledger system.
+ */
+class Leave extends Model
+{
     use HasActivityLogging;
     use HasCreatedUpdatedBy;
 
@@ -16,32 +19,23 @@ class LeaveBalances extends Model {
     {
         return $this->defaultLogOptions()->useLogName('leave');
     }
-    
+
     protected $fillable = [
         'employer_id',
-        'branch_id',
-        'leave_type_id',
-        'balance_minutes',
-        'balance_days',
-        'as_of',
+        'date',
+        'hours',
+        'note',
         'created_by',
         'updated_by',
     ];
 
     protected $casts = [
-        'as_of' => 'datetime',
+        'date'  => 'date',
+        'hours' => 'decimal:2',
     ];
 
-    public function employer() {
+    public function employer()
+    {
         return $this->belongsTo(Employer::class);
     }
-
-    public function branch() {
-        return $this->belongsTo(Branch::class);
-    }
-
-    public function leaveType() {
-        return $this->belongsTo(LeaveType::class);
-    }
-    
 }

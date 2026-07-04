@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\AttendanceEventSource;
 use App\Enums\AttendanceEventType;
-use App\Models\AttendanceDevice;
 use App\Models\AttendanceEvent;
 use App\Models\Employer;
 use Illuminate\Http\Request;
@@ -104,11 +103,9 @@ class EventController extends Controller {
         $employerName = $ac['name']                ?? 'unknown';
         $employeeCode = $ac['employeeNoString']    ?? null;
 
-        // Look up device by MAC address
-        $device = AttendanceDevice::where('mac_address', $macAddress)->first();
-
-        if (!$device) {
-            Log::warning('Hikvision: device not registered', ['mac_address' => $macAddress]);
+        // Single hardcoded device — accept only punches from the configured MAC address
+        if ($macAddress !== config('attendance.device.mac_address')) {
+            Log::warning('Hikvision: unrecognized device', ['mac_address' => $macAddress]);
             return response('OK', 200);
         }
 
@@ -131,7 +128,7 @@ class EventController extends Controller {
         $newType  = $attendanceStatus === 'checkIn' ? AttendanceEventType::In->value : AttendanceEventType::Out->value;
 
         // Guard 1: idempotency — block device retries sending the same event twice
-        if ($serialNo && AttendanceEvent::where('device_id', $device->id)->where('device_serial_no', $serialNo)->exists()) {
+        if ($serialNo && AttendanceEvent::where('device_serial_no', $serialNo)->exists()) {
             return response('OK', 200);
         }
 
@@ -147,7 +144,6 @@ class EventController extends Controller {
         AttendanceEvent::create([
             'branch_id'        => $employer->branch_id,
             'employer_id'      => $employer->id,
-            'device_id'        => $device->id,
             'device_user_code' => $employeeCode,
             'device_serial_no' => $serialNo,
             'source'           => AttendanceEventSource::Biometric->value,

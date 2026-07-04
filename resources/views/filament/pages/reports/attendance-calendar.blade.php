@@ -106,15 +106,6 @@
                 @endforeach
             </select>
         </div>
-        <div class="att-field">
-            <label class="att-label">Shift</label>
-            <select wire:model.live="shiftId" class="att-input">
-                <option value="">All shifts</option>
-                @foreach($this->shiftOptions() as $value => $label)
-                    <option value="{{ $value }}">{{ $label }}</option>
-                @endforeach
-            </select>
-        </div>
         <div class="att-field att-grow">
             <label class="att-label">Employee</label>
             <input type="text" wire:model.live.debounce.400ms="search" placeholder="Search by name…" class="att-input">
@@ -158,7 +149,7 @@
                         <tr>
                             <td class="att-emp">
                                 <div class="att-emp-name">{{ $row['name'] }}</div>
-                                <div class="att-sub">{{ $row['branch'] ?? '—' }}{{ $row['shift'] ? ' • ' . $row['shift'] : '' }}</div>
+                                <div class="att-sub">{{ $row['branch'] ?? '—' }}</div>
                             </td>
                             @foreach($days as $day)
                                 @php

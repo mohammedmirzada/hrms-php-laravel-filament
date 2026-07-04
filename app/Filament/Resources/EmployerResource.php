@@ -16,6 +16,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TimePicker;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -307,6 +308,25 @@ class EmployerResource extends Resource
                                             ]),
                                     ]),
 
+                                Section::make('Working Hours')
+                                    ->icon(Heroicon::Clock)
+                                    ->description('Fixed daily working hours for this employee (e.g. 09:00–17:00 or 11:00–15:00). Company working DAYS are configured in config/attendance.php.')
+                                    ->schema([
+                                        Grid::make(2)
+                                            ->schema([
+                                                TimePicker::make('work_start_time')
+                                                    ->label('Work Start')
+                                                    ->native(false)
+                                                    ->seconds(false)
+                                                    ->helperText('When the working day starts. Used for late detection in attendance reports.'),
+                                                TimePicker::make('work_end_time')
+                                                    ->label('Work End')
+                                                    ->native(false)
+                                                    ->seconds(false)
+                                                    ->helperText('When the working day ends. Used for overtime detection.'),
+                                            ]),
+                                    ]),
+
                             ]),
 
                         Tab::make('Authentication')
@@ -498,8 +518,7 @@ class EmployerResource extends Resource
     {
         return [
             RelationManagers\DocumentsRelationManager::class,
-            RelationManagers\CompensationsRelationManager::class,
-            RelationManagers\ShiftsRelationManager::class,
+            RelationManagers\LeavesRelationManager::class,
             RelationManagers\ActivitiesRelationManager::class,
         ];
     }

@@ -65,13 +65,6 @@ class AttendanceEventResource extends Resource
                                 ->searchable()
                                 ->preload()
                                 ->helperText('Optional. The employee this event belongs to. Leave empty if the device user hasn\'t been matched to an employee profile yet.'),
-                            Select::make('device_id')
-                                ->native(false)
-                                ->label('Device')
-                                ->relationship('device', 'name')
-                                ->searchable()
-                                ->preload()
-                                ->helperText('Optional. The attendance device that recorded this event.'),
                         ]),
                         Grid::make(3)->schema([
                             TextInput::make('device_user_code')
@@ -148,11 +141,6 @@ class AttendanceEventResource extends Resource
                     ->label('Event Time')
                     ->dateTime()
                     ->sortable(),
-                TextColumn::make('device.name')
-                    ->label('Device')
-                    ->sortable()
-                    ->toggleable()
-                    ->placeholder('—'),
                 IconColumn::make('is_valid')
                     ->label('Valid')
                     ->boolean()

@@ -2,13 +2,11 @@
 
 namespace App\Filament\Pages\Reports;
 
-use App\Enums\LeaveRequestStatus;
 use App\Models\AttendanceEvent;
 use App\Models\Branch;
 use App\Models\Employer;
 use App\Models\Holiday;
-use App\Models\LeaveRequest;
-use App\Models\Shift;
+use App\Models\Leave;
 use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
@@ -31,7 +29,6 @@ class AttendanceCalendar extends Page
 
     public ?string $month = null;
     public ?string $branchId = null;
-    public ?string $shiftId = null;
     public ?string $search = null;
 
     public function mount(): void
@@ -68,13 +65,6 @@ class AttendanceCalendar extends Page
     {
         return Branch::all()
             ->mapWithKeys(fn ($b) => [$b->id => $b->getTranslation('name', 'en')])
-            ->toArray();
-    }
-
-    public function shiftOptions(): array
-    {
-        return Shift::all()
-            ->mapWithKeys(fn ($s) => [$s->id => $s->getTranslation('name', 'en')])
             ->toArray();
     }
 
@@ -116,12 +106,8 @@ class AttendanceCalendar extends Page
         }
 
         $employers = Employer::query()
-            ->with(['branch', 'employerShifts.shift'])
+            ->with('branch')
             ->when($this->branchId, fn ($q) => $q->where('branch_id', $this->branchId))
-            ->when($this->shiftId, fn ($q) => $q->whereHas(
-                'employerShifts',
-                fn ($s) => $s->whereNull('effective_to')->where('shift_id', $this->shiftId)
-            ))
             ->when($this->search, fn ($q) => $q->where('full_name', 'like', '%' . $this->search . '%'))
             ->orderBy('id')
             ->get();
@@ -149,39 +135,28 @@ class AttendanceCalendar extends Page
             ->groupBy('branch_id')
             ->map(fn (Collection $g) => $g->map(fn ($h) => $h->date->format('Y-m-d'))->all());
 
-        $leaveByEmployer = LeaveRequest::whereIn('employer_id', $employerIds)
-            ->where('status', LeaveRequestStatus::FinalApproved->value)
-            ->where('start_at', '<=', $to->copy()->endOfDay())
-            ->where('end_at', '>=', $from->copy()->startOfDay())
+        $leaveByEmployer = Leave::whereIn('employer_id', $employerIds)
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->get()
             ->groupBy('employer_id');
 
         $rows = [];
 
         foreach ($employers as $employer) {
-            // Shift that was active during the selected month (same rule as AttendanceReport).
-            $shift = $employer->employerShifts
-                ->filter(function ($es) use ($from, $to) {
-                    return $es->effective_from && $es->effective_from->lte($to)
-                        && (is_null($es->effective_to) || $es->effective_to->gte($from));
-                })
-                ->sortByDesc('effective_from')
-                ->first()?->shift;
-
-            $workingDow = $shift?->days_of_week ?: [1, 2, 3, 4, 5, 6, 7];
+            // Company working days are hardcoded (config/attendance.php); working
+            // hours are fixed per employee.
+            $workingDow = config('attendance.working_days');
+            $workStart  = $employer->work_start_time;
+            $workEnd    = $employer->work_end_time;
             $holidays   = $holidaysByBranch[$employer->branch_id] ?? [];
 
             $eventsByDay = ($eventsByEmployer[$employer->id] ?? collect())
                 ->groupBy(fn ($e) => $e->event_at->format('Y-m-d'));
 
-            // Expand approved leave requests into a set of covered dates within the month.
+            // Each leave record covers a single date.
             $leaveDates = [];
             foreach ($leaveByEmployer[$employer->id] ?? collect() as $leave) {
-                $start = $leave->start_at->gt($from) ? $leave->start_at->copy()->startOfDay() : $from->copy();
-                $end   = $leave->end_at->lt($to) ? $leave->end_at->copy() : $to->copy();
-                for ($x = $start->copy(); $x->lte($end); $x->addDay()) {
-                    $leaveDates[$x->format('Y-m-d')] = true;
-                }
+                $leaveDates[$leave->date->format('Y-m-d')] = true;
             }
 
             $cells       = [];
@@ -208,8 +183,8 @@ class AttendanceCalendar extends Page
                         $out = $lastOut->event_at->format('H:i');
                     }
 
-                    if ($shift?->start_time) {
-                        $shiftStart = Carbon::parse("$date {$shift->start_time}");
+                    if ($workStart) {
+                        $shiftStart = Carbon::parse("$date {$workStart}");
                         if ($firstIn->event_at->gt($shiftStart)) {
                             $late = (int) round($shiftStart->diffInMinutes($firstIn->event_at));
                             if ($late > 0) {
@@ -219,8 +194,8 @@ class AttendanceCalendar extends Page
                         }
                     }
 
-                    if ($shift?->end_time && $lastOut) {
-                        $shiftEnd = Carbon::parse("$date {$shift->end_time}");
+                    if ($workEnd && $lastOut) {
+                        $shiftEnd = Carbon::parse("$date {$workEnd}");
                         if ($lastOut->event_at->gt($shiftEnd)) {
                             $overtime = (int) round($shiftEnd->diffInMinutes($lastOut->event_at));
                         }
@@ -251,7 +226,6 @@ class AttendanceCalendar extends Page
                 'id'      => $employer->id,
                 'name'    => $employer->getTranslation('full_name', 'en'),
                 'branch'  => $employer->branch?->getTranslation('name', 'en'),
-                'shift'   => $shift?->getTranslation('name', 'en'),
                 'cells'   => $cells,
                 'present' => $sumPresent,
                 'absent'  => $sumAbsent,

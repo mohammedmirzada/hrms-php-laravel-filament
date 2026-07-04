@@ -19,7 +19,6 @@ class AttendanceEvent extends Model {
     protected $fillable = [
         'branch_id',
         'employer_id',
-        'device_id',
         'device_user_code',
         'device_serial_no',
         'source',
@@ -46,8 +45,4 @@ class AttendanceEvent extends Model {
         return $this->belongsTo(Employer::class);
     }
 
-    public function device() {
-        return $this->belongsTo(AttendanceDevice::class, 'device_id');
-    }
-    
 }

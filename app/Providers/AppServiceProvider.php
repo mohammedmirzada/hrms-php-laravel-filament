@@ -4,8 +4,6 @@ namespace App\Providers;
 
 use App\Listeners\AuthEventSubscriber;
 use App\Listeners\ImpersonationEventSubscriber;
-use App\Models\LeaveRequest;
-use App\Observers\LeaveRequestObserver;
 use BezhanSalleh\LanguageSwitch\LanguageSwitch;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -29,8 +27,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        LeaveRequest::observe(LeaveRequestObserver::class);
-
         Event::subscribe(AuthEventSubscriber::class);
         Event::subscribe(ImpersonationEventSubscriber::class);
 

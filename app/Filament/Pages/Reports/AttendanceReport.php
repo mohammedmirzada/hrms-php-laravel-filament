@@ -5,7 +5,6 @@ namespace App\Filament\Pages\Reports;
 use App\Models\AttendanceEvent;
 use App\Models\Employer;
 use App\Models\Holiday;
-use App\Models\Shift;
 use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Carbon\Carbon;
@@ -36,13 +35,9 @@ class AttendanceReport extends Page implements HasTable
 
     public function getSubheading(): ?string
     {
-        $month     = $this->selectedMonth();
-        $shiftId   = $this->tableFilters['shift_id']['value'] ?? null;
-        $shiftName = $shiftId
-            ? (Shift::find($shiftId)?->getTranslation('name', 'en') ?? 'Unknown shift')
-            : 'All shifts';
+        $month = $this->selectedMonth();
 
-        return $shiftName . ' • ' . $month->format('F Y') . ' (' . $month->daysInMonth . ' days)';
+        return $month->format('F Y') . ' (' . $month->daysInMonth . ' days)';
     }
 
     private function selectedMonth(): Carbon
@@ -59,13 +54,6 @@ class AttendanceReport extends Page implements HasTable
             $options[$m->format('Y-m')] = $m->format('F Y');
         }
         return $options;
-    }
-
-    private function shiftOptions(): array
-    {
-        return Shift::all()
-            ->mapWithKeys(fn ($s) => [$s->id => $s->getTranslation('name', 'en')])
-            ->toArray();
     }
 
     public function table(Table $table): Table
@@ -124,18 +112,6 @@ class AttendanceReport extends Page implements HasTable
                     ->default(now()->format('Y-m'))
                     ->native(false)
                     ->query(fn (Builder $query) => $query),
-                SelectFilter::make('shift_id')
-                    ->label('Shift')
-                    ->options($this->shiftOptions())
-                    ->native(false)
-                    ->searchable()
-                    ->query(fn (Builder $query, array $data) => $query->when(
-                        $data['value'] ?? null,
-                        fn ($q, $shiftId) => $q->whereHas(
-                            'employerShifts',
-                            fn ($s) => $s->whereNull('effective_to')->where('shift_id', $shiftId)
-                        )
-                    )),
             ])
             ->striped()
             ->paginationPageOptions([10, 25, 50, 100])
@@ -157,18 +133,12 @@ class AttendanceReport extends Page implements HasTable
         // Stop counting at today — future days can't be "absent"
         $countUntil = $to->isFuture() ? now()->startOfDay() : $to->copy()->endOfDay();
 
-        // Pick the shift that was active during the selected month (not just the current one)
-        $shift = $employer->employerShifts()
-            ->where('effective_from', '<=', $to->toDateString())
-            ->where(function ($q) use ($from) {
-                $q->whereNull('effective_to')->orWhere('effective_to', '>=', $from->toDateString());
-            })
-            ->latest('effective_from')
-            ->with('shift')
-            ->first()?->shift;
+        // Company working days are hardcoded (config/attendance.php).
+        $workingDow = config('attendance.working_days');
 
-        // Working days of the week from shift (default: all 7 if no shift configured)
-        $workingDow = $shift?->days_of_week ?: [1, 2, 3, 4, 5, 6, 7];
+        // Fixed daily working hours for this employee (replaces shift start/end).
+        $workStart = $employer->work_start_time;
+        $workEnd   = $employer->work_end_time;
 
         $holidays = Holiday::where('branch_id', $employer->branch_id)
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
@@ -210,16 +180,16 @@ class AttendanceReport extends Page implements HasTable
 
             $daysPresent++;
 
-            if ($shift?->start_time) {
-                $shiftStart = Carbon::parse("$date {$shift->start_time}");
+            if ($workStart) {
+                $shiftStart = Carbon::parse("$date {$workStart}");
                 if ($firstIn->event_at->gt($shiftStart)) {
                     $totalLate += $shiftStart->diffInMinutes($firstIn->event_at);
                     $lateDays++;
                 }
             }
 
-            if ($shift?->end_time && $lastOut) {
-                $shiftEnd = Carbon::parse("$date {$shift->end_time}");
+            if ($workEnd && $lastOut) {
+                $shiftEnd = Carbon::parse("$date {$workEnd}");
                 if ($lastOut->event_at->gt($shiftEnd)) {
                     $overtime += $shiftEnd->diffInMinutes($lastOut->event_at);
                 }

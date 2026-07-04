@@ -5,9 +5,7 @@ namespace App\Filament\Resources\EmployerResource\RelationManagers;
 use App\Models\Activity;
 use App\Models\Document;
 use App\Models\Employer;
-use App\Models\EmployerCompensation;
-use App\Models\EmployerShift;
-use App\Models\LeaveRequest;
+use App\Models\Leave;
 use BackedEnum;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Support\Icons\Heroicon;
@@ -36,14 +34,8 @@ class ActivitiesRelationManager extends RelationManager
                     $q->where('subject_type', Document::class)
                         ->whereIn('subject_id', $employer->documents()->pluck('id'));
                 })->orWhere(function (Builder $q) use ($employer) {
-                    $q->where('subject_type', LeaveRequest::class)
-                        ->whereIn('subject_id', $employer->leaveRequests()->pluck('id'));
-                })->orWhere(function (Builder $q) use ($employer) {
-                    $q->where('subject_type', EmployerCompensation::class)
-                        ->whereIn('subject_id', $employer->compensations()->pluck('id'));
-                })->orWhere(function (Builder $q) use ($employer) {
-                    $q->where('subject_type', EmployerShift::class)
-                        ->whereIn('subject_id', $employer->employerShifts()->pluck('id'));
+                    $q->where('subject_type', Leave::class)
+                        ->whereIn('subject_id', $employer->leaves()->pluck('id'));
                 });
             })
             ->columns([

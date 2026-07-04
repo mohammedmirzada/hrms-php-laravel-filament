@@ -49,6 +49,8 @@ class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasNa
         'probation_period_end_date',
         'contract_expiry_date',
         'employment_status_id',
+        'work_start_time',
+        'work_end_time',
         'password',
         'created_by',
         'updated_by',
@@ -89,12 +91,8 @@ class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasNa
         return $this->belongsTo(EmploymentStatus::class);
     }
 
-    public function compensations() {
-        return $this->hasMany(EmployerCompensation::class);
-    }
-
-    public function leaveRequests() {
-        return $this->hasMany(LeaveRequest::class);
+    public function leaves() {
+        return $this->hasMany(Leave::class);
     }
 
     public function isOnProbation() {
@@ -105,10 +103,6 @@ class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasNa
 
     public function isContractExpired() {
         return $this->contract_expiry_date && today()->isAfter($this->contract_expiry_date);
-    }
-
-    public function employerShifts() {
-        return $this->hasMany(EmployerShift::class);
     }
 
     public function documents() {
