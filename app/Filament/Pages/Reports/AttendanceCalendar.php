@@ -163,6 +163,7 @@ class AttendanceCalendar extends Page
             $sumPresent  = 0;
             $sumAbsent   = 0;
             $sumLate     = 0;
+            $sumMissing  = 0;
 
             foreach ($days as $day) {
                 $date      = $day['date'];
@@ -171,16 +172,18 @@ class AttendanceCalendar extends Page
                 $firstIn   = $dayEvents?->firstWhere('event_type', 'IN');
                 $lastOut   = $dayEvents ? $dayEvents->where('event_type', 'OUT')->last() : null;
 
-                $in = $out = null;
-                $late = $overtime = 0;
+                $in = $out = $inShort = null;
+                $late = $overtime = $missing = 0;
 
                 if ($firstIn) {
                     $status = 'present';
                     $sumPresent++;
-                    $in = $firstIn->event_at->format('H:i');
+                    // Compact 12h for the cell (e.g. "9:24"), full 12h for the tooltip ("9:24 AM").
+                    $inShort = $firstIn->event_at->format('g:i');
+                    $in      = $firstIn->event_at->format('g:i A');
 
                     if ($lastOut) {
-                        $out = $lastOut->event_at->format('H:i');
+                        $out = $lastOut->event_at->format('g:i A');
                     }
 
                     if ($workStart) {
@@ -200,6 +203,22 @@ class AttendanceCalendar extends Page
                             $overtime = (int) round($shiftEnd->diffInMinutes($lastOut->event_at));
                         }
                     }
+
+                    // Missing (lost) hours: shortfall vs the required shift end.
+                    // Required checkout = max(shift end, check-in + required daily minutes),
+                    // so arriving late pushes the required checkout later.
+                    if ($workStart && $workEnd && $lastOut) {
+                        $shiftStart  = Carbon::parse("$date {$workStart}");
+                        $shiftEndReq = Carbon::parse("$date {$workEnd}");
+                        $requiredMin = $shiftStart->diffInMinutes($shiftEndReq);
+                        $requiredOut = $firstIn->event_at->gt($shiftStart)
+                            ? $firstIn->event_at->copy()->addMinutes($requiredMin)
+                            : $shiftEndReq;
+                        if ($lastOut->event_at->lt($requiredOut)) {
+                            $missing = (int) round($lastOut->event_at->diffInMinutes($requiredOut));
+                            $sumMissing += $missing;
+                        }
+                    }
                 } elseif ($isFuture) {
                     $status = 'future';
                 } elseif (isset($leaveDates[$date])) {
@@ -216,20 +235,30 @@ class AttendanceCalendar extends Page
                 $cells[$date] = [
                     'status'   => $status,
                     'in'       => $in,
+                    'in_short' => $inShort,
                     'out'      => $out,
                     'late'     => $late,
                     'overtime' => $overtime,
+                    'missing'  => $missing,
                 ];
             }
 
+            // Monthly totals (hours) for HR — shown separately then summed.
+            $leaveHours = round((float) ($leaveByEmployer[$employer->id] ?? collect())->sum('hours'), 2);
+            $lateHours  = round($sumLate / 60, 2);
+            $missHours  = round($sumMissing / 60, 2);
+
             $rows[] = [
-                'id'      => $employer->id,
-                'name'    => $employer->getTranslation('full_name', 'en'),
-                'branch'  => $employer->branch?->getTranslation('name', 'en'),
-                'cells'   => $cells,
-                'present' => $sumPresent,
-                'absent'  => $sumAbsent,
-                'late'    => $sumLate,
+                'id'        => $employer->id,
+                'name'      => $employer->getTranslation('full_name', 'en'),
+                'branch'    => $employer->branch?->getTranslation('name', 'en'),
+                'cells'     => $cells,
+                'present'   => $sumPresent,
+                'absent'    => $sumAbsent,
+                'late_h'    => $lateHours,
+                'leave_h'   => $leaveHours,
+                'missing_h' => $missHours,
+                'total_h'   => round($lateHours + $leaveHours + $missHours, 2),
             ];
         }
 

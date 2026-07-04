@@ -5,6 +5,7 @@
         $rows = $grid['rows'];
         $meta = $this->statusMeta();
         $todayDate = now()->format('Y-m-d');
+        $colspan = count($days) + 2; // Employee + day columns + Total
     @endphp
 
     <style>
@@ -13,7 +14,8 @@
         .att-table { border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; }
         .att-table th, .att-table td { padding: 0; white-space: nowrap; }
 
-        .att-day-head { width: 3rem; text-align: center; padding: 0.6rem 0; color: rgb(107 114 128); font-weight: 600; border-bottom: 1px solid rgb(229 231 235); }
+        .att-day-head { width: 2.7rem; min-width: 2.7rem; text-align: center; padding: 0.6rem 0; color: rgb(107 114 128); font-weight: 600; border-bottom: 1px solid rgb(229 231 235); }
+        .att-day { width: 2.7rem; min-width: 2.7rem; }
         .dark .att-day-head { color: rgb(156 163 175); border-color: rgb(55 65 81); }
         .att-day-head.att-weekend { background: rgb(249 250 251); }
         .dark .att-day-head.att-weekend { background: rgb(31 41 55); }
@@ -22,9 +24,9 @@
 
         .att-emp-head, .att-emp {
             position: sticky; left: 0; z-index: 2;
-            background: white; min-width: 13.5rem; max-width: 13.5rem;
-            padding: 0.7rem 1rem; text-align: left;
-            border-right: 1px solid rgb(229 231 235); border-bottom: 1px solid rgb(229 231 235);
+            background: white; min-width: 11rem; max-width: 11rem;
+            padding: 0.5rem 0.85rem; text-align: left;
+            border-right: 1px solid rgb(226 232 240); border-bottom: 1px solid rgb(229 231 235);
         }
         .dark .att-emp-head, .dark .att-emp { background: rgb(17 24 39); border-color: rgb(55 65 81); }
         .att-emp-head { font-weight: 600; color: rgb(55 65 81); z-index: 3; }
@@ -33,14 +35,14 @@
 
         .att-cell {
             display: flex; align-items: center; justify-content: center;
-            height: 2rem; margin: 3px; border-radius: 0.5rem;
-            font-size: 0.75rem; font-weight: 600; cursor: default;
+            width: 2.3rem; height: 1.5rem; margin: 2px auto; border-radius: 0.3rem;
+            font-size: 0.64rem; font-weight: 600; cursor: default;
             transition: transform 0.1s ease;
         }
-        .att-cell:hover { transform: scale(1.08); }
-        .att-present { background: #dcfce7; color: #15803d; }
-        .att-late    { background: #fef3c7; color: #b45309; }
-        .att-absent  { background: #fee2e2; color: #b91c1c; }
+        .att-cell:hover { transform: scale(1.18); }
+        .att-present { background: #e3f4e9; color: #178040; }
+        .att-late    { background: #fbeeca; color: #b45309; }
+        .att-absent  { background: #f8efee; color: #cf8781; }
         .att-leave   { background: #ede9fe; color: #6d28d9; }
         .att-holiday { background: #dbeafe; color: #1d4ed8; }
         .att-off     { background: #f3f4f6; color: #9ca3af; }
@@ -48,15 +50,41 @@
         .dark .att-future { background: repeating-linear-gradient(45deg, rgba(148,163,184,0.10), rgba(148,163,184,0.10) 4px, transparent 4px, transparent 8px); border-color: rgba(148,163,184,0.18); }
         .dark .att-present { background: #14532d; color: #bbf7d0; }
         .dark .att-late    { background: #78350f; color: #fde68a; }
-        .dark .att-absent  { background: #7f1d1d; color: #fecaca; }
+        .dark .att-absent  { background: rgba(127,29,29,0.3); color: #c99a95; }
         .dark .att-leave   { background: #4c1d95; color: #ddd6fe; }
         .dark .att-holiday { background: #1e3a8a; color: #bfdbfe; }
         .dark .att-off     { background: #1f2937; color: #6b7280; }
 
-        .att-num { text-align: center; width: 3.25rem; padding: 0 0.5rem; border-bottom: 1px solid rgb(229 231 235); border-left: 1px solid rgb(243 244 246); font-weight: 600; }
-        .dark .att-num { border-color: rgb(55 65 81); border-left-color: rgb(31 41 55); }
-        .att-sum-head { text-align: center; width: 3.25rem; padding: 0.6rem 0.5rem; color: rgb(107 114 128); font-weight: 700; border-bottom: 1px solid rgb(229 231 235); border-left: 1px solid rgb(243 244 246); }
-        .dark .att-sum-head { color: rgb(156 163 175); border-color: rgb(55 65 81); border-left-color: rgb(31 41 55); }
+        /* Monthly totals — pinned to the right so they stay visible while day columns scroll */
+        .att-num, .att-sum-head {
+            position: sticky; z-index: 2; width: 2.7rem; min-width: 2.7rem; text-align: center;
+            background: white; border-bottom: 1px solid rgb(229 231 235);
+        }
+        .dark .att-num, .dark .att-sum-head { background: rgb(17 24 39); border-color: rgb(55 65 81); }
+        .att-num { padding: 0 0.3rem; font-weight: 600; }
+        .att-sum-head { padding: 0.55rem 0.3rem; font-weight: 700; font-size: 0.7rem; color: rgb(107 114 128); z-index: 3; }
+        .dark .att-sum-head { color: rgb(156 163 175); }
+        .att-sfix { right: 0; width: 3.9rem; min-width: 3.9rem; border-left: 2px solid rgb(226 232 240); }
+        .dark .att-sfix { border-left-color: rgb(51 65 85); }
+        .att-total { font-weight: 800; font-size: 0.85rem; }
+
+        /* expand arrow + per-agent detail row */
+        .att-toggle {
+            border: 0; background: transparent; cursor: pointer; color: rgb(148 163 184);
+            font-size: 0.7rem; line-height: 1; padding: 0 0.4rem 0 0; width: 1.15rem; text-align: left;
+        }
+        .att-toggle:hover { color: rgb(100 116 139); }
+        .att-detail-row td { padding: 0; border-bottom: 1px solid rgb(229 231 235); background: rgb(248 250 252); }
+        .dark .att-detail-row td { border-color: rgb(55 65 81); background: rgb(15 23 42); }
+        .att-detail {
+            position: sticky; left: 0; display: inline-flex; flex-wrap: wrap; gap: 0.35rem 1.2rem;
+            padding: 0.55rem 0.85rem 0.55rem 2.15rem; font-size: 0.78rem; color: rgb(71 85 105);
+        }
+        .dark .att-detail { color: rgb(148 163 184); }
+        .att-detail b { color: rgb(30 41 59); font-weight: 700; }
+        .dark .att-detail b { color: rgb(226 232 240); }
+        .att-detail .att-chip-p b { color: #15803d; }
+        .att-detail .att-chip-a b { color: #b91c1c; }
 
         .att-legend { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.8125rem; align-items: center; color: rgb(75 85 99); }
         .dark .att-legend { color: rgb(209 213 219); }
@@ -119,7 +147,7 @@
                 <span><span class="att-swatch {{ $info['class'] }}"></span>{{ $info['label'] }}</span>
             @endif
         @endforeach
-        <span class="att-legend-note">· hover a cell for in/out times</span>
+        <span class="att-legend-note">· hover a cell for in/out times · click ▸ for each agent's breakdown · Total = lost hours (late + leave + missing)</span>
     </div>
 
     {{-- Matrix --}}
@@ -139,17 +167,18 @@
                                 <div class="att-dow">{{ $day['letter'] }}</div>
                             </th>
                         @endforeach
-                        <th class="att-sum-head">P</th>
-                        <th class="att-sum-head">A</th>
-                        <th class="att-sum-head">Late</th>
+                        <th class="att-sum-head att-sfix">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($rows as $row)
                         <tr>
                             <td class="att-emp">
-                                <div class="att-emp-name">{{ $row['name'] }}</div>
-                                <div class="att-sub">{{ $row['branch'] ?? '—' }}</div>
+                                <div style="display:flex;align-items:center;">
+                                    <button type="button" class="att-toggle" data-row="{{ $row['id'] }}" aria-label="Toggle details">▸</button>
+                                    <span class="att-emp-name">{{ $row['name'] }}</span>
+                                </div>
+                                <div class="att-sub" style="padding-left:1.15rem;">{{ $row['branch'] ?? '—' }}</div>
                             </td>
                             @foreach($days as $day)
                                 @php
@@ -158,7 +187,7 @@
                                     $m = $meta[$status];
 
                                     $text = match ($status) {
-                                        'present', 'late' => $c['in'],
+                                        'present', 'late' => $c['in_short'],
                                         'absent'  => 'A',
                                         'holiday' => 'H',
                                         'leave'   => 'L',
@@ -168,19 +197,29 @@
 
                                     if (in_array($status, ['present', 'late'])) {
                                         $tip = $day['date'] . ' · In ' . ($c['in'] ?? '—') . ' · Out ' . ($c['out'] ?? '—');
-                                        if ($c['late'] > 0)     { $tip .= ' · Late ' . $c['late'] . 'm'; }
-                                        if ($c['overtime'] > 0) { $tip .= ' · OT ' . $c['overtime'] . 'm'; }
+                                        if ($c['late'] > 0)               { $tip .= ' · Late ' . $c['late'] . 'm'; }
+                                        if (($c['missing'] ?? 0) > 0)     { $tip .= ' · Missing ' . $c['missing'] . 'm'; }
+                                        if ($c['overtime'] > 0)           { $tip .= ' · OT ' . $c['overtime'] . 'm'; }
                                     } else {
                                         $tip = $day['date'] . ($m['label'] ? ' · ' . $m['label'] : '');
                                     }
                                 @endphp
-                                <td>
-                                    <div class="att-cell {{ $m['class'] }}" title="{{ $tip }}">{{ $text }}</div>
+                                <td class="att-day">
+                                    <div class="att-cell {{ $m['class'] }}" data-tip="{{ $tip }}">{{ $text }}</div>
                                 </td>
                             @endforeach
-                            <td class="att-num">{{ $row['present'] ?: '' }}</td>
-                            <td class="att-num" style="color:#b91c1c">{{ $row['absent'] ?: '' }}</td>
-                            <td class="att-num">{{ $row['late'] ?: '' }}</td>
+                            <td class="att-num att-sfix att-total">{{ $row['total_h'] ?: '—' }}</td>
+                        </tr>
+                        <tr class="att-detail-row" id="det-{{ $row['id'] }}" style="display:none">
+                            <td colspan="{{ $colspan }}">
+                                <div class="att-detail">
+                                    <span class="att-chip-p">Present <b>{{ $row['present'] }}</b> days</span>
+                                    <span class="att-chip-a">Absent <b>{{ $row['absent'] }}</b> days</span>
+                                    <span>Late <b>{{ $row['late_h'] }}</b> h</span>
+                                    <span>Leave <b>{{ $row['leave_h'] }}</b> h</span>
+                                    <span>Missing <b>{{ $row['missing_h'] }}</b> h</span>
+                                </div>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -188,4 +227,63 @@
         </div>
     @endif
     </div>
+
+    {{-- Custom hover tooltip (mounted on <body> so the scroll container can't clip it) --}}
+    <script>
+    (function () {
+        if (window.__attTipInit) return;
+        window.__attTipInit = true;
+
+        function tipEl() {
+            var t = document.getElementById('att-tip');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'att-tip';
+                t.style.cssText = 'position:fixed;z-index:9999;pointer-events:none;display:none;'
+                    + 'background:#111827;color:#f9fafb;font-size:12px;line-height:1.3;'
+                    + 'padding:6px 9px;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.35);'
+                    + 'white-space:nowrap;';
+                document.body.appendChild(t);
+            }
+            return t;
+        }
+
+        document.addEventListener('mouseover', function (e) {
+            var cell = e.target.closest && e.target.closest('.att-cell[data-tip]');
+            if (!cell) return;
+            var t = tipEl();
+            t.textContent = cell.getAttribute('data-tip');
+            t.style.display = 'block';
+        });
+
+        document.addEventListener('mousemove', function (e) {
+            var t = document.getElementById('att-tip');
+            if (!t || t.style.display === 'none') return;
+            var r = t.getBoundingClientRect();
+            var x = e.clientX + 14, y = e.clientY + 16;
+            if (x + r.width > window.innerWidth)   x = e.clientX - r.width - 12;
+            if (y + r.height > window.innerHeight)  y = e.clientY - r.height - 12;
+            t.style.left = x + 'px';
+            t.style.top = y + 'px';
+        });
+
+        document.addEventListener('mouseout', function (e) {
+            var cell = e.target.closest && e.target.closest('.att-cell[data-tip]');
+            if (!cell) return;
+            var t = document.getElementById('att-tip');
+            if (t) t.style.display = 'none';
+        });
+
+        // Expand / collapse each agent's breakdown row.
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest && e.target.closest('.att-toggle');
+            if (!btn) return;
+            var row = document.getElementById('det-' + btn.getAttribute('data-row'));
+            if (!row) return;
+            var open = row.style.display !== 'none';
+            row.style.display = open ? 'none' : '';
+            btn.textContent = open ? '▸' : '▾';
+        });
+    })();
+    </script>
 </x-filament-panels::page>
