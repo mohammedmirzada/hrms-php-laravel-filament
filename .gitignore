@@ -23,3 +23,22 @@ yarn-error.log
 /.zed
 TASKS.MD
 .DS_Store
+
+# AI tools / agents
+/.claude
+/.claude-flow
+/.agents
+/.agent
+/.cursor
+/.cursorrules
+/.windsurf
+/.aider*
+/.github/copilot-instructions.md
+/.codex
+/.gemini
+/.continue
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+GEMINI.md
+.mcp.json
