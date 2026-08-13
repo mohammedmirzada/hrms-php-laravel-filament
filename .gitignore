@@ -23,3 +23,7 @@ yarn-error.log
 /.zed
 TASKS.MD
 .DS_Store
+.agents/
+.claude/
+CLAUDE.md
+AGENTS.md
