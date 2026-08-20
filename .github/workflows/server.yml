@@ -1,42 +1,42 @@
-name: Server Deployment
+# name: Server Deployment
 
-on:
-  workflow_dispatch:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches: [ "main" ]
+#   pull_request:
+#     branches: [ "main" ]
 
-jobs:
-  deploy_prod:
-    name: Server
-    runs-on: ubuntu-latest
-    steps:
-      - name: Executing remote SSH commands on Production
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.IP }}
-          username: ${{ secrets.USERNAME }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT }}
-          script: |
-            cd /www/wwwroot/hrms.lionsfortco.com/hrms-php-laravel-filament
-            eval `ssh-agent -s`
-            ssh-add /root/.ssh/id_rsa
-            ssh -T git@github.com
-            git remote add origin git@github.com:mohammedmirzada/hrms-php-laravel-filament.git
-            git reset --hard origin/main
-            git fetch origin
-            git checkout main
-            git pull origin main
-            composer i
-            composer dump-autoload
-            php artisan cache:clear && php artisan route:clear && php artisan config:clear && php artisan view:clear && php artisan event:clear && php artisan icons:cache && php artisan icons:clear
-            php artisan migrate --force
-            php artisan filament:optimize-clear
-            php artisan filament:optimize
-            php artisan optimize
-            php artisan vendor:publish --force --tag=livewire:assets
-            php artisan filament:clear-cached-components
-            npm i
-            npm run build
+# jobs:
+#   deploy_prod:
+#     name: Server
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Executing remote SSH commands on Production
+#         uses: appleboy/ssh-action@v1.0.0
+#         with:
+#           host: ${{ secrets.IP }}
+#           username: ${{ secrets.USERNAME }}
+#           password: ${{ secrets.PASSWORD }}
+#           port: ${{ secrets.PORT }}
+#           script: |
+#             cd /www/wwwroot/hrms.lionsfortco.com/hrms-php-laravel-filament
+#             eval `ssh-agent -s`
+#             ssh-add /root/.ssh/id_rsa
+#             ssh -T git@github.com
+#             git remote add origin git@github.com:mohammedmirzada/hrms-php-laravel-filament.git
+#             git reset --hard origin/main
+#             git fetch origin
+#             git checkout main
+#             git pull origin main
+#             composer i
+#             composer dump-autoload
+#             php artisan cache:clear && php artisan route:clear && php artisan config:clear && php artisan view:clear && php artisan event:clear && php artisan icons:cache && php artisan icons:clear
+#             php artisan migrate --force
+#             php artisan filament:optimize-clear
+#             php artisan filament:optimize
+#             php artisan optimize
+#             php artisan vendor:publish --force --tag=livewire:assets
+#             php artisan filament:clear-cached-components
+#             npm i
+#             npm run build
