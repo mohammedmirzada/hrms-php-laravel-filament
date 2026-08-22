@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\EventController;
-use App\Http\Controllers\MirakiEventController;
 use Illuminate\Support\Facades\Route;
 
 /*
