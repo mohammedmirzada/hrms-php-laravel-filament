@@ -104,7 +104,7 @@ class MirakiReportController extends Controller {
                 'pin'       => $punch->pin,
                 'date'      => $date,
                 'day'       => $punch->punched_at->format('D'),
-                'time'      => $punch->punched_at->format('H:i'),
+                'time'      => $punch->punched_at->format('g:i A'),   // 6:57 PM
                 'direction' => $useDevice
                     ? (self::DEVICE_STATES[$punch->status] ?? 'IN')
                     : ($seen[$key] % 2 === 1 ? 'IN' : 'OUT'),
