@@ -75,7 +75,17 @@ class MirakiReportController extends Controller {
      */
     private function buildRows($punches, $names): array {
 
-        $useDevice = config('miraki.punch_state') === 'device';
+        $mode = config('miraki.punch_state', 'auto');
+
+        // 'auto': trust the device as soon as it actually starts sending a state.
+        // While every punch arrives as 0 the device is clearly not telling us,
+        // so fall back to counting. This switches over by itself the day the
+        // punch state key is enabled — no setting to remember to change.
+        if ($mode === 'auto') {
+            $mode = $punches->contains(fn ($p) => $p->status > 0) ? 'device' : 'alternate';
+        }
+
+        $useDevice = $mode === 'device';
 
         // Counts punches per person per day, so 'alternate' knows the turn.
         $seen = [];
@@ -102,8 +112,9 @@ class MirakiReportController extends Controller {
             ];
         }
 
-        // Name, then date, then time — same order as the columns.
-        usort($rows, fn ($a, $b) => [$a['name'], $a['sortKey']] <=> [$b['name'], $b['sortKey']]);
+        // Newest punch first. The IN/OUT counting above already ran in
+        // chronological order, so flipping the display order is safe.
+        usort($rows, fn ($a, $b) => [$b['sortKey'], $a['name']] <=> [$a['sortKey'], $b['name']]);
 
         return $rows;
     }

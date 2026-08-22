@@ -51,18 +51,23 @@ return [
     | How the report decides IN or OUT
     |--------------------------------------------------------------------------
     |
-    | 'alternate'  the device does not say, so punches of one person on one day
-    |              are read in order: 1st IN, 2nd OUT, 3rd IN, 4th OUT...
+    | 'auto'       recommended. Uses the device state as soon as the device
+    |              actually starts sending one, otherwise counts. Nothing to
+    |              change by hand on the day the state key is enabled.
     |
-    | 'device'     trust the device. Only correct once the punch state key is
-    |              switched on at the device (Menu -> Attendance -> punch state),
-    |              so staff press In or Out before the finger. Until then every
-    |              punch arrives as 0 and would all show as IN.
+    | 'alternate'  always count: 1st punch of the day IN, 2nd OUT, 3rd IN...
+    |              Cannot show two INs in a row — the second becomes OUT.
     |
-    | Switch this to 'device' the day you enable the state key — that is also
-    | the only way two INs in a row can be recorded as two real INs.
+    | 'device'     always trust the device. Wrong until the punch state key is
+    |              switched on, because every punch arrives as 0 = IN.
+    |
+    | IMPORTANT: a real IN / OUT — where someone can punch IN ten times in a
+    | row — is only possible with the punch state key enabled on the device:
+    |   Menu -> System -> Attendance -> Punch State Options -> Manual
+    |   Menu -> Personalize -> Shortcut Key Mappings -> Check In / Check Out
+    | Staff then press In or Out before the finger.
     |
     */
-    'punch_state' => 'alternate',
+    'punch_state' => 'auto',
 
 ];
