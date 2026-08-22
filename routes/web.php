@@ -4,35 +4,32 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
-// Handshake — device registers here on boot. MUST return config, not just OK.
-Route::get('/iclock/cdata', function (Request $request) {
+Route::match(['get','post'], '/iclock/cdata', function (\Illuminate\Http\Request $request) {
     $sn = $request->query('SN');
-    Log::info('ZK handshake', ['SN' => $sn]);
 
-    $body = "GET OPTION FROM: {$sn}\r\n"
-          . "ATTLOGStamp=None\r\n"
-          . "OPERLOGStamp=None\r\n"
-          . "ATTPHOTOStamp=None\r\n"
-          . "ErrorDelay=30\r\n"
-          . "Delay=10\r\n"
-          . "TransTimes=00:00;14:05\r\n"
-          . "TransInterval=1\r\n"
-          . "TransFlag=1111000000\r\n"
-          . "TimeZone=3\r\n"
-          . "Realtime=1\r\n"
-          . "Encrypt=0\r\n";
+    // Registration/handshake (GET, or POST with table=options)
+    if ($request->isMethod('get') || $request->query('table') === 'options') {
+        \Log::info('ZK handshake', ['SN' => $sn, 'q' => $request->query()]);
+        $body = "GET OPTION FROM: {$sn}\r\n"
+              . "ServerVersion=3.0.1\r\n"
+              . "ServerName=ADMS\r\n"
+              . "PushVersion=3.0.1\r\n"
+              . "ErrorDelay=60\r\n"
+              . "RequestDelay=2\r\n"
+              . "TransTimes=00:00;14:00\r\n"
+              . "TransInterval=1\r\n"
+              . "TransTables=User Transaction\r\n"
+              . "Realtime=1\r\n"
+              . "TimeoutSec=10\r\n";
+        return response($body, 200)->header('Content-Type', 'text/plain');
+    }
 
-    return response($body, 200)->header('Content-Type', 'text/plain');
-});
-
-// Attendance/event data lands here.
-Route::post('/iclock/cdata', function (Request $request) {
-    Log::info('ZK data', ['body' => $request->getContent()]);
+    // Attendance data (POST with table=ATTLOG etc.)
+    \Log::info('ZK data', ['SN' => $sn, 'table' => $request->query('table'), 'body' => $request->getContent()]);
     return response('OK', 200)->header('Content-Type', 'text/plain');
 });
 
-// Device polls here for commands.
-Route::get('/iclock/getrequest', function (Request $request) {
-    Log::info('ZK getrequest', ['SN' => $request->query('SN')]);
+Route::match(['get','post'], '/iclock/getrequest', function (\Illuminate\Http\Request $request) {
+    \Log::info('ZK getrequest', ['SN' => $request->query('SN')]);
     return response('OK', 200)->header('Content-Type', 'text/plain');
 });
