@@ -12,14 +12,22 @@ use Illuminate\Http\Request;
 /**
  * Attendance report for one client.
  *
- * The device never says in or out, so punches of one day are paired by time:
- * 1st = IN, 2nd = OUT, 3rd = IN, 4th = OUT...  Worked time is the sum of the
- * pairs, so lunch breaks are excluded. An odd number of punches means someone
- * forgot to punch out — that day is flagged instead of guessed.
+ * A plain log: one row per punch — name, date, time, in or out.
+ * Nothing is merged, nothing is dropped. Ten punches means ten rows.
  *
- * Plain Blade page, no Filament.
+ * How IN / OUT is decided is set by config('miraki.punch_state').
  */
 class MirakiReportController extends Controller {
+
+    /** ZK punch state codes, folded down to just in or out. */
+    private const DEVICE_STATES = [
+        0 => 'IN',    // check in
+        1 => 'OUT',   // check out
+        2 => 'OUT',   // break out
+        3 => 'IN',    // break in
+        4 => 'IN',    // overtime in
+        5 => 'OUT',   // overtime out
+    ];
 
     public function index(Request $request, string $client) {
 
@@ -51,8 +59,6 @@ class MirakiReportController extends Controller {
             ->orderBy('punched_at')
             ->get();
 
-        $rows = $this->buildRows($punches, $names);
-
         return view('miraki.report', [
             'client'     => $client,
             'clientName' => $config['name'],
@@ -60,83 +66,46 @@ class MirakiReportController extends Controller {
             'monthKey'   => $month->format('Y-m'),
             'pin'        => $pin,
             'people'     => $names,
-            'rows'       => $rows,
-            'totals'     => $this->totals($rows),
-            'grandMins'  => array_sum(array_column($rows, 'minutes')),
+            'rows'       => $this->buildRows($punches, $names),
         ]);
     }
 
     /**
-     * Group punches by person + day, then pair them into in/out.
+     * One row per punch, in the order they happened.
      */
     private function buildRows($punches, $names): array {
 
+        $useDevice = config('miraki.punch_state') === 'device';
+
+        // Counts punches per person per day, so 'alternate' knows the turn.
+        $seen = [];
+
         $rows = [];
 
-        $grouped = $punches->groupBy(
-            fn ($punch) => $punch->pin . '|' . $punch->punched_at->toDateString()
-        );
+        foreach ($punches as $punch) {
 
-        foreach ($grouped as $key => $group) {
+            $date = $punch->punched_at->toDateString();
+            $key  = $punch->pin . '|' . $date;
 
-            [$pin, $date] = explode('|', $key);
-
-            $times = $group->pluck('punched_at')->sort()->values();
-
-            // Pair them up: 0-1, 2-3, 4-5...  A trailing odd punch is left out.
-            $minutes = 0;
-            $pairs   = [];
-
-            for ($i = 0; $i + 1 < $times->count(); $i += 2) {
-                $in  = $times[$i];
-                $out = $times[$i + 1];
-
-                $minutes += (int) abs($in->diffInMinutes($out));
-                $pairs[] = $in->format('H:i') . ' - ' . $out->format('H:i');
-            }
+            $seen[$key] = ($seen[$key] ?? 0) + 1;
 
             $rows[] = [
-                'pin'        => $pin,
-                'name'       => $names[$pin] ?? '—',
-                'date'       => $date,
-                'day'        => Carbon::parse($date)->format('D'),
-                'first'      => $times->first()->format('H:i'),
-                'last'       => $times->count() > 1 ? $times->last()->format('H:i') : null,
-                'minutes'    => $minutes,
-                'count'      => $times->count(),
-                'pairs'      => $pairs,
-                'incomplete' => $times->count() % 2 !== 0,
+                'name'      => $names[$punch->pin] ?? ('PIN ' . $punch->pin),
+                'pin'       => $punch->pin,
+                'date'      => $date,
+                'day'       => $punch->punched_at->format('D'),
+                'time'      => $punch->punched_at->format('H:i'),
+                'direction' => $useDevice
+                    ? (self::DEVICE_STATES[$punch->status] ?? 'IN')
+                    : ($seen[$key] % 2 === 1 ? 'IN' : 'OUT'),
+                'sortKey'   => $punch->punched_at->format('Y-m-d H:i:s'),
             ];
         }
 
-        usort($rows, fn ($a, $b) => [$a['name'], $a['date']] <=> [$b['name'], $b['date']]);
+        // Name, then date, then time — same order as the columns.
+        usort($rows, fn ($a, $b) => [$a['name'], $a['sortKey']] <=> [$b['name'], $b['sortKey']]);
 
         return $rows;
-    }
-
-    /** Per person totals for the summary block. */
-    private function totals(array $rows): array {
-
-        $totals = [];
-
-        foreach ($rows as $row) {
-
-            $key = $row['pin'];
-
-            $totals[$key] ??= [
-                'pin'        => $row['pin'],
-                'name'       => $row['name'],
-                'days'       => 0,
-                'minutes'    => 0,
-                'incomplete' => 0,
-            ];
-
-            $totals[$key]['days']++;
-            $totals[$key]['minutes'] += $row['minutes'];
-            $totals[$key]['incomplete'] += $row['incomplete'] ? 1 : 0;
-        }
-
-        return array_values($totals);
     }
 
     private function month(?string $value): Carbon {

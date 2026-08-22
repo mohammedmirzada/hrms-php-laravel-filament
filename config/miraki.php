@@ -46,4 +46,23 @@ return [
         'password' => env('MIRAKI_REPORT_PASS'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | How the report decides IN or OUT
+    |--------------------------------------------------------------------------
+    |
+    | 'alternate'  the device does not say, so punches of one person on one day
+    |              are read in order: 1st IN, 2nd OUT, 3rd IN, 4th OUT...
+    |
+    | 'device'     trust the device. Only correct once the punch state key is
+    |              switched on at the device (Menu -> Attendance -> punch state),
+    |              so staff press In or Out before the finger. Until then every
+    |              punch arrives as 0 and would all show as IN.
+    |
+    | Switch this to 'device' the day you enable the state key — that is also
+    | the only way two INs in a row can be recorded as two real INs.
+    |
+    */
+    'punch_state' => 'alternate',
+
 ];
