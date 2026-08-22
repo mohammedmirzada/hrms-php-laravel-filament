@@ -100,3 +100,12 @@ Route::match(['get', 'post'], '/iclock/devicecmd', function (Request $request) {
 
     return response('OK', 200)->header('Content-Type', 'text/plain');
 });
+
+// Manual trigger — open this in a browser to ask the device for its user list
+// without rebooting it. The device picks it up on its next poll (max 30s).
+Route::get('/iclock/pull-users', function () {
+
+    Cache::store('file')->put('zk:SFAA254900353:pull_users', true, now()->addMinutes(10));
+
+    return 'Queued. Watch the log for "ZK user" within 30 seconds.';
+});
