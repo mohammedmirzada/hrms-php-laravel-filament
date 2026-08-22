@@ -25,7 +25,7 @@ Route::match(['get', 'post'], '/iclock/cdata', function (Request $request) {
     if ($request->isMethod('get')) {
 
         // Device just booted — queue a "send me your users" command for it
-        Cache::store('file')->put("zk:{$sn}:pull_users", true, now()->addMinutes(10));
+        Cache::store('file')->put('zk:pull_users', true, now()->addMinutes(10));
 
         $body = "GET OPTION FROM: {$sn}\r\n"
               . "Stamp=9999\r\n"          // data marker — without it the device re-registers
@@ -82,13 +82,15 @@ Route::match(['get', 'post'], '/iclock/cdata', function (Request $request) {
 
 Route::match(['get', 'post'], '/iclock/getrequest', function (Request $request) {
 
-    $sn = $request->query('SN');
-
-    // One-shot after each boot: make the device upload its whole user list.
+    // One-shot: make the device upload its whole user list.
     // pull() reads and clears, so it is only sent once.
-    if (Cache::store('file')->pull("zk:{$sn}:pull_users")) {
-        return response("C:1:DATA QUERY USERINFO\r\n", 200)
-            ->header('Content-Type', 'text/plain');
+    if (Cache::store('file')->pull('zk:pull_users')) {
+
+        $cmd = "C:1:DATA QUERY USERINFO\r\n";
+
+        Log::info('ZK cmd sent', ['SN' => $request->query('SN'), 'cmd' => trim($cmd)]);
+
+        return response($cmd, 200)->header('Content-Type', 'text/plain');
     }
 
     // Nothing queued. Not logged — the device polls constantly.
@@ -96,7 +98,14 @@ Route::match(['get', 'post'], '/iclock/getrequest', function (Request $request) 
 });
 
 // Device reports back the result of a command we sent (C:1:...)
+// Return=0 means it worked, a negative number is an error code.
 Route::match(['get', 'post'], '/iclock/devicecmd', function (Request $request) {
+
+    Log::info('ZK cmd result', [
+        'SN'    => $request->query('SN'),
+        'query' => $request->query(),
+        'body'  => $request->getContent(),
+    ]);
 
     return response('OK', 200)->header('Content-Type', 'text/plain');
 });
@@ -105,7 +114,11 @@ Route::match(['get', 'post'], '/iclock/devicecmd', function (Request $request) {
 // without rebooting it. The device picks it up on its next poll (max 30s).
 Route::get('/iclock/pull-users', function () {
 
-    Cache::store('file')->put('zk:SFAA254900353:pull_users', true, now()->addMinutes(10));
+    Cache::store('file')->put('zk:pull_users', true, now()->addMinutes(10));
 
-    return 'Queued. Watch the log for "ZK user" within 30 seconds.';
+    $ok = Cache::store('file')->has('zk:pull_users');
+
+    return $ok
+        ? 'Queued. Watch the log for "ZK cmd sent" within 30 seconds.'
+        : 'FAILED: file cache is not writable (check storage/framework/cache).';
 });
