@@ -122,7 +122,10 @@ class MirakiDeviceController extends Controller {
      * Config block the device asks for at boot. Without Stamp/OpStamp it keeps
      * re-registering, and without Delay it polls every second.
      *
-     * No TimeZone line on purpose — sending it overwrites the device clock.
+     * TimeZone is sent on purpose: this device's clock was 5 hours ahead of
+     * Baghdad, so the server states the offset instead of letting the device
+     * keep its own. Whether the firmware acts on it is not guaranteed — if the
+     * clock does not move after a reboot, set it by hand on the device.
      */
     private function handshake(string $sn) {
 
@@ -141,6 +144,7 @@ class MirakiDeviceController extends Controller {
             . "TransFlag=1111000000\r\n"
             . "TransTables=User Transaction\r\n"
             . "Realtime=1\r\n"               // push punches the moment they happen
+            . "TimeZone=3\r\n"               // Baghdad, UTC+3
             . "Encrypt=0\r\n"
         );
     }
