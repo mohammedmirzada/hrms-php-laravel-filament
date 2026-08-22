@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 
@@ -10,6 +11,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | The device only talks to these fixed paths, it cannot use /api/*.
 | Every reply must be text/plain, or the device retries forever.
+|
+| Punches (ATTLOG) carry only the PIN, never the name.
+| Names live in the USERINFO table, which the device sends when we ask.
 */
 
 Route::match(['get', 'post'], '/iclock/cdata', function (Request $request) {
@@ -19,6 +23,9 @@ Route::match(['get', 'post'], '/iclock/cdata', function (Request $request) {
 
     // 1. Handshake: device asks the server for its config (GET)
     if ($request->isMethod('get')) {
+
+        // Device just booted — queue a "send me your users" command for it
+        Cache::store('file')->put("zk:{$sn}:pull_users", true, now()->addMinutes(10));
 
         $body = "GET OPTION FROM: {$sn}\r\n"
               . "Stamp=9999\r\n"          // data marker — without it the device re-registers
@@ -42,10 +49,9 @@ Route::match(['get', 'post'], '/iclock/cdata', function (Request $request) {
         return response('OK', 200)->header('Content-Type', 'text/plain');
     }
 
-    // 3. Real data: ATTLOG (punches), OPERLOG, USERINFO...
     $body = $request->getContent();
 
-    // Only punches are interesting. OPERLOG / USERINFO / etc. are ignored.
+    // 3a. Punches
     if ($table === 'ATTLOG') {
 
         Log::info('ZK punch', ['SN' => $sn, 'body' => $body]);
@@ -55,6 +61,19 @@ Route::match(['get', 'post'], '/iclock/cdata', function (Request $request) {
         //       PIN \t YYYY-MM-DD HH:MM:SS \t status \t verify \t workcode \t ...
     }
 
+    // 3b. User list — this is where the names come from
+    if ($table === 'USERINFO' || $table === 'OPERLOG') {
+
+        // OPERLOG also carries "USER PIN=..." lines when a user is added on the device
+        if (str_contains($body, 'USER PIN=')) {
+            Log::info('ZK user', ['SN' => $sn, 'body' => $body]);
+
+            // TODO: parse "USER PIN=1<TAB>Name=Ahmad<TAB>..." -> PIN => Name map
+        }
+    }
+
+    // Anything else (OPERLOG noise, BIODATA, photos...) is dropped silently.
+
     // Device expects the number of rows we accepted
     $rows = count(array_filter(explode("\n", trim($body))));
 
@@ -63,6 +82,21 @@ Route::match(['get', 'post'], '/iclock/cdata', function (Request $request) {
 
 Route::match(['get', 'post'], '/iclock/getrequest', function (Request $request) {
 
-    // No commands queued for the device. Not logged — it polls constantly.
+    $sn = $request->query('SN');
+
+    // One-shot after each boot: make the device upload its whole user list.
+    // pull() reads and clears, so it is only sent once.
+    if (Cache::store('file')->pull("zk:{$sn}:pull_users")) {
+        return response("C:1:DATA QUERY USERINFO\r\n", 200)
+            ->header('Content-Type', 'text/plain');
+    }
+
+    // Nothing queued. Not logged — the device polls constantly.
+    return response('OK', 200)->header('Content-Type', 'text/plain');
+});
+
+// Device reports back the result of a command we sent (C:1:...)
+Route::match(['get', 'post'], '/iclock/devicecmd', function (Request $request) {
+
     return response('OK', 200)->header('Content-Type', 'text/plain');
 });
