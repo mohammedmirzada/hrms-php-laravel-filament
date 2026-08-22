@@ -60,12 +60,16 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | will be used by the PHP date and date-time functions.
+    |
+    | Baghdad (UTC+3). This drives log timestamps, "today", and the default
+    | month on the attendance report. It does NOT touch punch times — those
+    | are stored exactly as the fingerprint device sends them, so the device
+    | clock must be set to Baghdad time as well.
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Baghdad'),
 
     /*
     |--------------------------------------------------------------------------
