@@ -1,7 +1,7 @@
 @extends('meraki.layout')
 
-@section('title', 'Overtime ' . $month->format('F Y'))
-@section('subtitle', 'Overtime — ' . $month->format('F Y'))
+@section('title', 'Overtime ' . $label)
+@section('subtitle', 'Overtime — ' . $label)
 
 @section('content')
 
@@ -19,6 +19,8 @@
         tbody tr:first-child { border-top: none; }
         tbody tr:hover { background: #fbfbf9; }
         td.who { font-weight: 600; }
+        td.dim { color: var(--ink); }
+        td.dim .len { color: var(--mute); font-size: .85rem; }
         td.extra { color: var(--extra); font-weight: 600; }
         td.short { color: var(--bad); font-weight: 600; }
         td.zero { color: #b9b8b2; font-weight: 400; }
@@ -38,18 +40,11 @@
         }
         .legend p { display: block; margin: 0 0 .5rem; }
         .legend p:last-child { margin-bottom: 0; }
+        .legend p.gap { margin-top: .85rem; }
         .legend b { color: var(--ink); font-weight: 600; }
     </style>
 
-    <form method="get" class="bar">
-        <label>Month
-            {{-- Safari has no month picker and shows a text box, so say what
-                 it should look like there. --}}
-            <input type="month" name="month" value="{{ $monthKey }}"
-                   placeholder="2026-08" pattern="\d{4}-\d{2}">
-        </label>
-        <button type="submit" class="go">Show</button>
-    </form>
+    @include('meraki.parts.filter')
 
     <div class="card">
         @if (count($rows))
@@ -58,6 +53,7 @@
                     <thead>
                     <tr>
                         <th>Name</th>
+                        <th>Shift</th>
                         <th class="n">Days came</th>
                         <th class="n">Worked</th>
                         <th class="n">Extra time</th>
@@ -70,6 +66,7 @@
                     @foreach ($rows as $row)
                         <tr>
                             <td class="who">{{ $row['name'] }}</td>
+                            <td class="dim">{{ $row['shiftName'] }} <span class="len">{{ $row['shiftText'] }}</span></td>
                             <td class="n">{{ $row['days'] }}</td>
                             <td class="n">{{ $row['workedText'] }}</td>
                             <td class="n {{ $row['extra'] > 0 ? 'extra' : 'zero' }}">
@@ -88,6 +85,7 @@
                     <tfoot>
                     <tr>
                         <td>Everyone</td>
+                        <td></td>
                         <td class="n"></td>
                         <td class="n">{{ $totalWorked }}</td>
                         <td class="n">{{ $totalExtra }}</td>
@@ -98,18 +96,28 @@
                 </table>
             </div>
         @else
-            <p class="empty">Nobody punched this month.</p>
+            <p class="empty">Nobody punched in {{ $label }}.</p>
         @endif
     </div>
 
     <div class="legend">
-        <p><b>Work day</b> is {{ $shift['start'] }} to {{ $shift['end'] }} — {{ $shiftText }}. Change it in Settings.</p>
-        <p><b>Extra time</b> is the hours worked over {{ $shiftText }} in a day, added up for the month.</p>
-        <p><b>Short time</b> is the hours missing under {{ $shiftText }}, counted only on days they came.</p>
+        <p><b>Extra time</b> is the hours worked over a person's own work day, added up.</p>
+        <p><b>Short time</b> is the hours missing under it, counted only on days they came.</p>
         <p><b>Days to check</b> is how many days have a punch missing, so those hours are a
             guess. Open the Calendar to see which days — they are the red names.</p>
         <p><b>Days off are not counted.</b> A date that nobody at all punched on is treated as
             closed — no short time for anyone. They are the greyed boxes on the Calendar.</p>
+
+        @foreach ($shifts as $s)
+            <p @class(['gap' => $loop->first])>
+                <b>{{ $s['name'] }}</b> — {{ $s['start'] }} to {{ $s['end'] }}, {{ $s['text'] }}.
+                @if ($s['grace'] > 0)
+                    Up to {{ $s['grace'] }} min short still counts as a full day.
+                @endif
+            </p>
+        @endforeach
+
+        <p>Change the shifts, and who is on which one, in <b>Settings</b>.</p>
     </div>
 
 @endsection

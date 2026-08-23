@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Meraki;
 
 use App\Http\Controllers\Controller;
+use App\Models\MerakiUser;
 use App\Support\MerakiSettings;
 use Illuminate\Http\Request;
 
 /**
- * Settings page. One shift start and end time, used for everybody.
- * Saved to storage, so it can be changed any time without a deploy.
+ * Settings page. Shifts, and who is on which one.
+ *
+ * Saved to storage, so it can all be changed any time without a deploy.
+ * Shifts cannot be deleted — old reports are measured against the shift a
+ * person was on, so an id has to keep meaning the same thing forever.
  */
 class MerakiSettingsController extends Controller {
 
@@ -20,25 +24,41 @@ class MerakiSettingsController extends Controller {
         ]);
     }
 
-    public function update(Request $request, string $client) {
+    /** Save every shift row at once — changes and new ones together. */
+    public function saveShifts(Request $request, string $client) {
+
+        $this->page($client);   // 404s on an unknown client
+
+        $ok = MerakiSettings::saveShifts($client, (array) $request->input('shifts', []));
+
+        return $this->done($client, $ok, 'Could not save the shifts.');
+    }
+
+    /** Put employees on shifts. */
+    public function savePeople(Request $request, string $client) {
+
+        $this->page($client);   // 404s on an unknown client
+
+        $ok = MerakiSettings::savePeople($client, (array) $request->input('people', []));
+
+        return $this->done($client, $ok, 'Could not save who is on which shift.');
+    }
+
+    /** Back to the page, either with a tick or with the reason it failed. */
+    private function done(string $client, bool $ok, string $what) {
 
         $page = $this->page($client);   // 404s on an unknown client
 
-        $ok = MerakiSettings::saveShift(
-            $client,
-            $request->input('shift_start'),
-            $request->input('shift_end')
-        );
-
-        if (! $ok) {
-            return view('meraki.settings', $page + [
-                'saved' => false,
-                'error' => 'Could not save. Both times must look like 08:00, and the start and'
-                    . ' end cannot be the same time. If they look right, storage/app is not writable.',
-            ]);
+        if ($ok) {
+            return redirect()->route('client.settings', ['client' => $client, 'saved' => 1]);
         }
 
-        return redirect()->route('client.settings', ['client' => $client, 'saved' => 1]);
+        return view('meraki.settings', $page + [
+            'saved' => false,
+            'error' => $what . ' Every row needs a name, both times must look like'
+                . ' 08:00, and a shift cannot start and end at the same time. If it all'
+                . ' looks right, storage/app is not writable.',
+        ]);
     }
 
     /** Shared page data, and the unknown-client check. */
@@ -48,14 +68,17 @@ class MerakiSettingsController extends Controller {
 
         abort_if(! is_array($config), 404, "Unknown client [{$client}].");
 
-        $shift = MerakiSettings::shift($client);
+        $shifts = MerakiSettings::shifts($client);
 
         return [
             'client'     => $client,
             'clientName' => $config['name'] ?? $client,
-            'shift'      => $shift,
-            'shiftText'  => MerakiSettings::readable(MerakiSettings::shiftMinutes($client)),
-            'isNight'    => MerakiSettings::minutes($shift['end']) <= MerakiSettings::minutes($shift['start']),
+            'shifts'     => $shifts,
+            'defaultId'  => (string) array_key_first($shifts),
+            'people'     => MerakiUser::where('device_sn', $config['device_sn'] ?? '')
+                ->orderBy('name')
+                ->pluck('name', 'pin'),
+            'assigned'   => MerakiSettings::people($client),
         ];
     }
 

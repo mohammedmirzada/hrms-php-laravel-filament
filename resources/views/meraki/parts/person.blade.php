@@ -49,6 +49,18 @@
             </div>
         @endif
 
+        @if ($who['short'] > 0)
+            <div class="line under">
+                <span class="lbl">Short</span>
+                <span class="val">{{ $who['shortText'] }}</span>
+            </div>
+        @endif
+
+        <div class="line shift">
+            <span class="lbl">Shift</span>
+            <span class="val">{{ $who['shiftName'] }} · {{ $who['shiftText'] }}</span>
+        </div>
+
         @if ($who['problem'])
             <div class="problem">{{ $who['problem'] }}</div>
         @endif

@@ -36,8 +36,9 @@ Route::prefix('iclock')->group(function () {
 |
 |   /meraki/login     login page
 |   /meraki/report    calendar, the main page
+|   /meraki/overtime  totals per person
 |   /meraki/log       plain list of every punch
-|   /meraki/settings  shift start and end time
+|   /meraki/settings  shifts, and who is on which one
 |
 | A new client in config/meraki.php gets the same URLs under its own slug.
 |
@@ -89,7 +90,11 @@ Route::middleware('web')
             Route::get('settings', [MerakiSettingsController::class, 'edit'])
                 ->name('client.settings');
 
-            Route::post('settings', [MerakiSettingsController::class, 'update']);
+            Route::post('settings/shifts', [MerakiSettingsController::class, 'saveShifts'])
+                ->name('client.settings.shifts');
+
+            Route::post('settings/people', [MerakiSettingsController::class, 'savePeople'])
+                ->name('client.settings.people');
 
         });
 

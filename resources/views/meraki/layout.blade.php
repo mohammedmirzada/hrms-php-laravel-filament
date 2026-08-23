@@ -96,6 +96,76 @@
         }
         button.go:hover { opacity: .85; }
 
+        /* --------------------------------------------- the employee dropdown
+
+           Closed it is the same box as the date fields beside it. Open it
+           drops a list of tick boxes.
+
+           Not a <select multiple>: that one needs ctrl-click to pick a second
+           name, which nobody outside this trade knows, and it has to stay
+           propped open on the page to be usable at all. */
+
+        .pickwrap { display: flex; flex-direction: column; gap: .3rem; }
+        .pickwrap .cap {
+            color: var(--mute); font-size: .8rem;
+            text-transform: uppercase; letter-spacing: .05em; font-weight: 600;
+        }
+
+        details.drop { position: relative; }
+
+        details.drop > summary {
+            display: flex; align-items: center; gap: .6rem;
+            min-width: 12rem; max-width: 16rem;
+            font-size: .92rem; padding: .45rem .6rem;
+            color: var(--ink); background: var(--panel);
+            border: 1px solid var(--line); border-radius: 7px;
+            cursor: pointer; list-style: none; user-select: none;
+        }
+        details.drop > summary::-webkit-details-marker { display: none; }
+        details.drop > summary:hover { border-color: #cfcec8; }
+        details.drop > summary:focus { outline: none; }
+        details.drop > summary:focus-visible {
+            border-color: var(--ink); box-shadow: 0 0 0 3px rgba(27,27,25,.08);
+        }
+        details.drop[open] > summary { border-color: var(--ink); }
+
+        details.drop .what {
+            flex: 1; min-width: 0;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        details.drop .what.all { color: var(--mute); }
+        details.drop .chev {
+            width: 10px; height: 10px; flex: none; color: #8f8e88;
+            transition: transform .15s ease;
+        }
+        details.drop[open] .chev { transform: rotate(180deg); }
+
+        details.drop .panel {
+            position: absolute; z-index: 30; top: calc(100% + .35rem); left: 0;
+            min-width: 100%; max-width: 20rem; max-height: 15rem; overflow-y: auto;
+            display: flex; flex-direction: column; gap: .05rem;
+            padding: .45rem .6rem .55rem;
+            background: var(--panel); border: 1px solid var(--line);
+            border-radius: 8px; box-shadow: 0 8px 22px rgba(27,27,25,.11);
+        }
+        details.drop .panel .top {
+            display: flex; align-items: baseline; gap: .8rem;
+            padding-bottom: .35rem; margin-bottom: .3rem;
+            border-bottom: 1px solid var(--line-2);
+            color: var(--mute); font-size: .76rem;
+        }
+        details.drop .panel .top a { color: var(--bad); margin-left: auto; }
+
+        details.drop label.tick {
+            flex-direction: row; align-items: center; gap: .5rem;
+            font-size: .9rem; font-weight: 400; color: var(--ink);
+            text-transform: none; letter-spacing: 0;
+            cursor: pointer; padding: .16rem 0; white-space: nowrap;
+        }
+        details.drop label.tick:hover span { text-decoration: underline; }
+        details.drop label.tick input { width: auto; margin: 0; accent-color: var(--ink); }
+        details.drop .dimtick { color: var(--mute); font-size: .88rem; }
+
         /* ----------------------------------------------------------- boxes */
 
         .card {

@@ -30,6 +30,7 @@ beforeEach(function () use (&$savedSettings) {
     // the app's migrations are not needed here and some do not run on sqlite.
     (require database_path('migrations/2026_08_22_000000_create_miraki_tables.php'))->up();
     (require database_path('migrations/2026_08_23_000000_rename_miraki_tables_to_meraki.php'))->up();
+    (require database_path('migrations/2026_08_25_000000_add_shift_id_to_meraki.php'))->up();
 
     config()->set('meraki.clients.meraki.device_sn', SN);
     config()->set('meraki.auth.username', 'tester');
@@ -206,15 +207,172 @@ it('saves a new shift from the settings page and uses it', function () {
 
     expect(extra(loggedIn()->get('/meraki/report?pin=5')->getContent()))->toBe([]);
 
-    loggedIn()->post('/meraki/settings', ['shift_start' => '9:00', 'shift_end' => '15:00'])
-        ->assertRedirect('/meraki/settings?saved=1');
+    // A new shift, then move him onto it — the hours of shift 1 are fixed
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '',  'name' => 'Short day', 'start' => '9:00', 'end' => '15:00', 'grace' => 5],
+    ]])->assertRedirect('/meraki/settings?saved=1');
 
-    expect(MerakiSettings::shift('meraki'))->toBe(['start' => '09:00', 'end' => '15:00']);
-    expect(MerakiSettings::shiftMinutes('meraki'))->toBe(360);
+    loggedIn()->post('/meraki/settings/people', ['people' => ['5' => '2']]);
+
+    $shift = MerakiSettings::shift('meraki', '2');
+
+    expect($shift['name'])->toBe('Short day');
+    expect($shift['start'])->toBe('09:00');
+    expect($shift['end'])->toBe('15:00');
+    expect(MerakiSettings::shiftMinutes('meraki', '2'))->toBe(360);
 
     $html = loggedIn()->get('/meraki/report?pin=5')->assertOk()->getContent();
 
     expect(extra($html))->toBe(['2 hours']);   // 8h worked, 6h work day
+});
+
+it('changes a shift and adds another in one save', function () {
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '1', 'name' => 'Office hours', 'start' => '08:00', 'end' => '16:00', 'grace' => 5],
+        ['id' => '',  'name' => 'Night shift',  'start' => '20:00', 'end' => '05:00', 'grace' => 10],
+        ['id' => '',  'name' => '',             'start' => '',      'end' => '',      'grace' => ''],
+    ]])->assertRedirect('/meraki/settings?saved=1');
+
+    $shifts = MerakiSettings::shifts('meraki');
+
+    // The blank row at the bottom is skipped, not saved as a third shift
+    expect($shifts)->toHaveCount(2);
+
+    // Shift 1 was renamed, but its hours are fixed once saved
+    expect($shifts['1']['name'])->toBe('Office hours');
+    expect($shifts['1']['minutes'])->toBe(540);     // still 08:00 -> 17:00
+
+    expect($shifts['2']['name'])->toBe('Night shift');
+    expect($shifts['2']['minutes'])->toBe(540);     // 20:00 -> 05:00, just hours
+    expect($shifts['2']['grace'])->toBe(10);
+
+    loggedIn()->get('/meraki/settings')->assertOk()
+        ->assertSee('Office hours')
+        ->assertSee('Night shift');
+});
+
+it('saves none of the rows when one of them is wrong', function () {
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '1', 'name' => 'Office hours', 'start' => '08:00', 'end' => '16:00', 'grace' => 5],
+        ['id' => '',  'name' => '  ',           'start' => '20:00', 'end' => '05:00', 'grace' => 0],
+    ]])->assertOk()->assertSee('Could not save the shifts');
+
+    $shifts = MerakiSettings::shifts('meraki');
+
+    // Still the one untouched shift — the good row was not applied either
+    expect($shifts)->toHaveCount(1);
+    expect($shifts['1']['name'])->toBe('Day shift');
+    expect($shifts['1']['minutes'])->toBe(540);
+});
+
+it('does not drop a shift that was left out of the list', function () {
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Half day', 'start' => '08:00', 'end' => '13:00', 'grace' => 0],
+    ]]);
+
+    expect(MerakiSettings::shifts('meraki'))->toHaveCount(2);
+
+    // Send only the new one back; the first must survive
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '2', 'name' => 'Morning', 'start' => '08:00', 'end' => '12:00', 'grace' => 0],
+    ]]);
+
+    $shifts = MerakiSettings::shifts('meraki');
+
+    expect($shifts)->toHaveCount(2);
+    expect($shifts['1']['name'])->toBe('Day shift');
+    expect($shifts['2']['name'])->toBe('Morning');
+    expect($shifts['2']['minutes'])->toBe(300);   // 08:00-13:00, hours are fixed
+});
+
+it('measures a person against the shift they are put on', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+    MerakiUser::create(['device_sn' => SN, 'pin' => '2', 'name' => 'Sara', 'privilege' => 0]);
+
+    // Shift 2 is a six hour day
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Half day', 'start' => '08:00', 'end' => '14:00', 'grace' => 0],
+    ]]);
+
+    loggedIn()->post('/meraki/settings/people', ['people' => ['2' => '2']]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    // Both work exactly eight hours
+    foreach (['1', '2'] as $pin) {
+        punch($pin, "$day 08:00:00", 0);
+        punch($pin, "$day 16:00:00", 1);
+    }
+
+    expect(MerakiSettings::shiftFor('meraki', '1')['name'])->toBe('Day shift');
+    expect(MerakiSettings::shiftFor('meraki', '2')['name'])->toBe('Half day');
+
+    // Ahmed is 1h short of nine, Sara is 2h over six
+    expect(extra(loggedIn()->get('/meraki/report?pin=1')->getContent()))->toBe([]);
+    expect(extra(loggedIn()->get('/meraki/report?pin=2')->getContent()))->toBe(['2 hours']);
+
+    loggedIn()->get('/meraki/overtime')->assertOk()
+        ->assertSee('Half day')
+        ->assertSee('Day shift');
+});
+
+it('lets the grace period forgive a few minutes short', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    punch('1', "$day 08:04:00", 0);   // four minutes late
+    punch('1', "$day 17:00:00", 1);   // 8h 56m, four short of nine hours
+
+    // The default shift already gives five minutes of grace
+    $html = loggedIn()->get('/meraki/overtime')->assertOk()->getContent();
+
+    expect($html)->toContain('8 hours 56 min');
+    expect(substr_count($html, 'class="n zero"'))->toBe(3);   // no short time
+
+    // The same day on a shift with no grace is four minutes short
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'No grace', 'start' => '08:00', 'end' => '17:00', 'grace' => 0],
+    ]]);
+    loggedIn()->post('/meraki/settings/people', ['people' => ['1' => '2']]);
+
+    expect(loggedIn()->get('/meraki/overtime')->getContent())->toContain('4 min');
+});
+
+it('keeps who is on which shift when a shift is edited', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '2', 'name' => 'Sara', 'privilege' => 0]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Night shift', 'start' => '20:00', 'end' => '05:00', 'grace' => 0],
+    ]]);
+
+    loggedIn()->post('/meraki/settings/people', ['people' => ['2' => '2']]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '2', 'name' => 'Late shift', 'start' => '21:00', 'end' => '05:00', 'grace' => 0],
+    ]]);
+
+    expect(MerakiSettings::people('meraki'))->toBe(['2' => '2']);
+    expect(MerakiSettings::shiftFor('meraki', '2')['name'])->toBe('Late shift');
+    expect(MerakiSettings::shiftFor('meraki', '2')['start'])->toBe('20:00');   // hours untouched
+});
+
+it('treats a made up shift id as a new shift, not a crash', function () {
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '99', 'name' => 'Ghost', 'start' => '08:00', 'end' => '17:00', 'grace' => 0],
+    ]])->assertRedirect('/meraki/settings?saved=1');
+
+    $shifts = MerakiSettings::shifts('meraki');
+
+    // Added as the next real id, never as 99
+    expect($shifts)->toHaveCount(2);
+    expect(array_keys($shifts))->toBe([1, 2]);
+    expect($shifts['2']['name'])->toBe('Ghost');
+
+    // A person still cannot be put on an id that does not exist
+    loggedIn()->post('/meraki/settings/people', ['people' => ['2' => '99']]);
+
+    expect(MerakiSettings::people('meraki'))->toBe([]);
 });
 
 it('keeps the day box short when everybody is shown', function () {
@@ -277,10 +435,10 @@ it('totals extra time and short time per person', function () {
     $page = loggedIn()->get('/meraki/overtime')->assertOk();
 
     $page->assertSee('Ahmed')->assertSee('Sara');
-    $page->assertSee('3 hours');         // Ahmed extra
-    $page->assertSee('30 min');          // Sara extra
-    $page->assertSee('2 hours');         // Sara short
-    $page->assertSee('21 hours');        // Ahmed worked 12h + 9h
+    $page->assertSee('3 hours');            // Ahmed extra
+    $page->assertSee('30 min');             // Sara extra
+    $page->assertSee('1 hour 55 min');      // Sara short — 2h less the 5 min grace
+    $page->assertSee('21 hours');           // Ahmed worked 12h + 9h
 });
 
 it('counts the days that need checking on the overtime page', function () {
@@ -359,11 +517,11 @@ it('gives the same in/out whether one person or everyone is shown', function () 
 });
 
 it('refuses a shift that starts and ends at the same time', function () {
-    loggedIn()->post('/meraki/settings', ['shift_start' => '08:00', 'shift_end' => '08:00'])
-        ->assertOk()
-        ->assertSee('cannot be the same time');
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'All day', 'start' => '08:00', 'end' => '08:00', 'grace' => 0],
+    ]])->assertOk()->assertSee('cannot start and end at the same time');
 
-    expect(MerakiSettings::shiftMinutes('meraki'))->toBe(540);   // still 9 hours
+    expect(MerakiSettings::shifts('meraki'))->toHaveCount(1);
 });
 
 it('sends you back to the page you asked for after logging in', function () {
@@ -446,12 +604,13 @@ it('cuts the punch list into pages of 100', function () {
     expect(substr_count($two->getContent(), '<td class="who">'))->toBe(20);
 });
 
-it('keeps the month and person filters while paging', function () {
+it('keeps the date and employee filters while paging', function () {
     MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
     MerakiUser::create(['device_sn' => SN, 'pin' => '2', 'name' => 'Sara', 'privilege' => 0]);
 
     $day   = now()->startOfMonth()->addDays(9)->toDateString();
-    $month = now()->format('Y-m');
+    $first = now()->startOfMonth()->toDateString();
+    $last  = now()->endOfMonth()->toDateString();
 
     foreach (range(0, 119) as $i) {
         punch('1', sprintf('%s %02d:%02d:00', $day, 8 + intdiv($i, 60), $i % 60), $i % 2);
@@ -459,10 +618,11 @@ it('keeps the month and person filters while paging', function () {
 
     punch('2', "$day 08:00:00", 0);   // Sara, filtered out
 
-    $html = loggedIn()->get("/meraki/log?month={$month}&pin=1")->assertOk()->getContent();
+    $html = loggedIn()->get("/meraki/log?from={$first}&to={$last}&pins[]=1")
+        ->assertOk()->getContent();
 
-    expect($html)->toContain('pin=1');
-    expect($html)->toContain('month=' . urlencode($month));
+    expect($html)->toContain('pins%5B0%5D=1');
+    expect($html)->toContain('from=' . $first);
     expect($html)->toContain('<b>120</b>');   // Sara's punch is not counted
 });
 
@@ -507,18 +667,21 @@ it('writes hours and minutes in words', function () {
     expect(MerakiSettings::readable(480))->toBe('8 hours');
 });
 
-it('handles a night shift length', function () {
-    loggedIn()->post('/meraki/settings', ['shift_start' => '22:00', 'shift_end' => '06:00']);
+it('reads an end before the start as hours that wrap past midnight', function () {
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Late shift', 'start' => '22:00', 'end' => '06:00', 'grace' => 0],
+    ]]);
 
-    expect(MerakiSettings::shiftMinutes('meraki'))->toBe(480);
+    // Eight hours, and nothing else about it is treated differently
+    expect(MerakiSettings::shiftMinutes('meraki', '2'))->toBe(480);
 });
 
 it('rejects a rubbish shift time', function () {
-    loggedIn()->post('/meraki/settings', ['shift_start' => 'banana', 'shift_end' => '17:00'])
-        ->assertOk()
-        ->assertSee('Could not save');
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Nonsense', 'start' => 'banana', 'end' => '17:00', 'grace' => 0],
+    ]])->assertOk()->assertSee('Could not save');
 
-    expect(MerakiSettings::shift('meraki')['start'])->toBe('08:00');
+    expect(MerakiSettings::shifts('meraki'))->toHaveCount(1);
 });
 
 it('still shows the plain punch list newest first', function () {
@@ -550,4 +713,517 @@ it('shows the whole month as full weeks', function () {
     // seven column headings, and every day box closed
     expect(substr_count($html, 'class="head"'))->toBe(7);
     expect(substr_count($html, 'class="day '))->toBeIn([35, 42]);
+});
+
+// ------------------------------------------------------------ date range
+
+it('opens on this month when no dates are given', function () {
+    $html = loggedIn()->get('/meraki/report')->assertOk()->getContent();
+
+    expect($html)->toContain('value="' . now()->startOfMonth()->toDateString() . '"');
+    expect($html)->toContain('value="' . now()->endOfMonth()->toDateString() . '"');
+    expect($html)->toContain(now()->format('F Y'));
+});
+
+it('still understands an old month link', function () {
+    $html = loggedIn()->get('/meraki/report?month=2026-09')->assertOk()->getContent();
+
+    expect($html)->toContain('value="2026-09-01"');
+    expect($html)->toContain('value="2026-09-30"');
+});
+
+it('shows only the days inside the range', function () {
+    // Two whole months back, so nothing here is in the future
+    $start = now()->subMonths(2)->startOfMonth();
+
+    $from = $start->copy()->addDays(9);    // the 10th
+    $to   = $start->copy()->addDays(19);   // the 20th
+
+    $html = loggedIn()->get('/meraki/report?from=' . $from->toDateString() . '&to=' . $to->toDateString())
+        ->assertOk()->getContent();
+
+    $cells = substr_count($html, 'class="day ');
+    $pad   = substr_count($html, '<div class="day pad">');
+
+    // Eleven days asked for; the rest of the weeks are padding
+    expect($cells - $pad)->toBe(11);
+
+    // Nobody punched, so all eleven are days off
+    expect(substr_count($html, '<div class="day rest">'))->toBe(11);
+    expect(preg_replace('/\s+/', ' ', $html))->toContain('those 11 days');
+});
+
+it('shows a range that crosses two months', function () {
+    $from = now()->subMonths(2)->startOfMonth()->addDays(24);   // the 25th
+    $to   = now()->subMonth()->startOfMonth()->addDays(4);      // the 5th
+
+    $html = loggedIn()->get('/meraki/report?from=' . $from->toDateString() . '&to=' . $to->toDateString())
+        ->assertOk()->getContent();
+
+    // the 1st of the later month is labelled, so nobody loses their place
+    expect(substr_count($html, 'class="mon"'))->toBe(1);
+    expect($html)->toContain($from->format('j M Y') . ' – ' . $to->format('j M Y'));
+});
+
+it('turns a backwards range the right way round', function () {
+    $a = now()->startOfMonth()->addDays(4)->toDateString();
+    $b = now()->startOfMonth()->addDays(14)->toDateString();
+
+    $html = loggedIn()->get("/meraki/report?from={$b}&to={$a}")->assertOk()->getContent();
+
+    expect($html)->toContain('name="from" value="' . $a . '"');
+    expect($html)->toContain('name="to" value="' . $b . '"');
+});
+
+it('ignores a rubbish date and falls back to this month', function () {
+    $html = loggedIn()->get('/meraki/report?from=banana&to=')->assertOk()->getContent();
+
+    expect($html)->toContain('value="' . now()->startOfMonth()->toDateString() . '"');
+});
+
+it('counts only the punches inside the range', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    $early = now()->startOfMonth()->addDays(2);
+    $late  = now()->startOfMonth()->addDays(20);
+
+    punch('1', $early->toDateString() . ' 08:00:00', 0);
+    punch('1', $early->toDateString() . ' 17:00:00', 1);
+    punch('1', $late->toDateString() . ' 08:00:00', 0);
+    punch('1', $late->toDateString() . ' 17:00:00', 1);
+
+    $narrow = '?from=' . now()->startOfMonth()->toDateString()
+        . '&to=' . now()->startOfMonth()->addDays(9)->toDateString();
+
+    // Calendar: one day in that range, not two
+    expect(worked(loggedIn()->get('/meraki/report' . $narrow . '&pins[]=1')->getContent()))
+        ->toBe(['9 hours']);
+
+    // Overtime totals follow the same range
+    expect(loggedIn()->get('/meraki/overtime' . $narrow)->getContent())
+        ->toContain('9 hours');
+
+    // Punch list too — two punches, not four
+    expect(loggedIn()->get('/meraki/log' . $narrow)->getContent())
+        ->toContain('<b>2</b>');
+});
+
+// -------------------------------------------------------- employee filter
+
+it('shows the employee tick list instead of a dropdown', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    foreach (['/meraki/report', '/meraki/overtime', '/meraki/log'] as $page) {
+        $html = loggedIn()->get($page)->assertOk()->getContent();
+
+        expect($html)->toContain('Employee');
+        expect($html)->toContain('name="pins[]"');
+        expect($html)->toContain('Tick nobody to see everyone');
+    }
+});
+
+it('shows several employees at once, all opened', function () {
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    foreach (range(1, 5) as $n) {
+        MerakiUser::create(['device_sn' => SN, 'pin' => (string) $n, 'name' => "Person {$n}", 'privilege' => 0]);
+        punch((string) $n, "$day 08:00:00", 0);
+        punch((string) $n, "$day 17:00:00", 1);
+    }
+
+    $html = loggedIn()->get('/meraki/report?pins[]=2&pins[]=4')->assertOk()->getContent();
+
+    // Only the two picked, and both already open
+    expect(substr_count($html, '<details class="one'))->toBe(2);
+    expect(opened($html))->toBe(2);
+    expect(worked($html))->toBe(['9 hours', '9 hours']);
+    expect($html)->toContain('2 picked');
+});
+
+it('filters the overtime table and the punch list by employee', function () {
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    foreach (range(1, 4) as $n) {
+        MerakiUser::create(['device_sn' => SN, 'pin' => (string) $n, 'name' => "Person {$n}", 'privilege' => 0]);
+        punch((string) $n, "$day 08:00:00", 0);
+        punch((string) $n, "$day 17:00:00", 1);
+    }
+
+    $over = loggedIn()->get('/meraki/overtime?pins[]=1&pins[]=3')->assertOk()->getContent();
+
+    expect(substr_count($over, '<td class="who">'))->toBe(2);
+
+    $log = loggedIn()->get('/meraki/log?pins[]=1&pins[]=3')->assertOk()->getContent();
+
+    expect(substr_count($log, '<td class="who">'))->toBe(4);   // two punches each
+});
+
+it('does not let a made up pin empty the page', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    punch('1', "$day 08:00:00", 0);
+    punch('1', "$day 17:00:00", 1);
+
+    // pin 77 belongs to nobody, so it is dropped and everyone is shown
+    $html = loggedIn()->get('/meraki/report?pins[]=77')->assertOk()->getContent();
+
+    expect($html)->toContain('Ahmed');
+    expect(worked($html))->toBe(['9 hours']);
+});
+
+it('does not turn other days off when several employees are picked', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+    MerakiUser::create(['device_sn' => SN, 'pin' => '2', 'name' => 'Sara', 'privilege' => 0]);
+    MerakiUser::create(['device_sn' => SN, 'pin' => '3', 'name' => 'Omar', 'privilege' => 0]);
+
+    $d1 = now()->startOfMonth()->addDays(9)->toDateString();
+    $d2 = now()->startOfMonth()->addDays(10)->toDateString();
+    $d3 = now()->startOfMonth()->addDays(11)->toDateString();
+
+    punch('1', "$d1 08:00:00", 0);
+    punch('1', "$d1 17:00:00", 1);
+    punch('2', "$d2 08:00:00", 0);
+    punch('2', "$d2 17:00:00", 1);
+    punch('3', "$d3 08:00:00", 0);
+    punch('3', "$d3 17:00:00", 1);
+
+    $picked = loggedIn()->get('/meraki/report?pins[]=1&pins[]=2')->getContent();
+
+    // Omar's day is still a working day, even though he was not picked
+    $gone = now()->day;
+
+    expect(substr_count($picked, '<div class="day rest">'))->toBe($gone - 3);
+});
+
+// ---------------------------------------------------------- night shifts
+
+
+
+it('leaves a day shift on the day it happened', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    $day = now()->startOfMonth()->addDays(9);
+
+    punch('1', $day->toDateString() . ' 08:00:00', 0);
+    punch('1', $day->toDateString() . ' 17:00:00', 1);
+
+    // The day before and the day after must both stay empty
+    $before = loggedIn()->get('/meraki/report?from=' . $day->copy()->subDay()->toDateString()
+        . '&to=' . $day->copy()->subDay()->toDateString())->getContent();
+
+    expect(worked($before))->toBe([]);
+    expect(worked(loggedIn()->get('/meraki/report?pins[]=1')->getContent()))->toBe(['9 hours']);
+});
+
+// ------------------------------------------------------- changing a shift
+
+it('recounts a person the moment their shift changes', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Mover', 'privilege' => 0]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '1', 'name' => 'Day shift', 'start' => '08:00', 'end' => '17:00', 'grace' => 5],
+        ['id' => '',  'name' => 'Half day',  'start' => '08:00', 'end' => '13:00', 'grace' => 5],
+    ]]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    punch('1', "$day 08:00:00", 0);
+    punch('1', "$day 14:00:00", 1);      // six hours
+
+    // Nine hour day: three short, nothing extra
+    $before = loggedIn()->get('/meraki/overtime')->getContent();
+
+    expect($before)->toContain('Day shift');
+    expect($before)->toContain('2 hours 55 min');   // 9h - 6h - 5 min grace
+
+    loggedIn()->post('/meraki/settings/people', ['people' => ['1' => '2']]);
+
+    // Five hour day: one hour extra, nothing short
+    $after = loggedIn()->get('/meraki/overtime')->getContent();
+
+    expect($after)->toContain('Half day');
+    expect($after)->toContain('1 hour');
+    expect(substr_count($after, 'class="n zero"'))->toBe(2);   // short and days-to-check
+});
+
+it('keeps everyone on their shift when the shifts are edited', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'A', 'privilege' => 0]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '1', 'name' => 'Day shift', 'start' => '08:00', 'end' => '17:00', 'grace' => 5],
+        ['id' => '',  'name' => 'Half day',  'start' => '08:00', 'end' => '13:00', 'grace' => 0],
+    ]]);
+
+    loggedIn()->post('/meraki/settings/people', ['people' => ['1' => '2']]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '1', 'name' => 'Office hours', 'start' => '07:00', 'end' => '17:00', 'grace' => 5],
+        ['id' => '2', 'name' => 'Short one',    'start' => '08:00', 'end' => '12:00', 'grace' => 0],
+    ]]);
+
+    expect(MerakiSettings::people('meraki'))->toBe(['1' => '2']);
+    expect(MerakiSettings::shiftFor('meraki', '1')['name'])->toBe('Short one');
+    expect(MerakiSettings::shiftFor('meraki', '1')['minutes'])->toBe(300);   // hours fixed
+});
+
+// --------------------------------------------------------- odd situations
+
+it('can still filter to someone the device has not named yet', function () {
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    punch('77', "$day 08:00:00", 0);   // no row in meraki_users at all
+    punch('77', "$day 17:00:00", 1);
+
+    $html = loggedIn()->get('/meraki/report')->assertOk()->getContent();
+
+    expect($html)->toContain('PIN 77');
+    expect($html)->toContain('value="77"');       // offered in the filter
+
+    expect(worked(loggedIn()->get('/meraki/report?pins[]=77')->getContent()))->toBe(['9 hours']);
+});
+
+it('counts one employee once even if the url names them twice', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Twice', 'privilege' => 0]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    punch('1', "$day 08:00:00", 0);
+    punch('1', "$day 17:00:00", 1);
+
+    $html = loggedIn()->get('/meraki/report?pins[]=1&pins[]=1')->assertOk()->getContent();
+
+    expect(substr_count($html, '<details class="one'))->toBe(1);
+    expect($html)->toContain('>Twice<');          // not "2 picked"
+});
+
+it('gives the punch list exactly the range asked for, no padding', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Edge', 'privilege' => 0]);
+
+    $from = now()->startOfMonth()->addDays(4);
+    $to   = now()->startOfMonth()->addDays(6);
+
+    punch('1', $from->toDateString() . ' 00:00:00', 0);
+    punch('1', $to->toDateString() . ' 23:59:59', 1);
+    punch('1', $from->copy()->subDay()->toDateString() . ' 09:00:00', 0);
+    punch('1', $to->copy()->addDay()->toDateString() . ' 09:00:00', 0);
+
+    $html = loggedIn()->get('/meraki/log?from=' . $from->toDateString() . '&to=' . $to->toDateString())
+        ->assertOk()->getContent();
+
+    // Both edges counted, neither neighbour
+    expect($html)->toContain('<b>2</b>');
+});
+
+// ------------------------------------- the shift is stamped onto the punch
+
+it('stamps the shift onto every punch the device sends', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Half day', 'start' => '08:00', 'end' => '13:00', 'grace' => 0],
+    ]]);
+
+    loggedIn()->post('/meraki/settings/people', ['people' => ['1' => '2']]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    $this->call('POST', '/iclock/cdata?SN=' . SN . '&table=ATTLOG', [], [], [],
+        ['CONTENT_TYPE' => 'text/plain'],
+        "1\t$day 08:00:00\t0\t1\n1\t$day 16:00:00\t1\t1\n"
+    )->assertOk();
+
+    expect(Meraki::where('pin', '1')->pluck('shift_id')->all())->toBe(['2', '2']);
+});
+
+it('leaves a stamped day alone when the person is moved to another shift', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    // Two shifts: 9 hours and 5 hours
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Half day', 'start' => '08:00', 'end' => '13:00', 'grace' => 0],
+    ]]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    // Punched while on the Day shift, and stamped as such
+    Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$day 08:00:00",
+        'status' => 0, 'verify' => 1, 'raw' => 'test', 'shift_id' => '1']);
+    Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$day 16:00:00",
+        'status' => 1, 'verify' => 1, 'raw' => 'test', 'shift_id' => '1']);
+
+    $before = loggedIn()->get('/meraki/overtime')->getContent();
+
+    expect($before)->toContain('Day shift');
+    expect($before)->toContain('8 hours');            // worked
+    expect($before)->toContain('55 min');             // short: 9h - 8h - 5 min grace
+
+    // Move him to the five hour shift
+    loggedIn()->post('/meraki/settings/people', ['people' => ['1' => '2']]);
+
+    $after = loggedIn()->get('/meraki/overtime')->getContent();
+
+    // That day was made under the Day shift and must not budge.
+    // (Both shifts are named in the key at the bottom either way, so look
+    //  at Ahmed's own row rather than the whole page.)
+    preg_match('/<td class="who">Ahmed.*?<\/tr>/s', $after, $row);
+
+    expect($row[0])->toContain('Day shift');
+    expect($row[0])->not->toContain('Half day');
+    expect($after)->toBe($before);
+});
+
+it('follows the new shift only for punches made after the move', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Half day', 'start' => '08:00', 'end' => '13:00', 'grace' => 0],
+    ]]);
+
+    $d1 = now()->startOfMonth()->addDays(9)->toDateString();
+    $d2 = now()->startOfMonth()->addDays(10)->toDateString();
+
+    // Monday on the Day shift, Tuesday on the Half day — six hours each
+    foreach ([[$d1, '1'], [$d2, '2']] as [$date, $shift]) {
+        Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$date 08:00:00",
+            'status' => 0, 'verify' => 1, 'raw' => 'test', 'shift_id' => $shift]);
+        Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$date 14:00:00",
+            'status' => 1, 'verify' => 1, 'raw' => 'test', 'shift_id' => $shift]);
+    }
+
+    $html = loggedIn()->get('/meraki/report?pins[]=1')->assertOk()->getContent();
+
+    // Same six hours both days, but only the Half day one is overtime
+    expect(worked($html))->toBe(['6 hours', '6 hours']);
+    expect(extra($html))->toBe(['1 hour']);           // 6h on a 5h shift
+
+    $over = loggedIn()->get('/meraki/overtime')->getContent();
+
+    expect($over)->toContain('12 hours');             // worked, both days
+    expect($over)->toContain('1 hour');               // extra, Tuesday only
+    expect($over)->toContain('2 hours 55 min');       // short, Monday only
+});
+
+it('falls back to the current shift for punches with no stamp', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Half day', 'start' => '08:00', 'end' => '13:00', 'grace' => 0],
+    ]]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    // Recorded before the stamp existed
+    punch('1', "$day 08:00:00", 0);
+    punch('1', "$day 14:00:00", 1);
+
+    expect(loggedIn()->get('/meraki/overtime')->getContent())->toContain('Day shift');
+
+    loggedIn()->post('/meraki/settings/people', ['people' => ['1' => '2']]);
+
+    // Nothing better to go on, so it follows him
+    expect(loggedIn()->get('/meraki/overtime')->getContent())->toContain('Half day');
+});
+
+it('refuses to change the hours of a shift that is already saved', function () {
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '1', 'name' => 'Renamed', 'start' => '05:00', 'end' => '23:00', 'grace' => 199],
+    ]])->assertRedirect('/meraki/settings?saved=1');
+
+    $shift = MerakiSettings::shift('meraki', '1');
+
+    expect($shift['name'])->toBe('Renamed');          // the name does move
+    expect($shift['start'])->toBe('08:00');           // the hours do not
+    expect($shift['end'])->toBe('17:00');
+    expect($shift['grace'])->toBe(5);
+
+    // and the page shows them as text, not as fields to type in
+    $html = loggedIn()->get('/meraki/settings')->assertOk()->getContent();
+
+    expect($html)->toContain('shifts[0][name]');
+    expect($html)->not->toContain('shifts[0][start]');
+    expect($html)->toContain('hours are fixed once saved');
+});
+
+it('names every shift a person worked under in the range', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Switcher', 'privilege' => 0]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Half day', 'start' => '08:00', 'end' => '13:00', 'grace' => 0],
+    ]]);
+
+    $d1 = now()->startOfMonth()->addDays(9)->toDateString();
+    $d2 = now()->startOfMonth()->addDays(10)->toDateString();
+
+    foreach ([[$d1, '1'], [$d2, '2']] as [$date, $shift]) {
+        Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$date 08:00:00",
+            'status' => 0, 'verify' => 1, 'raw' => 'test', 'shift_id' => $shift]);
+        Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$date 15:00:00",
+            'status' => 1, 'verify' => 1, 'raw' => 'test', 'shift_id' => $shift]);
+    }
+
+    preg_match('/<td class="who">Switcher.*?<\/tr>/s',
+        loggedIn()->get('/meraki/overtime')->getContent(), $row);
+
+    expect($row[0])->toContain('Day shift, Half day');
+});
+
+it('uses the shift a day started on when the stamps differ mid day', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Split', 'privilege' => 0]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Half day', 'start' => '08:00', 'end' => '13:00', 'grace' => 0],
+    ]]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$day 08:00:00",
+        'status' => 0, 'verify' => 1, 'raw' => 'test', 'shift_id' => '1']);
+    Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$day 14:00:00",
+        'status' => 1, 'verify' => 1, 'raw' => 'test', 'shift_id' => '2']);
+
+    preg_match('/<td class="who">Split.*?<\/tr>/s',
+        loggedIn()->get('/meraki/overtime')->getContent(), $row);
+
+    expect($row[0])->toContain('Day shift');
+    expect($row[0])->not->toContain('Half day');
+});
+
+it('falls back safely when a punch names a shift that is gone', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ghosted', 'privilege' => 0]);
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$day 08:00:00",
+        'status' => 0, 'verify' => 1, 'raw' => 'test', 'shift_id' => '77']);
+    Meraki::create(['device_sn' => SN, 'pin' => '1', 'punched_at' => "$day 17:00:00",
+        'status' => 1, 'verify' => 1, 'raw' => 'test', 'shift_id' => '77']);
+
+    $html = loggedIn()->get('/meraki/overtime')->assertOk()->getContent();
+
+    expect($html)->toContain('Day shift');      // the first shift, not a crash
+    expect($html)->toContain('9 hours');
+});
+
+it('does not re-stamp a punch the device sends twice', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Repeat', 'privilege' => 0]);
+
+    loggedIn()->post('/meraki/settings/shifts', ['shifts' => [
+        ['id' => '', 'name' => 'Half day', 'start' => '08:00', 'end' => '13:00', 'grace' => 0],
+    ]]);
+
+    $day  = now()->startOfMonth()->addDays(9)->toDateString();
+    $body = "1\t$day 08:00:00\t0\t1\n";
+    $url  = '/iclock/cdata?SN=' . SN . '&table=ATTLOG';
+
+    $this->call('POST', $url, [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
+
+    loggedIn()->post('/meraki/settings/people', ['people' => ['1' => '2']]);
+
+    // The device re-sends it after a reconnect, now that he has moved
+    $this->call('POST', $url, [], [], [], ['CONTENT_TYPE' => 'text/plain'], $body);
+
+    expect(Meraki::count())->toBe(1);
+    expect(Meraki::first()->shift_id)->toBe('1');   // still the shift of the day
 });

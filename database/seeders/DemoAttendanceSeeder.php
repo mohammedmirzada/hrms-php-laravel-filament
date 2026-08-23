@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Support\MerakiSettings;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -196,6 +197,9 @@ class DemoAttendanceSeeder extends Seeder {
             'status'     => $status,
             'verify'     => 1,
             'raw'        => self::STAMP,
+            // Same stamp the device puts on a real punch, so the seeded month
+            // behaves exactly like a recorded one.
+            'shift_id'   => MerakiSettings::shiftFor('meraki', (string) $pin)['id'],
             'created_at' => now(),
             'updated_at' => now(),
         ];

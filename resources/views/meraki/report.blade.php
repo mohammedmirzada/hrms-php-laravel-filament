@@ -1,7 +1,7 @@
 @extends('meraki.layout')
 
-@section('title', 'Punch list ' . $month->format('F Y'))
-@section('subtitle', 'Punch list — ' . $month->format('F Y'))
+@section('title', 'Punch list ' . $label)
+@section('subtitle', 'Punch list — ' . $label)
 
 @section('content')
 
@@ -46,23 +46,7 @@
         .pager .at { font-variant-numeric: tabular-nums; }
     </style>
 
-    <form method="get" class="bar">
-        <label>Month
-            {{-- Safari has no month picker and shows a text box, so say what
-                 it should look like there. --}}
-            <input type="month" name="month" value="{{ $monthKey }}"
-                   placeholder="2026-08" pattern="\d{4}-\d{2}">
-        </label>
-        <label>Person
-            <select name="pin">
-                <option value="">Everyone</option>
-                @foreach ($people as $p => $name)
-                    <option value="{{ $p }}" @selected($pin == $p)>{{ $name }}</option>
-                @endforeach
-            </select>
-        </label>
-        <button type="submit" class="go">Show</button>
-    </form>
+    @include('meraki.parts.filter')
 
     <div class="card">
         @if ($rows->total())
@@ -93,7 +77,7 @@
                 </table>
             </div>
         @else
-            <p class="empty">No punches this month.</p>
+            <p class="empty">No punches for {{ $label }}.</p>
         @endif
     </div>
 

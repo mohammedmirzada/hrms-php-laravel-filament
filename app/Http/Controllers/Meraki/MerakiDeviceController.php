@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Meraki;
 use App\Models\MerakiUser;
+use App\Support\MerakiSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -150,20 +151,42 @@ class MerakiDeviceController extends Controller {
                 continue;
             }
 
+            $pin = trim($f[0]);
+
             // firstOrCreate + the unique index means a re-sent punch is ignored
             Meraki::firstOrCreate(
                 [
                     'device_sn'  => $sn,
-                    'pin'        => trim($f[0]),
+                    'pin'        => $pin,
                     'punched_at' => trim($f[1]),
                 ],
                 [
-                    'status' => (int) ($f[2] ?? 0),
-                    'verify' => isset($f[3]) ? (int) $f[3] : null,
-                    'raw'    => $line,
+                    'status'   => (int) ($f[2] ?? 0),
+                    'verify'   => isset($f[3]) ? (int) $f[3] : null,
+                    'raw'      => $line,
+
+                    // Written once, here. Moving this person to another shift
+                    // tomorrow must not change what today was measured against.
+                    'shift_id' => $this->shiftId($sn, $pin),
                 ]
             );
         }
+    }
+
+    /**
+     * The shift this person is on right now, as an id, for stamping onto a
+     * punch. Null if the serial belongs to no client we know.
+     */
+    private function shiftId(string $sn, string $pin): ?string {
+
+        foreach ((array) config('meraki.clients') as $slug => $client) {
+
+            if (($client['device_sn'] ?? null) === $sn) {
+                return MerakiSettings::shiftFor($slug, $pin)['id'];
+            }
+        }
+
+        return null;
     }
 
     /**

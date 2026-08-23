@@ -14,12 +14,16 @@ use Illuminate\Pagination\LengthAwarePaginator;
 /**
  * Attendance for one client.
  *
- *   calendar()  month grid, every person on the day they worked
+ *   calendar()  day grid over the chosen dates, everybody on the day they worked
+ *   overtime()  totals per person over the chosen dates
  *   log()       plain list, one row per punch, newest first
  *
+ * All three take the same filters: a date range (from / to) and any number of
+ * employees. Leaving the employees empty means everybody.
+ *
  * Hours are counted by adding up every IN -> OUT pair, so a break in the
- * middle is not paid. Overtime is worked hours above the shift length, set
- * on the Settings page.
+ * middle is not paid. Overtime is worked hours above the length of that
+ * person's shift, set on the Settings page.
  *
  * How IN / OUT is decided is set by config('meraki.punch_state').
  */
@@ -35,54 +39,58 @@ class MerakiReportController extends Controller {
         5 => 'OUT',   // overtime out
     ];
 
+    /**
+     * Longest range anybody may ask for. A range of years would build a grid
+     * nobody can read out of a query nobody wants to wait for.
+     */
+    private const MAX_DAYS = 366;
+
     // -------------------------------------------------------------- calendar
 
     public function calendar(Request $request, string $client) {
 
         [$config, $sn] = $this->client($client);
 
-        $month = $this->month($request->query('month'));
-        $pin   = $request->query('pin');
+        [$from, $to] = $this->range($request);
 
-        $names   = $this->names($sn);
-        $punches = $this->punches($sn, $month, $pin);
+        $names = $this->people($sn, $from, $to);
+        $pins  = $this->pins($request, $names);
 
-        $shift       = MerakiSettings::shift($client);
-        $shiftLength = MerakiSettings::shiftMinutes($client);
+        $punches = $this->punches($sn, $from, $to, $pins);
 
-        $days = $this->days($punches, $names, $shiftLength);
+        $days = $this->days($punches, $names, $client);
 
-        // Days off are worked out from everybody, not from the filtered person
-        $busy = $this->busyDates($sn, $month);
+        // Days off are worked out from everybody, not from the chosen people
+        $busy = $this->busyDates($sn, $from, $to);
 
         return view('meraki.calendar', [
-            'client'      => $client,
-            'clientName'  => $config['name'],
-            'month'       => $month,
-            'monthKey'    => $month->format('Y-m'),
-            'pin'         => $pin,
-            'people'      => $names,
-            'weeks'       => $this->weeks($month, $days, $busy),
-            'weekDays'    => $this->weekDayNames(),
-            'offCount'    => $this->offDayCount($month, $busy),
-            'shift'       => $shift,
-            'shiftText'   => MerakiSettings::readable($shiftLength),
+            'client'     => $client,
+            'clientName' => $config['name'],
+            'from'       => $from->toDateString(),
+            'to'         => $to->toDateString(),
+            'label'      => $this->rangeLabel($from, $to),
+            'pins'       => $pins,
+            'people'     => $names,
+            'weeks'      => $this->weeks($from, $to, $days, $busy),
+            'weekDays'   => $this->weekDayNames(),
+            'offCount'   => $this->offDayCount($from, $to, $busy),
+            'shifts'     => MerakiSettings::shifts($client),
 
             // With everybody on screen the day boxes would grow one block per
             // person and the month would be metres tall. So everybody gets one
-            // short line each, and the full block is for one chosen person.
-            'detailed'    => $pin !== null && $pin !== '',
+            // short line each, and full blocks are for the people picked.
+            'detailed'   => count($pins) > 0,
 
             // An empty grid on its own looks broken. Say so instead.
-            'hasData'     => count($days) > 0,
+            'hasData'    => count($days) > 0,
         ]);
     }
 
     // -------------------------------------------------------------- overtime
 
     /**
-     * Month totals per person: how long they worked, how much of it was over
-     * the work day, and how much they were short of it.
+     * Totals per person over the chosen dates: how long they worked, how much
+     * of it was over their work day, and how much they were short of it.
      *
      * Short time only counts days they actually came. A day nobody punched is
      * a day off as far as this page knows — the device cannot tell the
@@ -92,13 +100,14 @@ class MerakiReportController extends Controller {
 
         [$config, $sn] = $this->client($client);
 
-        $month = $this->month($request->query('month'));
+        [$from, $to] = $this->range($request);
 
-        $names       = $this->names($sn);
-        $punches     = $this->punches($sn, $month, null);
-        $shiftLength = MerakiSettings::shiftMinutes($client);
+        $names = $this->people($sn, $from, $to);
+        $pins  = $this->pins($request, $names);
 
-        $days = $this->days($punches, $names, $shiftLength);
+        $punches = $this->punches($sn, $from, $to, $pins);
+
+        $days = $this->days($punches, $names, $client);
 
         $totals = [];
 
@@ -109,27 +118,40 @@ class MerakiReportController extends Controller {
                 $pin = $who['pin'];
 
                 $totals[$pin] ??= [
-                    'name'     => $who['name'],
-                    'days'     => 0,
-                    'worked'   => 0,
-                    'extra'    => 0,
-                    'short'    => 0,
-                    'problems' => 0,
+                    'name'      => $who['name'],
+                    'shifts'    => [],
+                    'days'      => 0,
+                    'worked'    => 0,
+                    'extra'     => 0,
+                    'short'     => 0,
+                    'problems'  => 0,
                 ];
+
+                // Somebody moved mid-range worked under more than one shift,
+                // and the row has to say so rather than name only the first.
+                $totals[$pin]['shifts'][$who['shiftName']] = $who['shiftText'];
 
                 $totals[$pin]['days']     += 1;
                 $totals[$pin]['worked']   += $who['worked'];
                 $totals[$pin]['extra']    += $who['overtime'];
-                $totals[$pin]['short']    += max(0, $shiftLength - $who['worked']);
+                $totals[$pin]['short']    += $who['short'];
                 $totals[$pin]['problems'] += $who['problem'] ? 1 : 0;
             }
         }
 
         // Words, not numbers, for everything on screen
         foreach ($totals as $pin => $row) {
+
             $totals[$pin]['workedText'] = MerakiSettings::readable($row['worked']);
             $totals[$pin]['extraText']  = MerakiSettings::readable($row['extra']);
             $totals[$pin]['shortText']  = MerakiSettings::readable($row['short']);
+
+            // One shift: name it, with its hours beside it. More than one:
+            // name them all and drop the hours, which are no longer one number.
+            $totals[$pin]['shiftName'] = implode(', ', array_keys($row['shifts']));
+            $totals[$pin]['shiftText'] = count($row['shifts']) === 1
+                ? reset($row['shifts'])
+                : '';
         }
 
         uasort($totals, fn ($a, $b) => strcasecmp($a['name'], $b['name']));
@@ -137,11 +159,13 @@ class MerakiReportController extends Controller {
         return view('meraki.overtime', [
             'client'      => $client,
             'clientName'  => $config['name'],
-            'month'       => $month,
-            'monthKey'    => $month->format('Y-m'),
+            'from'        => $from->toDateString(),
+            'to'          => $to->toDateString(),
+            'label'       => $this->rangeLabel($from, $to),
+            'pins'        => $pins,
+            'people'      => $names,
             'rows'        => $totals,
-            'shift'       => MerakiSettings::shift($client),
-            'shiftText'   => MerakiSettings::readable($shiftLength),
+            'shifts'      => MerakiSettings::shifts($client),
             'totalExtra'  => MerakiSettings::readable(array_sum(array_column($totals, 'extra'))),
             'totalShort'  => MerakiSettings::readable(array_sum(array_column($totals, 'short'))),
             'totalWorked' => MerakiSettings::readable(array_sum(array_column($totals, 'worked'))),
@@ -150,9 +174,12 @@ class MerakiReportController extends Controller {
 
     /**
      * One entry per person per day they punched:
-     * first in, last out, worked minutes, overtime minutes.
+     * first in, last out, worked minutes, overtime, short time.
+     *
+     * The shift is looked up per person, so two people on the same day can be
+     * measured against different hours.
      */
-    private function days($punches, $names, int $shiftLength): array {
+    private function days($punches, $names, string $client): array {
 
         $directions = $this->directions($punches);
 
@@ -221,7 +248,13 @@ class MerakiReportController extends Controller {
                     $noOut = true;
                 }
 
-                $overtime = max(0, $worked - $shiftLength);
+                $shift = $this->shiftOf($client, $list, $pin);
+
+                $overtime = max(0, $worked - $shift['minutes']);
+
+                // The grace period forgives being a few minutes light, so
+                // arriving five minutes late is not held against anybody.
+                $short = max(0, $shift['minutes'] - $worked - $shift['grace']);
 
                 $days[$date][] = [
                     'pin'          => $pin,
@@ -234,6 +267,10 @@ class MerakiReportController extends Controller {
                     'workedText'   => MerakiSettings::readable($worked),
                     'overtime'     => $overtime,
                     'overtimeText' => MerakiSettings::readable($overtime),
+                    'short'        => $short,
+                    'shortText'    => MerakiSettings::readable($short),
+                    'shiftName'    => $shift['name'],
+                    'shiftText'    => $shift['text'],
                     'problem'      => $this->problem($noIn, $noOut),
                 ];
             }
@@ -266,55 +303,60 @@ class MerakiReportController extends Controller {
     }
 
     /**
-     * The month as rows of seven days, padded out so every week is full.
+     * The chosen dates as rows of seven days, padded out so every week is full.
+     * A range of one month looks exactly like the old month grid; a range that
+     * crosses months just keeps going.
      *
-     * A date in the month that nobody punched at all is marked a day off.
+     * A date inside the range that nobody punched at all is marked a day off.
      * The device is the only thing that knows anything, so no punches from
      * anyone is the only signal there is that the place was shut.
      *
-     * $allDays is always the whole company's month, never the filtered person,
-     * so picking one name from the filter does not turn everyone else's normal
-     * working days into days off.
+     * $allDays is always the whole company, never the chosen people, so
+     * picking a name does not turn everyone else's working days into days off.
      */
-    private function weeks(Carbon $month, array $days, array $allDays): array {
+    private function weeks(Carbon $from, Carbon $to, array $days, array $allDays): array {
 
         $startsOn = (int) config('meraki.week_starts_on', 6);
 
-        $cursor = $month->copy()->startOfMonth();
+        $cursor = $from->copy()->startOfDay();
 
         while ($cursor->dayOfWeek !== $startsOn) {
             $cursor->subDay();
         }
 
-        $lastDay = $month->copy()->endOfMonth()->startOfDay();
+        $start = $from->copy()->startOfDay();
+        $end   = $to->copy()->startOfDay();
 
         $weeks = [];
         $week  = [];
 
-        while ($cursor <= $lastDay || count($week) > 0) {
+        while (true) {
 
             $date = $cursor->toDateString();
 
-            $inMonth = $cursor->month === $month->month;
+            $inRange = $cursor->betweenIncluded($start, $end);
 
             // A date that has not happened yet is not a day off, it is just
-            // the future. Without this the rest of the current month greys
-            // out and looks like a three week holiday.
+            // the future. Without this the rest of the month greys out and
+            // looks like a three week holiday.
             $past = $cursor->lessThanOrEqualTo(Carbon::today());
 
             $week[] = [
                 'date'    => $date,
                 'number'  => $cursor->day,
-                'inMonth' => $inMonth,
-                'off'     => $inMonth && $past && empty($allDays[$date]),
+                // A range can cross months, so say which month on its 1st.
+                'month'   => $cursor->day === 1 ? $cursor->format('M') : null,
+                'inRange' => $inRange,
+                'off'     => $inRange && $past && empty($allDays[$date]),
                 'people'  => $days[$date] ?? [],
             ];
 
             if (count($week) === 7) {
+
                 $weeks[] = $week;
                 $week    = [];
 
-                if ($cursor >= $lastDay) {
+                if ($cursor >= $end) {
                     break;
                 }
             }
@@ -344,11 +386,12 @@ class MerakiReportController extends Controller {
 
         [$config, $sn] = $this->client($client);
 
-        $month = $this->month($request->query('month'));
-        $pin   = $request->query('pin');
+        [$from, $to] = $this->range($request);
 
-        $names   = $this->names($sn);
-        $punches = $this->punches($sn, $month, $pin);
+        $names = $this->people($sn, $from, $to);
+        $pins  = $this->pins($request, $names);
+
+        $punches = $this->punches($sn, $from, $to, $pins);
 
         $directions = $this->directions($punches);
 
@@ -372,9 +415,10 @@ class MerakiReportController extends Controller {
         return view('meraki.report', [
             'client'     => $client,
             'clientName' => $config['name'],
-            'month'      => $month,
-            'monthKey'   => $month->format('Y-m'),
-            'pin'        => $pin,
+            'from'       => $from->toDateString(),
+            'to'         => $to->toDateString(),
+            'label'      => $this->rangeLabel($from, $to),
+            'pins'       => $pins,
             'people'     => $names,
             'rows'       => $this->page($request, $rows),
         ]);
@@ -407,7 +451,106 @@ class MerakiReportController extends Controller {
         );
     }
 
+    // --------------------------------------------------------------- filters
+
+    /**
+     * The dates being looked at, as whole days. Defaults to this month.
+     *
+     * ?month=2026-08 is still understood, so old links and bookmarks from
+     * before the range filter existed keep working.
+     */
+    private function range(Request $request): array {
+
+        $from = $this->date($request->query('from'));
+        $to   = $this->date($request->query('to'));
+
+        if ($from === null && $to === null) {
+
+            $month = $this->month($request->query('month'));
+
+            return [
+                $month->copy()->startOfMonth(),
+                $month->copy()->endOfMonth()->startOfDay(),
+            ];
+        }
+
+        // One end on its own still works: it fills the rest of its own month.
+        $from ??= $to->copy()->startOfMonth();
+        $to   ??= $from->copy()->endOfMonth()->startOfDay();
+
+        if ($to->lessThan($from)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        if ($from->diffInDays($to) > self::MAX_DAYS) {
+            $to = $from->copy()->addDays(self::MAX_DAYS);
+        }
+
+        return [$from, $to];
+    }
+
+    /**
+     * The chosen employees, as pins. Empty means everybody.
+     *
+     * Only people the device actually knows get through, so a hand typed pin
+     * in the URL cannot quietly produce an empty page.
+     */
+    private function pins(Request $request, $names): array {
+
+        $raw = $request->query('pins', $request->query('pin'));
+
+        $wanted = array_filter(
+            array_map(fn ($p) => trim((string) $p), (array) $raw),
+            fn ($p) => $p !== ''
+        );
+
+        $known = array_map('strval', $names->keys()->all());
+
+        // Unique, or the same name sent twice would read as "2 picked".
+        return array_values(array_unique(array_intersect($wanted, $known)));
+    }
+
+    /** Something readable for the title: a whole month, a day, or a range. */
+    private function rangeLabel(Carbon $from, Carbon $to): string {
+
+        if ($from->isSameDay($to)) {
+            return $from->format('j M Y');
+        }
+
+        $wholeMonth = $from->day === 1
+            && $to->isSameDay($to->copy()->endOfMonth()->startOfDay())
+            && $from->isSameMonth($to);
+
+        if ($wholeMonth) {
+            return $from->format('F Y');
+        }
+
+        return $from->format('j M Y') . ' – ' . $to->format('j M Y');
+    }
+
     // ---------------------------------------------------------------- shared
+
+    /**
+     * The shift one person's day was measured against.
+     *
+     * Taken from the punches themselves: the device stamps each one with the
+     * shift that person was on at the time, so moving them to another shift
+     * tomorrow leaves every day before it exactly as it was.
+     *
+     * Punches recorded before that stamp existed have nothing to go on, so
+     * those fall back to the shift the person is on now.
+     */
+    private function shiftOf(string $client, $list, $pin): array {
+
+        foreach ($list as $punch) {
+
+            if ($punch->shift_id !== null && $punch->shift_id !== '') {
+                return MerakiSettings::shift($client, (string) $punch->shift_id);
+            }
+        }
+
+        return MerakiSettings::shiftFor($client, (string) $pin);
+    }
 
     /**
      * punch id => 'IN' or 'OUT'.
@@ -472,18 +615,15 @@ class MerakiReportController extends Controller {
     }
 
     /**
-     * Every date in the month that anybody punched on, as ['Y-m-d' => true].
+     * Every date in the range that anybody punched on, as ['Y-m-d' => true].
      *
-     * Always the whole device, never one person — a date nobody touched is
-     * what this system calls a day off.
+     * Always the whole device, never the chosen people — a date nobody touched
+     * is what this system calls a day off.
      */
-    private function busyDates(string $sn, Carbon $month): array {
+    private function busyDates(string $sn, Carbon $from, Carbon $to): array {
 
         return Meraki::where('device_sn', $sn)
-            ->whereBetween('punched_at', [
-                $month->copy()->startOfMonth(),
-                $month->copy()->endOfMonth()->endOfDay(),
-            ])
+            ->whereBetween('punched_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
             ->selectRaw('DATE(punched_at) as d')
             ->distinct()
             ->pluck('d')
@@ -491,12 +631,12 @@ class MerakiReportController extends Controller {
             ->all();
     }
 
-    /** How many days of the month nobody punched on. Future dates do not count. */
-    private function offDayCount(Carbon $month, array $busy): int {
+    /** How many days in the range nobody punched on. Future dates do not count. */
+    private function offDayCount(Carbon $from, Carbon $to, array $busy): int {
 
         $off    = 0;
-        $cursor = $month->copy()->startOfMonth();
-        $last   = $month->copy()->endOfMonth()->startOfDay()->min(Carbon::today());
+        $cursor = $from->copy()->startOfDay();
+        $last   = $to->copy()->startOfDay()->min(Carbon::today());
 
         while ($cursor <= $last) {
 
@@ -517,18 +657,55 @@ class MerakiReportController extends Controller {
             ->pluck('name', 'pin');
     }
 
-    /** One month of punches, oldest first, for one person or everybody. */
-    private function punches(string $sn, Carbon $month, ?string $pin) {
+    /**
+     * Everyone the filter can offer: the names the device has sent, plus any
+     * pin that punched in this range but has no name yet.
+     *
+     * Without the second half those punches show up in the reports as "PIN 7"
+     * with no way to filter to them — the device sends attendance long before
+     * it sends the name list.
+     */
+    private function people(string $sn, Carbon $from, Carbon $to) {
+
+        $names = $this->names($sn);
+
+        $seen = Meraki::where('device_sn', $sn)
+            ->whereBetween('punched_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->select('pin')
+            ->distinct()
+            ->pluck('pin');
+
+        foreach ($seen as $pin) {
+            if (! isset($names[$pin])) {
+                $names[$pin] = 'PIN ' . $pin;
+            }
+        }
+
+        return $names->sortBy(fn ($name) => mb_strtolower($name));
+    }
+
+    /** Punches over the range, oldest first, for the chosen people or everybody. */
+    private function punches(string $sn, Carbon $from, Carbon $to, array $pins) {
 
         return Meraki::where('device_sn', $sn)
-            ->whereBetween('punched_at', [
-                $month->copy()->startOfMonth(),
-                $month->copy()->endOfMonth()->endOfDay(),
-            ])
-            ->when($pin, fn ($q) => $q->where('pin', $pin))
+            ->whereBetween('punched_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->when($pins, fn ($q) => $q->whereIn('pin', $pins))
             ->orderBy('pin')
             ->orderBy('punched_at')
             ->get();
+    }
+
+    private function date(?string $value): ?Carbon {
+
+        if (! is_string($value) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($value))) {
+            return null;
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', trim($value))->startOfDay();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     private function month(?string $value): Carbon {

@@ -1,7 +1,7 @@
 @extends('meraki.layout')
 
-@section('title', 'Attendance ' . $month->format('F Y'))
-@section('subtitle', $month->format('F Y'))
+@section('title', 'Attendance ' . $label)
+@section('subtitle', $label)
 
 @php
     // How many people a day box shows before the rest fold away.
@@ -37,6 +37,8 @@
         .day.rest .num { color: #a9a8a2; }
 
         .num { font-size: .78rem; font-weight: 650; color: var(--mute); margin-bottom: .35rem; }
+        /* a range can cross months, so the 1st says which month it is */
+        .num .mon { margin-left: .3rem; font-weight: 600; color: var(--ink); }
 
         /* ---------- one person, one day: closed is a single line ---------- */
         .one { font-size: .8rem; border-bottom: 1px solid var(--line-2); }
@@ -84,6 +86,8 @@
         .worked .val { font-weight: 650; }
         .over .lbl, .over .val { color: var(--extra); }
         .over .val { font-weight: 650; }
+        .under .lbl, .under .val { color: var(--bad); }
+        .shift .val { color: var(--mute); font-variant-numeric: normal; }
         .problem { margin-top: .25rem; color: var(--bad); font-size: .78rem; font-weight: 600; }
         .none { color: #a9a8a2; }
 
@@ -117,28 +121,12 @@
         .key .r { background: var(--bad); }
     </style>
 
-    <form method="get" class="bar">
-        <label>Month
-            {{-- Safari has no month picker and shows a text box, so say what
-                 it should look like there. --}}
-            <input type="month" name="month" value="{{ $monthKey }}"
-                   placeholder="2026-08" pattern="\d{4}-\d{2}">
-        </label>
-        <label>Person
-            <select name="pin">
-                <option value="">Everyone</option>
-                @foreach ($people as $p => $name)
-                    <option value="{{ $p }}" @selected($pin == $p)>{{ $name }}</option>
-                @endforeach
-            </select>
-        </label>
-        <button type="submit" class="go">Show</button>
-    </form>
+    @include('meraki.parts.filter')
 
     @unless ($hasData)
         <div class="info">
-            Nothing recorded {{ $pin ? 'for this person ' : '' }}in {{ $month->format('F Y') }}.
-            Pick another month, or check the Punch list.
+            Nothing recorded for {{ $label }}{{ count($pins) ? ', for the people picked' : '' }}.
+            Try other dates, or check the Punch list.
         </div>
     @endunless
 
@@ -152,9 +140,9 @@
 
                 @foreach ($weeks as $week)
                     @foreach ($week as $day)
-                        <div class="day {{ $day['inMonth'] ? ($day['off'] ? 'rest' : '') : 'pad' }}">
+                        <div class="day {{ $day['inRange'] ? ($day['off'] ? 'rest' : '') : 'pad' }}">
 
-                            <div class="num">{{ $day['number'] }}</div>
+                            <div class="num">{{ $day['number'] }}@if ($day['month'])<span class="mon">{{ $day['month'] }}</span>@endif</div>
 
                             @foreach (array_slice($day['people'], 0, $show) as $who)
                                 @include('meraki.parts.person', ['who' => $who, 'open' => $detailed])
@@ -179,13 +167,23 @@
 
     <div class="key">
         <p><b>Click a name</b> to see its check in and check out times.</p>
-        <p class="gap"><span class="dot g"></span>Green — normal day, up to {{ $shiftText }}.</p>
-        <p><span class="dot o"></span>Orange — worked more than {{ $shiftText }}.</p>
+        <p class="gap"><span class="dot g"></span>Green — normal day, up to that person's work day.</p>
+        <p><span class="dot o"></span>Orange — worked more than their work day.</p>
         <p><span class="dot r"></span>Red — a punch is missing, so the hours are a guess.</p>
         <p class="gap"><b>Greyed boxes are days off.</b> Nobody at all punched on those
             {{ $offCount }} days, so they count as closed and are left out of every total.</p>
         <p><b>Worked</b> counts check in to check out. Breaks are not paid.</p>
-        <p><b>Work day</b> is {{ $shift['start'] }} to {{ $shift['end'] }} — {{ $shiftText }}. Change it in Settings.</p>
+
+        @foreach ($shifts as $s)
+            <p @class(['gap' => $loop->first])>
+                <b>{{ $s['name'] }}</b> — {{ $s['start'] }} to {{ $s['end'] }}, {{ $s['text'] }}.
+                @if ($s['grace'] > 0)
+                    Up to {{ $s['grace'] }} min short still counts as a full day.
+                @endif
+            </p>
+        @endforeach
+
+        <p>Change the shifts, and who is on which one, in <b>Settings</b>.</p>
     </div>
 
 @endsection

@@ -20,6 +20,10 @@ class Meraki extends Model {
         'verify',
         'device_sn',
         'raw',
+
+        // The shift this person was on when they punched. Stamped once, on
+        // the way in, so moving them later cannot rewrite this day.
+        'shift_id',
     ];
 
     protected $casts = [
