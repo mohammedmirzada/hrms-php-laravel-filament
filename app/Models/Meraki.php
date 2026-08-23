@@ -5,13 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A single punch from the Miraki fingerprint device.
+ * A single punch from the Meraki fingerprint device.
  *
  * Raw only — no in/out, no hours. The report works that out.
  */
-class Miraki extends Model {
+class Meraki extends Model {
 
-    protected $table = 'miraki';
+    protected $table = 'meraki';
 
     protected $fillable = [
         'pin',
@@ -27,7 +27,7 @@ class Miraki extends Model {
     ];
 
     public function user() {
-        return $this->belongsTo(MirakiUser::class, 'pin', 'pin');
+        return $this->belongsTo(MerakiUser::class, 'pin', 'pin');
     }
 
 }

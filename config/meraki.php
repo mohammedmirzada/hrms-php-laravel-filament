@@ -25,9 +25,11 @@ return [
 
     'clients' => [
 
-        'miraki' => [
-            'name'      => 'Miraki',
-            'device_sn' => env('MIRAKI_DEVICE_SN'),   // ZKTeco iFace950 Plus
+        'meraki' => [
+            'name'      => 'Meraki',
+            // The old MIRAKI_ spelling still works, so a server whose .env
+            // was not updated yet keeps running. Rename it when you can.
+            'device_sn' => env('MERAKI_DEVICE_SN', env('MIRAKI_DEVICE_SN')),   // ZKTeco iFace950 Plus
         ],
 
         // 'acme' => [
@@ -39,11 +41,11 @@ return [
 
     /*
     | Login for the report pages, same login for every client.
-    | Set MIRAKI_REPORT_USER and MIRAKI_REPORT_PASS in .env.
+    | Set MERAKI_REPORT_USER and MERAKI_REPORT_PASS in .env.
     */
     'auth' => [
-        'username' => env('MIRAKI_REPORT_USER'),
-        'password' => env('MIRAKI_REPORT_PASS'),
+        'username' => env('MERAKI_REPORT_USER', env('MIRAKI_REPORT_USER')),
+        'password' => env('MERAKI_REPORT_PASS', env('MIRAKI_REPORT_PASS')),
     ],
 
     /*
@@ -69,5 +71,28 @@ return [
     |
     */
     'punch_state' => 'auto',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Hours and overtime
+    |--------------------------------------------------------------------------
+    |
+    | Worked hours = every IN -> OUT pair added up. A break in the middle is
+    | NOT paid. An extra IN while already in is ignored, an OUT with no IN
+    | before it is ignored, so a wrong punch never makes the hours negative.
+    |
+    | Overtime = worked hours - shift length, when that is more than zero.
+    | Shift 08:00-17:00 is 9h, so 12h worked = 3h overtime, no matter whether
+    | the person came early or left late.
+    |
+    | The device's own "overtime in / overtime out" keys are NOT used. Only
+    | check in and check out count.
+    |
+    */
+
+    /*
+    | Calendar starts each week on this day. 6 = Saturday (Iraq), 1 = Monday.
+    */
+    'week_starts_on' => 6,
 
 ];

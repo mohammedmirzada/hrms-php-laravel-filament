@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Miraki;
+namespace App\Http\Controllers\Meraki;
 
 use App\Http\Controllers\Controller;
 
-use App\Models\Miraki;
-use App\Models\MirakiUser;
+use App\Models\Meraki;
+use App\Models\MerakiUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -15,14 +15,14 @@ use Illuminate\Support\Facades\Log;
  *
  * Devices only talk to fixed /iclock/* paths, they cannot use /api/*, and the
  * path cannot be changed on the device. So every client's device hits the same
- * three endpoints and is identified by serial number — see config/miraki.php.
+ * three endpoints and is identified by serial number — see config/meraki.php.
  *
  * Every reply must be text/plain, or the device retries forever.
  *
  * Punches (ATTLOG) carry only the PIN, never the name.
  * Names come from the USERINFO table, which the device sends when we ask.
  */
-class MirakiDeviceController extends Controller {
+class MerakiDeviceController extends Controller {
 
     /**
      * GET  — handshake, device asks for its config.
@@ -66,13 +66,20 @@ class MirakiDeviceController extends Controller {
         return $this->plain('OK: ' . count($this->lines($body)));
     }
 
-    /** Device polls this every 30s asking for commands. */
+    /**
+     * Device polls this every 30s asking for commands.
+     *
+     * Names look after themselves: a new person enrolled on the device is
+     * pushed here straight away in OPERLOG, and once a day we ask for the
+     * whole list as well, so a name changed on the device catches up too.
+     */
     public function getrequest(Request $request) {
 
         $sn = (string) $request->query('SN');
 
-        // pull() reads and clears, so the command goes out only once.
-        if ($this->isKnownDevice($sn) && Cache::store('file')->pull($this->pullKey($sn))) {
+        if ($this->isKnownDevice($sn) && ! Cache::store('file')->has($this->syncKey($sn))) {
+
+            Cache::store('file')->put($this->syncKey($sn), true, now()->addDay());
 
             Log::info('Asking device for its user list', ['SN' => $sn]);
 
@@ -93,29 +100,6 @@ class MirakiDeviceController extends Controller {
         return $this->plain('OK');
     }
 
-    /**
-     * Refresh the pin -> name list without rebooting the device.
-     * Picked up on the device's next poll (max 30s).
-     */
-    public function pullUsers(string $client) {
-
-        $sn = $this->deviceSn($client);
-
-        abort_if($sn === '', 404, "Unknown client [{$client}]. If you just deployed, run: php artisan config:clear");
-
-        Cache::store('file')->put($this->pullKey($sn), true, now()->addMinutes(10));
-
-        // No session on these routes, so no flash message — plain reply instead.
-        if (! Cache::store('file')->has($this->pullKey($sn))) {
-            return response('FAILED: file cache is not writable (storage/framework/cache).', 500);
-        }
-
-        return response()->view('miraki.queued', [
-            'client' => $client,
-            'sn'     => $sn,
-        ]);
-    }
-
     // ------------------------------------------------------------- handshake
 
     /**
@@ -129,8 +113,8 @@ class MirakiDeviceController extends Controller {
      */
     private function handshake(string $sn) {
 
-        // Device just booted, so refresh the pin -> name list too
-        Cache::store('file')->put($this->pullKey($sn), true, now()->addMinutes(10));
+        // Device just booted, so ask for the name list again on its next poll
+        Cache::store('file')->forget($this->syncKey($sn));
 
         return $this->plain(
             "GET OPTION FROM: {$sn}\r\n"
@@ -167,7 +151,7 @@ class MirakiDeviceController extends Controller {
             }
 
             // firstOrCreate + the unique index means a re-sent punch is ignored
-            Miraki::firstOrCreate(
+            Meraki::firstOrCreate(
                 [
                     'device_sn'  => $sn,
                     'pin'        => trim($f[0]),
@@ -209,7 +193,7 @@ class MirakiDeviceController extends Controller {
                 continue;
             }
 
-            MirakiUser::updateOrCreate(
+            MerakiUser::updateOrCreate(
                 [
                     'device_sn' => $sn,
                     'pin'       => $fields['PIN'],
@@ -225,7 +209,7 @@ class MirakiDeviceController extends Controller {
     // ----------------------------------------------------------------- config
 
     /**
-     * Serial numbers listed in config/miraki.php, which reads them from .env.
+     * Serial numbers listed in config/meraki.php, which reads them from .env.
      * Blanks are filtered out so a missing env var can never match.
      */
     private function isKnownDevice(string $sn): bool {
@@ -234,20 +218,15 @@ class MirakiDeviceController extends Controller {
             return false;
         }
 
-        $known = array_filter(array_column((array) config('miraki.clients'), 'device_sn'));
+        $known = array_filter(array_column((array) config('meraki.clients'), 'device_sn'));
 
         return in_array($sn, $known, true);
     }
 
-    /** Slug -> serial number. */
-    private function deviceSn(string $client): string {
+    /** Set while the name list is fresh. Gone = ask the device again. */
+    private function syncKey(string $sn): string {
 
-        return (string) config("miraki.clients.{$client}.device_sn");
-    }
-
-    private function pullKey(string $sn): string {
-
-        return "zk:pull_users:{$sn}";
+        return "zk:users_synced:{$sn}";
     }
 
     // ------------------------------------------------------------------ utils

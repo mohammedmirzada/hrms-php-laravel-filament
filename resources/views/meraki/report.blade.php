@@ -1,36 +1,11 @@
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $clientName }} Attendance — {{ $month->format('F Y') }}</title>
+@extends('meraki.layout')
+
+@section('title', 'Punch list ' . $month->format('F Y'))
+@section('subtitle', 'Punch list — ' . $month->format('F Y'))
+
+@section('content')
+
     <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0; padding: 2rem 1.5rem;
-            font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-            color: #1f2328; background: #f6f8fa;
-        }
-        .wrap { max-width: 780px; margin: 0 auto; }
-        h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
-        .sub { color: #656d76; margin: 0 0 1.5rem; }
-        form {
-            display: flex; gap: .6rem; flex-wrap: wrap; align-items: center;
-            background: #fff; border: 1px solid #d1d9e0; border-radius: 8px;
-            padding: .8rem; margin-bottom: 1.25rem;
-        }
-        label { display: flex; gap: .4rem; align-items: center; color: #656d76; font-size: .9rem; }
-        select, input, button {
-            font: inherit; padding: .45rem .6rem;
-            border: 1px solid #d1d9e0; border-radius: 6px; background: #fff; color: #1f2328;
-        }
-        button { background: #1f6feb; color: #fff; border-color: #1f6feb; cursor: pointer; }
-        .link { margin-left: auto; color: #1f6feb; text-decoration: none; font-size: .85rem; }
-        .link:hover { text-decoration: underline; }
-        .card {
-            background: #fff; border: 1px solid #d1d9e0;
-            border-radius: 8px; overflow: hidden;
-        }
         .scroll { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         th, td { padding: .7rem 1rem; text-align: left; white-space: nowrap; }
@@ -49,16 +24,9 @@
         .in  { background: #dafbe1; color: #1a7f37; }
         .out { background: #ffebe9; color: #cf222e; }
         .empty { padding: 3rem 1rem; text-align: center; color: #656d76; }
-        .count { color: #656d76; font-size: .85rem; margin: .75rem 0 0; }
     </style>
-</head>
-<body>
-<div class="wrap">
 
-    <h1>{{ $clientName }} Attendance</h1>
-    <p class="sub">{{ $month->format('F Y') }}</p>
-
-    <form method="get">
+    <form method="get" class="bar">
         <label>Month
             <input type="month" name="month" value="{{ $monthKey }}">
         </label>
@@ -70,8 +38,7 @@
                 @endforeach
             </select>
         </label>
-        <button type="submit">Show</button>
-        <a class="link" href="{{ route('client.pull-users', ['client' => $client]) }}">Refresh names</a>
+        <button type="submit" class="go">Show</button>
     </form>
 
     <div class="card">
@@ -108,9 +75,7 @@
     </div>
 
     @if (count($rows))
-        <p class="count">{{ count($rows) }} punches</p>
+        <p class="note">{{ count($rows) }} punches</p>
     @endif
 
-</div>
-</body>
-</html>
+@endsection
