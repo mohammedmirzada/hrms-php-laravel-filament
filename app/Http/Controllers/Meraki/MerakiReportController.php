@@ -297,11 +297,16 @@ class MerakiReportController extends Controller {
 
             $inMonth = $cursor->month === $month->month;
 
+            // A date that has not happened yet is not a day off, it is just
+            // the future. Without this the rest of the current month greys
+            // out and looks like a three week holiday.
+            $past = $cursor->lessThanOrEqualTo(Carbon::today());
+
             $week[] = [
                 'date'    => $date,
                 'number'  => $cursor->day,
                 'inMonth' => $inMonth,
-                'off'     => $inMonth && empty($allDays[$date]),
+                'off'     => $inMonth && $past && empty($allDays[$date]),
                 'people'  => $days[$date] ?? [],
             ];
 
@@ -486,12 +491,12 @@ class MerakiReportController extends Controller {
             ->all();
     }
 
-    /** How many days of the month nobody punched on. */
+    /** How many days of the month nobody punched on. Future dates do not count. */
     private function offDayCount(Carbon $month, array $busy): int {
 
         $off    = 0;
         $cursor = $month->copy()->startOfMonth();
-        $last   = $month->copy()->endOfMonth()->startOfDay();
+        $last   = $month->copy()->endOfMonth()->startOfDay()->min(Carbon::today());
 
         while ($cursor <= $last) {
 

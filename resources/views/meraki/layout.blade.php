@@ -120,6 +120,7 @@
         <h1>
             <a href="{{ route('client.report', ['client' => $client]) }}">{{ $clientName }}</a>
         </h1>
+
         <p class="sub">@yield('subtitle')</p>
 
         <nav>

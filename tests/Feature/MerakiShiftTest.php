@@ -389,10 +389,11 @@ it('marks a date nobody punched as a day off', function () {
 
     $html = loggedIn()->get('/meraki/report')->assertOk()->getContent();
 
-    // Greyed, with no label written in the box
-    $inMonth = $day->daysInMonth;
+    // Greyed, with no label written in the box. Only days already gone
+    // count — the rest of the month has not happened yet.
+    $gone = now()->day;
 
-    expect(substr_count($html, '<div class="day rest">'))->toBe($inMonth - 1);
+    expect(substr_count($html, '<div class="day rest">'))->toBe($gone - 1);
     expect(substr_count($html, 'rest-tag'))->toBe(0);
 });
 
@@ -414,10 +415,10 @@ it('does not turn other people\'s work days into days off when filtering', funct
 
     // Two working days either way. Ahmed's day must not become a day off
     // just because Sara was filtered in.
-    $inMonth = now()->daysInMonth;
+    $gone = now()->day;
 
-    expect(substr_count($everyone, '<div class="day rest">'))->toBe($inMonth - 2);
-    expect(substr_count($justSara, '<div class="day rest">'))->toBe($inMonth - 2);
+    expect(substr_count($everyone, '<div class="day rest">'))->toBe($gone - 2);
+    expect(substr_count($justSara, '<div class="day rest">'))->toBe($gone - 2);
 });
 
 it('cuts the punch list into pages of 100', function () {
@@ -475,6 +476,26 @@ it('does not fall over on a page number past the end', function () {
     loggedIn()->get('/meraki/log?page=999')
         ->assertOk()
         ->assertSee('Page 1 of 1');
+});
+
+it('does not grey out days that have not happened yet', function () {
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    $today = now()->startOfDay();
+
+    punch('1', $today->toDateString() . ' 08:00:00', 0);
+    punch('1', $today->toDateString() . ' 17:00:00', 1);
+
+    $html = loggedIn()->get('/meraki/report')->assertOk()->getContent();
+
+    // Only the days already gone, never the rest of the month
+    $past = $today->day - 1;
+
+    expect(substr_count($html, '<div class="day rest">'))->toBe($past);
+
+    $flat = preg_replace('/\s+/', ' ', $html);
+
+    expect($flat)->toContain('those ' . $past . ' days');
 });
 
 it('writes hours and minutes in words', function () {
