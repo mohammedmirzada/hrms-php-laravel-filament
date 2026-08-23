@@ -5,35 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $clientName }} — Log in</title>
     <style>
+        :root {
+            --bg: #f4f4f1; --panel: #ffffff; --line: #e4e3de;
+            --ink: #1b1b19; --mute: #75746e; --bad: #b3261e; --bad-bg: #fdf1f0;
+        }
         * { box-sizing: border-box; }
         body {
-            margin: 0; min-height: 100vh;
+            margin: 0; min-height: 100vh; padding: 1.5rem;
             display: flex; align-items: center; justify-content: center;
             font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-            color: #1f2328; background: #f6f8fa; padding: 1.5rem;
+            color: var(--ink); background: var(--bg);
+            -webkit-font-smoothing: antialiased;
         }
         .box {
-            background: #fff; border: 1px solid #d1d9e0; border-radius: 10px;
-            padding: 2rem; width: 100%; max-width: 360px;
+            background: var(--panel); border: 1px solid var(--line);
+            border-radius: 12px; padding: 2rem 1.9rem;
+            width: 100%; max-width: 360px;
         }
-        h1 { font-size: 1.25rem; margin: 0 0 .2rem; }
-        p.sub { color: #656d76; margin: 0 0 1.5rem; font-size: .9rem; }
-        label { display: block; font-size: .88rem; color: #656d76; margin-bottom: 1rem; }
+        h1 { font-size: 1.15rem; font-weight: 650; margin: 0 0 .15rem; letter-spacing: -.01em; }
+        p.sub { color: var(--mute); margin: 0 0 1.7rem; font-size: .9rem; }
+        label {
+            display: block; margin-bottom: 1.1rem;
+            font-size: .78rem; font-weight: 650; color: var(--mute);
+            text-transform: uppercase; letter-spacing: .05em;
+        }
         input {
-            display: block; width: 100%; margin-top: .3rem;
-            font: inherit; padding: .55rem .7rem;
-            border: 1px solid #d1d9e0; border-radius: 6px; background: #fff; color: #1f2328;
+            display: block; width: 100%; margin-top: .35rem;
+            font: inherit; font-size: .95rem; padding: .55rem .7rem;
+            color: var(--ink); background: var(--panel);
+            border: 1px solid var(--line); border-radius: 7px;
+            text-transform: none; letter-spacing: 0;
         }
-        input:focus { outline: 2px solid #1f6feb; outline-offset: -1px; border-color: #1f6feb; }
+        input:focus {
+            outline: none; border-color: var(--ink);
+            box-shadow: 0 0 0 3px rgba(27,27,25,.08);
+        }
         button {
-            width: 100%; font: inherit; font-weight: 600; cursor: pointer;
-            padding: .6rem; border-radius: 6px;
-            background: #1f6feb; color: #fff; border: 1px solid #1f6feb;
+            width: 100%; margin-top: .4rem;
+            font: inherit; font-size: .95rem; font-weight: 600; cursor: pointer;
+            padding: .6rem; border-radius: 7px;
+            background: var(--ink); color: #fff; border: 1px solid var(--ink);
+            transition: opacity .12s ease;
         }
-        button:hover { background: #1a60cf; }
+        button:hover { opacity: .85; }
         .bad {
-            background: #ffebe9; color: #cf222e; border: 1px solid #ffcecb;
-            padding: .55rem .7rem; border-radius: 6px; margin-bottom: 1rem; font-size: .9rem;
+            background: var(--bad-bg); color: var(--bad); border: 1px solid #f0c8c5;
+            padding: .6rem .75rem; border-radius: 8px;
+            margin-bottom: 1.1rem; font-size: .9rem;
         }
     </style>
 </head>

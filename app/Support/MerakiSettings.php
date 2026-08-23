@@ -38,13 +38,17 @@ class MerakiSettings {
         return $length > 0 ? $length : $length + 1440;
     }
 
-    /** Store a new shift. Returns false if either time is not HH:MM. */
+    /**
+     * Store a new shift. Returns false if either time is not HH:MM, or if the
+     * two are the same — that would be read as a 24 hour work day and quietly
+     * wipe out everyone's extra time.
+     */
     public static function saveShift(string $client, ?string $start, ?string $end): bool {
 
         $start = self::time($start);
         $end   = self::time($end);
 
-        if ($start === null || $end === null) {
+        if ($start === null || $end === null || $start === $end) {
             return false;
         }
 

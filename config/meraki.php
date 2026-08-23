@@ -53,9 +53,10 @@ return [
     | How the report decides IN or OUT
     |--------------------------------------------------------------------------
     |
-    | 'auto'       recommended. Uses the device state as soon as the device
-    |              actually starts sending one, otherwise counts. Nothing to
-    |              change by hand on the day the state key is enabled.
+    | 'auto'       recommended. Decided one person, one day at a time: if the
+    |              device sent a real state that day it is used, otherwise the
+    |              punches are counted. Nothing to change by hand on the day the
+    |              state key is enabled, and old days keep reading correctly.
     |
     | 'alternate'  always count: 1st punch of the day IN, 2nd OUT, 3rd IN...
     |              Cannot show two INs in a row — the second becomes OUT.

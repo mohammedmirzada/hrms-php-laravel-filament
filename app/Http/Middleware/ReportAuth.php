@@ -32,6 +32,12 @@ class ReportAuth {
             return $next($request);
         }
 
+        // Remember the page they wanted, so logging in does not dump them on
+        // the calendar when they clicked a link to something else.
+        if ($request->isMethod('get')) {
+            $request->session()->put('url.intended', $request->fullUrl());
+        }
+
         return redirect()->route('client.login', ['client' => $client]);
     }
 

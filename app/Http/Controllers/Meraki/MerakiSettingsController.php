@@ -33,7 +33,8 @@ class MerakiSettingsController extends Controller {
         if (! $ok) {
             return view('meraki.settings', $page + [
                 'saved' => false,
-                'error' => 'Could not save. Check both times look like 08:00, and that storage/app is writable.',
+                'error' => 'Could not save. Both times must look like 08:00, and the start and'
+                    . ' end cannot be the same time. If they look right, storage/app is not writable.',
             ]);
         }
 

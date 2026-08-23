@@ -66,10 +66,13 @@ class MerakiAuthController extends Controller {
         }
 
         // New session id on login, so a stolen one from before is useless.
+        // regenerate() keeps the session data, only the id changes.
         $request->session()->regenerate();
         $request->session()->put(self::sessionKey($client), true);
 
-        return redirect()->route('client.report', ['client' => $client]);
+        // Back to the page they asked for, or the calendar if they just
+        // came to the front door.
+        return redirect()->intended(route('client.report', ['client' => $client]));
     }
 
     public function logout(Request $request, string $client) {

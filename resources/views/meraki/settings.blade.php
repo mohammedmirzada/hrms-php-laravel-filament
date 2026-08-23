@@ -6,15 +6,20 @@
 @section('content')
 
     <style>
-        .box { background: #fff; border: 1px solid #d1d9e0; border-radius: 8px;
-               padding: 1.25rem; max-width: 520px; }
-        .box h2 { font-size: 1rem; margin: 0 0 .3rem; }
-        .box p.help { color: #656d76; font-size: .88rem; margin: 0 0 1.1rem; }
-        .row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
-        .row label { flex-direction: column; align-items: flex-start; gap: .3rem; }
+        .box {
+            background: var(--panel); border: 1px solid var(--line);
+            border-radius: 10px; padding: 1.4rem 1.5rem; max-width: 520px;
+        }
+        .box h2 { font-size: 1rem; font-weight: 650; margin: 0 0 .35rem; }
+        .box p.help { color: var(--mute); font-size: .9rem; margin: 0 0 1.3rem; }
+        .row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
         .row input { width: 9rem; font-variant-numeric: tabular-nums; }
-        .len { color: #656d76; font-size: .88rem; margin: 0 0 1.1rem; }
-        .len b { color: #1f2328; }
+        .len {
+            color: var(--mute); font-size: .9rem; margin: 0 0 1.3rem;
+            padding: .6rem .8rem; background: #faf9f7;
+            border: 1px solid var(--line-2); border-radius: 8px;
+        }
+        .len b { color: var(--ink); font-weight: 650; }
     </style>
 
     @if ($saved)
@@ -22,7 +27,7 @@
     @endif
 
     @if ($error)
-        <div class="bad">{{ $error }}</div>
+        <div class="bad-box">{{ $error }}</div>
     @endif
 
     <div class="box">
@@ -30,7 +35,7 @@
         <h2>Work shift</h2>
         <p class="help">
             One shift for everybody. Anything worked over this many hours in a
-            day is counted as overtime on the calendar.
+            day is counted as extra time.
         </p>
 
         <form method="post" action="{{ route('client.settings', ['client' => $client]) }}">

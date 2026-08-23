@@ -80,6 +80,9 @@ Route::middleware('web')
             Route::get('report', [MerakiReportController::class, 'calendar'])
                 ->name('client.report');
 
+            Route::get('overtime', [MerakiReportController::class, 'overtime'])
+                ->name('client.overtime');
+
             Route::get('log', [MerakiReportController::class, 'log'])
                 ->name('client.log');
 
