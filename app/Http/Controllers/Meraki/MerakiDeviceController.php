@@ -63,6 +63,18 @@ class MerakiDeviceController extends Controller {
             $this->storeUsers($body, $sn);
         }
 
+        // Anything else the device sends, written down once so it stops being
+        // a guess. Names went missing in August 2026 and there was no way to
+        // tell "the device never sent them" from "it sent them in a shape we
+        // do not read". This makes the difference visible in the log.
+        if ($table !== 'ATTLOG' && ! str_contains($body, 'USER PIN=')) {
+            Log::info('Device sent something we do not handle', [
+                'SN'    => $sn,
+                'table' => $table,
+                'body'  => mb_substr(trim($body), 0, 500),
+            ]);
+        }
+
         // Device wants the number of rows we accepted
         return $this->plain('OK: ' . count($this->lines($body)));
     }
@@ -70,9 +82,13 @@ class MerakiDeviceController extends Controller {
     /**
      * Device polls this every 30s asking for commands.
      *
-     * Names look after themselves: a new person enrolled on the device is
-     * pushed here straight away in OPERLOG, and once a day we ask for the
-     * whole list as well, so a name changed on the device catches up too.
+     * Names only ever arrive because we ask. This device does not announce a
+     * new person as they are enrolled — proved on 2026-08-24, when a man
+     * punched at 11:07 with no name and his name landed at 12:13:10, the
+     * second we asked for the list. So we ask three ways:
+     *   - once a day, to catch a name changed on the device
+     *   - on every reboot, from the handshake
+     *   - the moment a PIN we have no name for punches
      */
     public function getrequest(Request $request) {
 
@@ -142,6 +158,8 @@ class MerakiDeviceController extends Controller {
      */
     private function storePunches(string $body, string $sn): void {
 
+        $pins = [];
+
         foreach ($this->lines($body) as $line) {
 
             $f = explode("\t", $line);
@@ -170,7 +188,47 @@ class MerakiDeviceController extends Controller {
                     'shift_id' => $this->shiftId($sn, $pin),
                 ]
             );
+
+            $pins[$pin] = true;
         }
+
+        $this->askForMissingNames($sn, array_keys($pins));
+    }
+
+    /**
+     * Somebody punched whose name we have never been given.
+     *
+     * This device does NOT push a new person as they are enrolled — it only
+     * ever sends names when asked, so a person added today reads as "PIN 7"
+     * until the next daily ask. A punch is the proof they exist, so drop the
+     * "asked recently" mark and the next poll, 30s away, asks again.
+     *
+     * It cannot loop: a person with no name typed on the device is stored as
+     * "PIN 7", which counts as a name, so they are never asked for twice.
+     */
+    private function askForMissingNames(string $sn, array $pins): void {
+
+        if ($pins === [] || ! Cache::store('file')->has($this->syncKey($sn))) {
+            return;
+        }
+
+        $known = MerakiUser::where('device_sn', $sn)
+            ->whereIn('pin', $pins)
+            ->pluck('pin')
+            ->all();
+
+        $missing = array_diff($pins, $known);
+
+        if ($missing === []) {
+            return;
+        }
+
+        Log::info('Punch from a PIN with no name, asking for the list', [
+            'SN'   => $sn,
+            'pins' => array_values($missing),
+        ]);
+
+        Cache::store('file')->forget($this->syncKey($sn));
     }
 
     /**
@@ -216,13 +274,18 @@ class MerakiDeviceController extends Controller {
                 continue;
             }
 
+            // A person can be enrolled with the name left blank. Storing that
+            // as an empty string would show a nameless row on every report,
+            // so fall back to the PIN, which is at least something to read.
+            $name = trim((string) ($fields['Name'] ?? ''));
+
             MerakiUser::updateOrCreate(
                 [
                     'device_sn' => $sn,
                     'pin'       => $fields['PIN'],
                 ],
                 [
-                    'name'      => $fields['Name'] ?? ('PIN ' . $fields['PIN']),
+                    'name'      => $name !== '' ? $name : ('PIN ' . $fields['PIN']),
                     'privilege' => (int) ($fields['Pri'] ?? 0),
                 ]
             );

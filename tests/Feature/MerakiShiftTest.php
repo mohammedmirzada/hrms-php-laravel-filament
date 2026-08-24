@@ -1227,3 +1227,125 @@ it('does not re-stamp a punch the device sends twice', function () {
     expect(Meraki::count())->toBe(1);
     expect(Meraki::first()->shift_id)->toBe('1');   // still the shift of the day
 });
+
+// ---------------------------------------------------------------- name sync
+
+/*
+ | This device never announces a new person as they are enrolled. It only
+ | sends names when asked. Proved on production 2026-08-24: PIN 3 punched at
+ | 11:07 with no name and his name landed at 12:13:10, the second we asked.
+ | So a punch from a PIN we cannot name has to trigger the next ask.
+ */
+
+/** Sends one punch the way the device does. */
+function punchIn(string $pin, string $at) {
+
+    return test()->call(
+        'POST',
+        '/iclock/cdata?SN=' . SN . '&table=ATTLOG',
+        [], [], [], ['CONTENT_TYPE' => 'text/plain'],
+        "$pin\t$at\t0\t1\n"
+    );
+}
+
+/** The device asking for work. Returns the command it is given. */
+function poll() {
+
+    return test()->get('/iclock/getrequest?SN=' . SN)->getContent();
+}
+
+it('asks for the name list when a PIN with no name punches', function () {
+
+    // First poll uses up the daily ask
+    expect(poll())->toContain('DATA QUERY USERINFO');
+    expect(poll())->not->toContain('DATA QUERY USERINFO');
+
+    punchIn('7', now()->startOfMonth()->addDays(9)->toDateString() . ' 08:00:00');
+
+    // Nobody knows who 7 is, so ask again straight away
+    expect(poll())->toContain('DATA QUERY USERINFO');
+});
+
+it('does not ask again for a PIN it already knows', function () {
+
+    MerakiUser::create(['device_sn' => SN, 'pin' => '7', 'name' => 'Hussein', 'privilege' => 0]);
+
+    poll();
+
+    punchIn('7', now()->startOfMonth()->addDays(9)->toDateString() . ' 08:00:00');
+
+    expect(poll())->not->toContain('DATA QUERY USERINFO');
+});
+
+it('stops asking once the device answers with the name', function () {
+
+    poll();
+
+    punchIn('7', now()->startOfMonth()->addDays(9)->toDateString() . ' 08:00:00');
+
+    // The device answers our question
+    $this->call(
+        'POST',
+        '/iclock/cdata?SN=' . SN . '&table=USERINFO',
+        [], [], [], ['CONTENT_TYPE' => 'text/plain'],
+        "USER PIN=7\tName=Hussein\tPri=0\tPasswd=\tCard=\tGrp=1\n"
+    );
+
+    expect(MerakiUser::where('pin', '7')->value('name'))->toBe('Hussein');
+
+    poll();   // uses the fresh mark
+
+    punchIn('7', now()->startOfMonth()->addDays(9)->toDateString() . ' 17:00:00');
+
+    expect(poll())->not->toContain('DATA QUERY USERINFO');
+});
+
+it('never loops on a person enrolled with no name typed in', function () {
+
+    poll();
+
+    // The device answers, but the name field is empty
+    $this->call(
+        'POST',
+        '/iclock/cdata?SN=' . SN . '&table=USERINFO',
+        [], [], [], ['CONTENT_TYPE' => 'text/plain'],
+        "USER PIN=7\tName=\tPri=0\tPasswd=\tCard=\tGrp=1\n"
+    );
+
+    // Stored as something readable, not blank
+    expect(MerakiUser::where('pin', '7')->value('name'))->toBe('PIN 7');
+
+    poll();
+
+    punchIn('7', now()->startOfMonth()->addDays(9)->toDateString() . ' 08:00:00');
+
+    // He counts as named now, so we stop pestering the device
+    expect(poll())->not->toContain('DATA QUERY USERINFO');
+});
+
+it('asks only about the unknown one when several punch together', function () {
+
+    MerakiUser::create(['device_sn' => SN, 'pin' => '1', 'name' => 'Ahmed', 'privilege' => 0]);
+
+    poll();
+
+    $day = now()->startOfMonth()->addDays(9)->toDateString();
+
+    $this->call(
+        'POST',
+        '/iclock/cdata?SN=' . SN . '&table=ATTLOG',
+        [], [], [], ['CONTENT_TYPE' => 'text/plain'],
+        "1\t$day 08:00:00\t0\t1\n9\t$day 08:01:00\t0\t1\n"
+    );
+
+    expect(poll())->toContain('DATA QUERY USERINFO');
+});
+
+it('still stores the punch of a person it cannot name', function () {
+
+    poll();
+
+    punchIn('7', now()->startOfMonth()->addDays(9)->toDateString() . ' 08:00:00');
+
+    expect(Meraki::where('pin', '7')->count())->toBe(1);
+});
