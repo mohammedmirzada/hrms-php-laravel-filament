@@ -35,7 +35,7 @@ return [
     'device' => [
         'vendor'      => 'Hikvision',
         'mac_address' => 'a4:d5:c2:62:3e:31',
-        'ip_address'  => '192.168.1.200',
+        'ip_address'  => '192.168.11.150',
         'port'        => 443,
     ],
 
