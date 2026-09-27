@@ -5,17 +5,18 @@ namespace App\Models;
 use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\Support\LogOptions;
 
-class AttendanceDevice extends Model {
-
+class AttendanceDevice extends Model
+{
     use HasActivityLogging;
     use HasCreatedUpdatedBy;
 
-    public function getActivitylogOptions(): \Spatie\Activitylog\Support\LogOptions
+    public function getActivitylogOptions(): LogOptions
     {
         return $this->defaultLogOptions()->useLogName('attendance');
     }
-    
+
     protected $fillable = [
         'branch_id',
         'vendor',
@@ -28,11 +29,10 @@ class AttendanceDevice extends Model {
     ];
 
     protected $casts = [
-        'last_sync_at' => 'datetime',
     ];
 
-    public function branch() {
+    public function branch()
+    {
         return $this->belongsTo(Branch::class);
     }
-
 }

@@ -3,7 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Employee\Pages\Dashboard;
-use App\Filament\Employee\Pages\SubmitLeaveResuest;
+use App\Filament\Employee\Pages\SubmitLeaveRequest;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -37,7 +37,7 @@ class EmployeePanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Employee/Pages'), for: 'App\Filament\Employee\Pages')
             ->pages([
                 Dashboard::class,
-                SubmitLeaveResuest::class,
+                SubmitLeaveRequest::class,
             ])
             ->widgets([
                 AccountWidget::class,

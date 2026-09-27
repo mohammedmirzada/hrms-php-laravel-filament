@@ -15,8 +15,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
-class ActivityLogResource extends Resource {
-    
+class ActivityLogResource extends Resource
+{
     protected static ?string $model = Activity::class;
 
     protected static BackedEnum|string|null $navigationIcon = Heroicon::ClipboardDocumentList;
@@ -130,7 +130,7 @@ class ActivityLogResource extends Resource {
                         ->toArray()
                     )
                     ->query(fn (Builder $query, array $data) => $query->when(
-                        $data['value'],
+                        $data['value'] ?? null,
                         fn ($q, $value) => $q->where('causer_type', User::class)->where('causer_id', $value)
                     ))
                     ->searchable(),

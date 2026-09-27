@@ -8,20 +8,20 @@ use App\Models\Branch;
 use App\Models\ExchangeRate;
 use App\Models\PayrollPeriod;
 use BackedEnum;
+use Filament\Actions;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Actions;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\DB;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 use UnitEnum;
 
 class PayrollPeriodResource extends Resource
@@ -86,7 +86,7 @@ class PayrollPeriodResource extends Resource
                                                 ->where('quote_currency', $value)
                                                 ->exists();
                                             if (! $exists) {
-                                                $fail('No exchange rate found for ' . $value . '. Add one in Exchange Rates first.');
+                                                $fail('No exchange rate found for '.$value.'. Add one in Exchange Rates first.');
                                             }
                                         }
                                     };
@@ -98,7 +98,7 @@ class PayrollPeriodResource extends Resource
                             ->label('Exchange Rate Date')
                             ->disabled()
                             ->dehydrated()
-                            ->hidden(fn ($get) => !$get('processing_currency_code') || $get('processing_currency_code') === 'USD')
+                            ->hidden(fn ($get) => ! $get('processing_currency_code') || $get('processing_currency_code') === 'USD')
                             ->helperText('Automatically set to the most recent exchange rate available for the selected currency. Read-only.'),
                         Select::make('status')
                             ->native(false)
@@ -142,7 +142,9 @@ class PayrollPeriodResource extends Resource
                     ->sortable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => PayrollPeriodStatus::tryFrom($state)?->color() ?? 'gray')
+                    // The model casts status to the enum, so $state arrives as a case.
+                    ->color(fn (PayrollPeriodStatus $state): string => $state->color())
+                    ->formatStateUsing(fn (PayrollPeriodStatus $state): string => $state->label())
                     ->sortable(),
                 IconColumn::make('immutable')
                     ->label('Finalized')

@@ -11,6 +11,7 @@ use App\Filament\Resources\EmployerResource\Pages;
 use App\Filament\Resources\EmployerResource\RelationManagers;
 use App\Models\Employer;
 use BackedEnum;
+use Filament\Actions;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
@@ -24,12 +25,12 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Actions;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class EmployerResource extends Resource
@@ -145,7 +146,7 @@ class EmployerResource extends Resource
                                                                     }
                                                                 }
                                                             })
-                                                            ->dehydrateStateUsing(fn ($state, $get) => ($get('phone_code_1') ?? '+670') . ' ' . $state)
+                                                            ->dehydrateStateUsing(fn ($state, $get) => ($get('phone_code_1') ?? '+670').' '.$state)
                                                             ->columnSpan(3),
                                                     ]),
                                                 Grid::make(5)
@@ -173,7 +174,7 @@ class EmployerResource extends Resource
                                                                     }
                                                                 }
                                                             })
-                                                            ->dehydrateStateUsing(fn ($state, $get) => $state ? (($get('phone_code_2') ?? '+670') . ' ' . $state) : null)
+                                                            ->dehydrateStateUsing(fn ($state, $get) => $state ? (($get('phone_code_2') ?? '+670').' '.$state) : null)
                                                             ->columnSpan(3),
                                                     ]),
                                             ]),
@@ -299,7 +300,7 @@ class EmployerResource extends Resource
                                                     ->native(false)
                                                     ->label('Employment Status')
                                                     ->relationship('employmentStatus', 'name')
-                                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->getTranslation('name', 'en') . ' (' . $record->code . ')')
+                                                    ->getOptionLabelFromRecordUsing(fn ($record) => $record->getTranslation('name', 'en').' ('.$record->code.')')
                                                     ->searchable()
                                                     ->preload()
                                                     ->required()
@@ -316,8 +317,8 @@ class EmployerResource extends Resource
                                     ->icon(Heroicon::ComputerDesktop)
                                     ->description('Set a password to allow this employee to log in to the employee portal.')
                                     ->schema([
-                                        Text::make(new \Illuminate\Support\HtmlString(
-                                            'Employee portal login page: <a href="' . url('/employee/login') . '" target="_blank" class="fi-link text-primary-600 underline">' . url('/employee/login') . '</a><br><span class="text-sm text-gray-500">Share this link with the employee along with their email and password.</span>'
+                                        Text::make(new HtmlString(
+                                            'Employee portal login page: <a href="'.url('/employee/login').'" target="_blank" class="fi-link text-primary-600 underline">'.url('/employee/login').'</a><br><span class="text-sm text-gray-500">Share this link with the employee along with their email and password.</span>'
                                         )),
                                         Grid::make(2)
                                             ->schema([
@@ -338,30 +339,30 @@ class EmployerResource extends Resource
                             ->icon(Heroicon::DocumentText)
                             ->schema([
                                 Repeater::make('documents')
-                                            ->relationship()
-                                            ->schema([
-                                                Select::make('document_type')
-                                                    ->native(false)
-                                                    ->options(DocumentType::labels())
-                                                    ->required()
-                                                    ->helperText('Choose the category that best describes this file.'),
-                                                FileUpload::make('file_path')
-                                                    ->label('File')
-                                                    ->directory('documents')
-                                                    ->disk('public')
-                                                    ->maxSize(5120)
-                                                    ->openable()
-                                                    ->previewable()
-                                                    ->required()
-                                                    ->helperText('Max 5MB. Accepted formats: PDF, images, Word documents.'),
-                                                DatePicker::make('expiry_date')
-                                                    ->native(false)
-                                                    ->label('Expiry Date')
-                                                    ->helperText('Optional. Set for documents that expire (visas, work permits, passports) so renewals can be tracked.'),
-                                            ])
-                                            ->columnSpanFull()
-                                            ->defaultItems(0)
-                                            ->addActionLabel('Add Document'),
+                                    ->relationship()
+                                    ->schema([
+                                        Select::make('document_type')
+                                            ->native(false)
+                                            ->options(DocumentType::labels())
+                                            ->required()
+                                            ->helperText('Choose the category that best describes this file.'),
+                                        FileUpload::make('file_path')
+                                            ->label('File')
+                                            ->directory('documents')
+                                            ->disk('public')
+                                            ->maxSize(5120)
+                                            ->openable()
+                                            ->previewable()
+                                            ->required()
+                                            ->helperText('Max 5MB. Accepted formats: PDF, images, Word documents.'),
+                                        DatePicker::make('expiry_date')
+                                            ->native(false)
+                                            ->label('Expiry Date')
+                                            ->helperText('Optional. Set for documents that expire (visas, work permits, passports) so renewals can be tracked.'),
+                                    ])
+                                    ->columnSpanFull()
+                                    ->defaultItems(0)
+                                    ->addActionLabel('Add Document'),
                             ]),
                     ])
                     ->columnSpanFull()
@@ -382,12 +383,12 @@ class EmployerResource extends Resource
                     ->label('Photo')
                     ->disk('public')
                     ->circular()
-                    ->defaultImageUrl(fn ($record) => 'data:image/svg+xml,' . rawurlencode(
+                    ->defaultImageUrl(fn ($record) => 'data:image/svg+xml,'.rawurlencode(
                         '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">'
-                        . '<rect width="128" height="128" fill="#EBF4FF"/>'
-                        . '<text x="64" y="64" font-size="48" fill="#7F9CF5" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">'
-                        . mb_strtoupper(mb_substr($record->getTranslation('full_name', 'en') ?? '?', 0, 1))
-                        . '</text></svg>'
+                        .'<rect width="128" height="128" fill="#EBF4FF"/>'
+                        .'<text x="64" y="64" font-size="48" fill="#7F9CF5" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">'
+                        .mb_strtoupper(mb_substr($record->getTranslation('full_name', 'en') ?? '?', 0, 1))
+                        .'</text></svg>'
                     )),
                 TextColumn::make('full_name')
                     ->label('Full Name')
@@ -473,10 +474,10 @@ class EmployerResource extends Resource
                             ->label('Hire Date To'),
                     ])
                     ->query(function ($query, $data) {
-                        if ($data['hire_date_from']) {
+                        if ($data['hire_date_from'] ?? null) {
                             $query->whereDate('hire_date', '>=', $data['hire_date_from']);
                         }
-                        if ($data['hire_date_to']) {
+                        if ($data['hire_date_to'] ?? null) {
                             $query->whereDate('hire_date', '<=', $data['hire_date_to']);
                         }
                     }),
@@ -716,15 +717,15 @@ class EmployerResource extends Resource
     }
 
     // Global search configuration
-    
+
     protected static bool $isGloballySearchable = true;
 
     protected static ?string $recordTitleAttribute = 'full_name';
 
-    public static function getGloballySearchableAttributes(): array {
+    public static function getGloballySearchableAttributes(): array
+    {
         return ['full_name', 'email', 'phone_number_1', 'phone_number_2'];
     }
 
     protected static ?bool $isGlobalSearchForcedCaseInsensitive = true;
-
 }

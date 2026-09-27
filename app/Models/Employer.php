@@ -6,22 +6,23 @@ use App\Enums\Gender;
 use App\Enums\MaritalStatus;
 use App\Models\Concerns\HasActivityLogging;
 use App\Models\Concerns\HasCreatedUpdatedBy;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Spatie\Translatable\HasTranslations;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasAvatar;
 use Filament\Models\Contracts\HasName;
 use Filament\Panel;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Translatable\HasTranslations;
 
-class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasName {
-
+class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasName
+{
     use HasActivityLogging;
     use HasCreatedUpdatedBy;
     use HasTranslations;
     use Notifiable;
 
-    public function getActivitylogOptions(): \Spatie\Activitylog\Support\LogOptions
+    public function getActivitylogOptions(): LogOptions
     {
         return $this->defaultLogOptions()->useLogName('employee');
     }
@@ -55,6 +56,7 @@ class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasNa
     ];
 
     protected $casts = [
+        'password' => 'hashed',
         'emergency_contact' => 'array',
         'genre' => Gender::class,
         'marital_status' => MaritalStatus::class,
@@ -65,60 +67,72 @@ class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasNa
         'contract_expiry_date' => 'date',
     ];
 
-    public function department() {
+    public function department()
+    {
         return $this->belongsTo(Department::class);
     }
 
-    public function position() {
+    public function position()
+    {
         return $this->belongsTo(Position::class);
     }
 
-    public function manager() {
+    public function manager()
+    {
         return $this->belongsTo(Employer::class, 'manager_id', 'id');
     }
 
-    public function branch() {
+    public function branch()
+    {
         return $this->belongsTo(Branch::class);
     }
 
-    public function subordinates() {
+    public function subordinates()
+    {
         return $this->hasMany(Employer::class, 'manager_id');
     }
 
-    public function employmentStatus() {
+    public function employmentStatus()
+    {
         return $this->belongsTo(EmploymentStatus::class);
     }
 
-    public function compensations() {
+    public function compensations()
+    {
         return $this->hasMany(EmployerCompensation::class);
     }
 
-    public function leaveRequests() {
+    public function leaveRequests()
+    {
         return $this->hasMany(LeaveRequest::class);
     }
 
-    public function isOnProbation() {
+    public function isOnProbation()
+    {
         return $this->probation_period_start_date
             && $this->probation_period_end_date
             && now()->between($this->probation_period_start_date, $this->probation_period_end_date);
     }
 
-    public function isContractExpired() {
+    public function isContractExpired()
+    {
         return $this->contract_expiry_date && today()->isAfter($this->contract_expiry_date);
     }
 
-    public function employerShifts() {
+    public function employerShifts()
+    {
         return $this->hasMany(EmployerShift::class);
     }
 
-    public function documents() {
+    public function documents()
+    {
         return $this->hasMany(Document::class);
     }
 
     public function getFilamentAvatarUrl(): ?string
     {
-        if ($this->avatar) {
-            return '/storage/' . $this->avatar;
+        if ($this->profile_picture) {
+            return '/storage/'.$this->profile_picture;
         }
 
         return null;
@@ -129,7 +143,8 @@ class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasNa
         return true;
     }
 
-    public function roles() {
+    public function roles()
+    {
         return $this->morphToMany(Role::class, 'model', 'model_has_roles', 'model_id', 'role_id');
     }
 
@@ -143,5 +158,4 @@ class Employer extends Authenticatable implements FilamentUser, HasAvatar, HasNa
     {
         return $this->morphMany(Activity::class, 'causer');
     }
-
 }

@@ -7,13 +7,13 @@ use App\Filament\Resources\DocumentResource\Pages;
 use App\Models\Document;
 use App\Models\Employer;
 use BackedEnum;
+use Filament\Actions;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Actions;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -78,7 +78,7 @@ class DocumentResource extends Resource
                 TextColumn::make('file_path')
                     ->label('File')
                     ->formatStateUsing(fn ($state) => $state ? basename($state) : '—')
-                    ->url(fn ($record) => $record->file_path ? asset('storage/' . $record->file_path) : null)
+                    ->url(fn ($record) => $record->file_path ? asset('storage/'.$record->file_path) : null)
                     ->openUrlInNewTab()
                     ->icon(Heroicon::ArrowTopRightOnSquare)
                     ->color('primary'),
@@ -121,10 +121,10 @@ class DocumentResource extends Resource
                             ->label('Expiry Date To'),
                     ])
                     ->query(function ($query, $data) {
-                        if ($data['expiry_date_from']) {
+                        if ($data['expiry_date_from'] ?? null) {
                             $query->whereDate('expiry_date', '>=', $data['expiry_date_from']);
                         }
-                        if ($data['expiry_date_to']) {
+                        if ($data['expiry_date_to'] ?? null) {
                             $query->whereDate('expiry_date', '<=', $data['expiry_date_to']);
                         }
                     }),

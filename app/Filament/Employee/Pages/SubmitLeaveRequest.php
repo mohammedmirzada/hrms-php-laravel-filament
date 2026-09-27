@@ -7,19 +7,19 @@ use App\Enums\LeaveRequestStatus;
 use App\Enums\LeaveUnit;
 use App\Models\Employer;
 use App\Models\LeavePolicy;
-use App\Services\LeaveBalanceCalculator;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Services\LeaveBalanceCalculator;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TimePicker;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
@@ -28,27 +28,34 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
 
-class SubmitLeaveResuest extends Page implements HasForms {
-
+class SubmitLeaveRequest extends Page implements HasForms
+{
     use InteractsWithForms;
 
-    protected string $view = 'filament.employee.pages.submit-leave-resuest';
+    protected string $view = 'filament.employee.pages.submit-leave-request';
+
     protected static BackedEnum|string|null $navigationIcon = Heroicon::DocumentDuplicate;
+
     protected static ?int $navigationSort = 2;
+
     protected static ?string $title = 'Submit Leave Request';
+
     protected static ?string $navigationLabel = 'Submit Leave Request';
 
     public ?array $data = [];
 
-    public function mount(): void {
+    public function mount(): void
+    {
         $this->form->fill();
     }
 
-    private function getEmployee(): Employer {
+    private function getEmployee(): Employer
+    {
         return auth()->guard('employer')->user();
     }
 
-    public function form(Schema $schema): Schema {
+    public function form(Schema $schema): Schema
+    {
         $employee = $this->getEmployee();
         $branchId = $employee->branch_id;
 
@@ -92,16 +99,16 @@ class SubmitLeaveResuest extends Page implements HasForms {
                                     return new HtmlString('<span class="text-gray-400">Select a leave type to see your balance.</span>');
                                 }
 
-                                $result  = app(LeaveBalanceCalculator::class)->getBalance($employee, $leaveTypeId);
-                                $type    = \App\Models\LeaveType::find($leaveTypeId);
-                                $isHour  = $type?->default_unit === 'HOUR';
+                                $result = app(LeaveBalanceCalculator::class)->getBalance($employee, $leaveTypeId);
+                                $type = LeaveType::find($leaveTypeId);
+                                $isHour = $type?->default_unit === 'HOUR';
 
                                 if ($isHour) {
                                     $value = round($result['minutes'] / 60, 1);
-                                    $unit  = 'hrs';
+                                    $unit = 'hrs';
                                 } else {
                                     $value = round($result['minutes'] / 480, 1);
-                                    $unit  = 'days';
+                                    $unit = 'days';
                                 }
 
                                 if ($result['accrued'] === 0) {
@@ -109,7 +116,7 @@ class SubmitLeaveResuest extends Page implements HasForms {
                                 }
 
                                 $color = $value > 0 ? 'text-success-600' : 'text-danger-600';
-                                $label = ($value >= 0 ? '+' : '') . "{$value} {$unit} available";
+                                $label = ($value >= 0 ? '+' : '')."{$value} {$unit} available";
 
                                 return new HtmlString("<span class=\"font-semibold {$color}\">{$label}</span>");
                             }),
@@ -242,6 +249,7 @@ class SubmitLeaveResuest extends Page implements HasForms {
                         FileUpload::make('attachment_path')
                             ->label(function (callable $get) {
                                 $leaveType = LeaveType::find($get('leave_type_id'));
+
                                 return $leaveType?->document_type
                                     ? "Required Document: {$leaveType->document_type}"
                                     : 'Attachment';
@@ -252,6 +260,7 @@ class SubmitLeaveResuest extends Page implements HasForms {
                             ->acceptedFileTypes(['application/pdf', 'image/*'])
                             ->required(function (callable $get) {
                                 $leaveType = LeaveType::find($get('leave_type_id'));
+
                                 return (bool) $leaveType?->document_type;
                             })
                             ->hidden(function (callable $get) {
@@ -259,6 +268,7 @@ class SubmitLeaveResuest extends Page implements HasForms {
                             })
                             ->helperText(function (callable $get) {
                                 $leaveType = LeaveType::find($get('leave_type_id'));
+
                                 return $leaveType?->document_type
                                     ? "A {$leaveType->document_type} is required for this leave type. Upload a PDF or image (max 5 MB)."
                                     : 'Optional. Upload a supporting document if needed (max 5 MB).';
@@ -268,7 +278,8 @@ class SubmitLeaveResuest extends Page implements HasForms {
             ->statePath('data');
     }
 
-    public function submit(): void {
+    public function submit(): void
+    {
         $this->form->validate();
 
         $employee = $this->getEmployee();
@@ -280,10 +291,10 @@ class SubmitLeaveResuest extends Page implements HasForms {
 
         if ($data['day_part'] === LeaveRequestDayPart::Hourly->value) {
             $startAt = Carbon::parse("{$data['start_at']} {$data['start_time']}");
-            $endAt   = Carbon::parse("{$data['start_at']} {$data['end_time']}");
+            $endAt = Carbon::parse("{$data['start_at']} {$data['end_time']}");
         } else {
             $startAt = Carbon::parse($data['start_at'])->startOfDay();
-            $endAt   = Carbon::parse($data['end_at'])->endOfDay();
+            $endAt = Carbon::parse($data['end_at'])->endOfDay();
         }
 
         $duration = self::calculateDuration(
@@ -294,8 +305,8 @@ class SubmitLeaveResuest extends Page implements HasForms {
 
         if ($policy?->min_request_unit_minutes && $duration['minutes'] < $policy->min_request_unit_minutes) {
             $min = $policy->min_request_unit_minutes >= 60
-                ? round($policy->min_request_unit_minutes / 60, 1) . ' hour(s)'
-                : $policy->min_request_unit_minutes . ' minute(s)';
+                ? round($policy->min_request_unit_minutes / 60, 1).' hour(s)'
+                : $policy->min_request_unit_minutes.' minute(s)';
 
             throw ValidationException::withMessages([
                 'data.end_time' => "The minimum request duration for this leave type is {$min}.",
@@ -306,31 +317,31 @@ class SubmitLeaveResuest extends Page implements HasForms {
 
         if ($balance['accrued'] > 0 && $duration['minutes'] > $balance['minutes']) {
             $leaveType = LeaveType::find($data['leave_type_id']);
-            $isHour    = $leaveType?->default_unit === 'HOUR';
+            $isHour = $leaveType?->default_unit === 'HOUR';
             $available = $isHour
-                ? round($balance['minutes'] / 60, 1) . ' hrs'
-                : round($balance['minutes'] / 480, 1) . ' days';
+                ? round($balance['minutes'] / 60, 1).' hrs'
+                : round($balance['minutes'] / 480, 1).' days';
 
             $field = $isHour ? 'data.end_time' : 'data.end_at';
 
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 $field => "You only have {$available} available. Reduce the duration of your request.",
             ]);
         }
 
         LeaveRequest::create([
-            'employer_id'      => $employee->id,
-            'branch_id'        => $employee->branch_id,
-            'leave_type_id'    => $data['leave_type_id'],
-            'policy_id'        => $policy?->id,
-            'day_part'         => $data['day_part'],
-            'start_at'         => $startAt,
-            'end_at'           => $endAt,
+            'employer_id' => $employee->id,
+            'branch_id' => $employee->branch_id,
+            'leave_type_id' => $data['leave_type_id'],
+            'policy_id' => $policy?->id,
+            'day_part' => $data['day_part'],
+            'start_at' => $startAt,
+            'end_at' => $endAt,
             'duration_minutes' => $duration['minutes'],
-            'duration_days'    => $duration['days'],
-            'reason'           => $data['reason'] ?? null,
-            'attachment_path'  => $data['attachment_path'] ?? null,
-            'status'           => LeaveRequestStatus::Submitted->value,
+            'duration_days' => $duration['days'],
+            'reason' => $data['reason'] ?? null,
+            'attachment_path' => $data['attachment_path'] ?? null,
+            'status' => LeaveRequestStatus::Submitted->value,
         ]);
 
         $this->form->fill();
@@ -366,5 +377,4 @@ class SubmitLeaveResuest extends Page implements HasForms {
 
         return ['minutes' => $totalMinutes, 'days' => $days];
     }
-
 }

@@ -4,12 +4,12 @@ namespace App\Filament\Resources\LeaveRequestResource\RelationManagers;
 
 use App\Enums\ApprovalRole;
 use App\Enums\ApprovalStatus;
+use Filament\Actions;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
-use Filament\Actions;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -59,7 +59,9 @@ class ApprovalsRelationManager extends RelationManager
                     ->label('Assigned To'),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (string $state): string => ApprovalStatus::tryFrom($state)?->color() ?? 'gray')
+                    // The model casts status to the enum, so $state arrives as a case.
+                    ->color(fn (ApprovalStatus $state): string => $state->color())
+                    ->formatStateUsing(fn (ApprovalStatus $state): string => $state->label())
                     ->sortable(),
                 TextColumn::make('actionByUser.name')
                     ->label('Actioned By'),
